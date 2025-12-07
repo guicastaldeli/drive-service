@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Api Gateway</title>
+</head>
+<body>
+    Welcome to Api Endpoints! :D
+    <br>
+    <br>
+    <!-- Time Stream -->
+    <div class="time-stream-section">
+        <span>---- Time Stream ----</span>
+        <div class="endpoint">
+            <a href="/api/time-stream" target="_blank">Time</a>
+        </div>
+        <span>--------------------------</span>
+    </div>
+
+    <br>
+
+    <!-- Session Service -->
+    <div class="session-service-section">
+        <span>---- Session Service ----</span>
+        <div class="endpoint">
+            <a href="/api/session/types" target="_blank">Types</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/session/stats" target="_blank">Stats</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/session/USER_USERNAME" target="_blank">Get User Session (URL USERNAME)</a>
+        </div>
+        <span>----------------------------</span>
+    </div>
+
+    <br>
+
+    <!-- Connection Tracker -->
+    <div class="connection-tracker-section">
+        <span>---- Connection Tracker ----</span>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/all" target="_blank">All Connections</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/active" target="_blank">Active Connections</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/count" target="_blank">Count</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/USER_SOCKET_ID" target="_blank">By Socket ID (URL ID)</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/ip/USER_IP" target="_blank">By Ip (URL IP)</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/connection-tracker/connections/user/USER_USERNAME||USER_ID" target="_blank">By User (URL USERNAME or ID)</a>
+        </div>
+        <span>----------------------------------</span>
+    </div>
+
+    <br>
+    
+    <!-- Message Tracker -->
+    <div class="message-tracker-section">
+        <span>---- Message Tracker ----</span>
+        <div class="endpoint">
+            <a href="/api/message-tracker/get-messages" target="_blank">Tracked Messages</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/messages/chatId/CHAT_ID" target="_blank">Chat ID</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/messages/chatId/CHAT_ID/count" target="_blank">Chat ID Count</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/messages/recent/USER_ID" target="_blank">Recent Messages (URL USERID)</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/messages/recent/USER_ID/COUNT" target="_blank">Recent Messages Count (URL USERID & NUMBER)</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/messages/userId/USER_ID" target="_blank">User ID (URL USER ID)</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/stats" target="_blank">Stats</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/count" target="_blank">Count</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/message-tracker/clear" target="_blank">Clear</a>
+        </div>
+        <span>---------------------------------</span>
+    </div>
+
+    <br>
+
+    <!-- User Controller -->
+    <div class="user-controller-section">
+        <span>---- User Controller ----</span>
+        <div class="endpoint">
+            <a href="/api/users/all" target="_blank">All Users</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/users/online" target="_blank">Online Users</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/users/email/EMAIL" target="_blank">By Email</a>
+        </div>
+        <div class="endpoint">
+            <a href="/api/users/username/USERNAME" target="_blank">By Username</a>
+        </div>
+        <span>-----------------------------</span>
+    </div>
+</body>
+</html>
