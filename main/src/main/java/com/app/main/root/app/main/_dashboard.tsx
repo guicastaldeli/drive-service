@@ -59,6 +59,9 @@ export class Dashboard extends Component<Props, State> {
                                 <div className="screen main-dashboard">
                                     <div className="sidebar">
                                     </div>
+                                    <div className="container-upload-file">
+                                        <input type="file" id="upload-file">Upload</input>
+                                    </div>
                                 </div>
                             )}
                         </>
