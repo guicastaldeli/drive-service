@@ -2,9 +2,7 @@ package com.app.main.root.app._server;
 import com.app.main.root.app.__controllers.UserAgentParserController;
 import com.app.main.root.app._service.ServiceManager;
 import com.app.main.root.app._utils.ColorConverter;
-
 import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
@@ -63,7 +61,6 @@ public class ConnectionTracker {
 
             String userId = serviceManager.getUserService().getUserIdBySession(socketId);
             if(userId != null) {
-                serviceManager.getGroupService().removeUserFromAllGroups(userId);
                 serviceManager.getUserService().unlinkUserSession(socketId);
             }
 
@@ -82,7 +79,6 @@ public class ConnectionTracker {
             connectionInfo.username = username;
             
             serviceManager.getUserService().linkUserSession(userId, socketId);
-            serviceManager.getGroupService().updateGroupSessionsUser(userId, socketId);
             connections.put(socketId, connectionInfo);
         }
     }
@@ -129,11 +125,6 @@ public class ConnectionTracker {
         disconnectionCallbacks.remove(callback);
     }
 
-    /* Group Sessions */
-    public Set<String> getGroupSessions(String groupId) {
-        return serviceManager.getGroupService().groupSessions.getOrDefault(groupId, Collections.emptySet());
-    }
-
     /*
     * Get All Active Sessions 
     */
@@ -171,15 +162,7 @@ public class ConnectionTracker {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalConnections", connections.size());
         stats.put("activeConnections", getActiveConnectionsCount());
-        stats.put("totalGroups", serviceManager.getGroupService().groupSessions.size());
         stats.put("totalUsers", serviceManager.getUserService().userToSessionMap.size());
-
-        Map<String, Integer> groupSizes = new HashMap<>();
-        for(Map.Entry<String, Set<String>> entry : serviceManager.getGroupService().groupSessions.entrySet()) {
-            groupSizes.put(entry.getKey(), entry.getValue().size());
-        }
-        stats.put("groupSizes", groupSizes);
-
         return stats;
     }
 

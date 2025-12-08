@@ -6,7 +6,6 @@ import com.app.main.root.app.EventLog.EventDirection;
 import com.app.main.root.app._crypto.password_encoder.PasswordEncoderWrapper;
 import com.app.main.root.app._crypto.user_validator.UserValidatorWrapper;
 import com.app.main.root.app._db.CommandQueryManager;
-import com.app.main.root.app._server.RouteContext;
 import com.app.main.root.app._server.ConnectionTracker;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -17,7 +16,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 import java.sql.*;
 
@@ -128,63 +126,6 @@ public class UserService {
         }
 
         return users;
-    }
-
-    /*
-    * Get User Chats 
-    */
-    public List<Map<String, Object>> getUserDirect(String userId) throws SQLException {
-        String query = CommandQueryManager.GET_USER_DIRECT.get();
-        List<Map<String, Object>> chats = new ArrayList<>();
-
-        try(
-            Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query);
-        ) {
-            stmt.setString(1, userId);
-            try(ResultSet rs = stmt.executeQuery()) {
-                while(rs.next()) {
-                    Map<String, Object> chat = new HashMap<>();
-                    String contactId = rs.getString("contact_id");
-                    Map<String, Object> idMap = serviceManager.getDirectService().getChatId(userId, contactId);
-                    String id = (String) idMap.get("chatId");
-
-                    chat.put("id", id);
-                    chat.put("contactId", contactId);
-                    chat.put("contactUsername", rs.getString("username"));
-                    chat.put("type", "DIRECT");
-                    chats.add(chat);
-                }
-            }
-        }
-
-        return chats;
-    }
-
-    public List<Map<String, Object>> getUserGroups(String userId) throws SQLException {
-        String query = CommandQueryManager.GET_USER_GROUPS.get();
-        List<Map<String, Object>> groups = new ArrayList<>();
-
-        try(
-            Connection conn = dataSourceService.setDb("group").getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query)
-        ) {
-            stmt.setString(1, userId);
-            try(ResultSet rs = stmt.executeQuery()) {
-                while(rs.next()) {
-                    Map<String, Object> group = new HashMap<>();
-                    group.put("id", rs.getString("id"));
-                    group.put("name", rs.getString("name"));
-                    group.put("creatorId", rs.getString("creator_id"));
-                    group.put("createdAt", rs.getString("created_at"));
-                    group.put("memberCount", rs.getString("member_count"));
-                    group.put("type", "GROUP");
-                    groups.add(group);
-                }
-            }
-        }
-
-        return groups;
     }
 
     /* Username */
@@ -437,31 +378,6 @@ public class UserService {
             stmt.setTimestamp(1, time);
             stmt.setString(2, userId);
             stmt.executeUpdate();
-        }
-    }
-
-    /*
-    **
-    ***
-    *** Routes
-    ***
-    **
-    */
-    public void handleUserRoute(RouteContext context) {
-        String targetUserId = (String) context.message.get("targetUserId");
-        if(targetUserId != null) {
-            String targetSession = getSessionByUserId(targetUserId);
-            if(targetSession != null) {
-                context.targetSessions.add(targetSession);
-                if(targetSession.equals(context.sessionId)) {
-                    context.metadata.put("queue", "/user/queue/messages/self");
-                } else {
-                    Set<String> allSessions = connectionTracker.getAllActiveSessions();
-                    allSessions.remove(context.sessionId);
-                    context.targetSessions.addAll(allSessions);
-                    context.metadata.put("queue", "/user/queue/messages/others");
-                }
-            }
         }
     }
 

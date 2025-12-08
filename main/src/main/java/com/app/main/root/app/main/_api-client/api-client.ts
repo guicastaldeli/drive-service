@@ -1,5 +1,4 @@
 import { TimeStreamClient } from "./time-stream-client";
-import { MessageServiceClient } from "./message-service-client";
 import { SessionServiceClient } from "./session-service-client";
 import { AuthServiceClient } from "./auth-service-client";
 import { UserServiceClient } from "./user-service-client";
@@ -11,7 +10,6 @@ export class ApiClient {
 
     private timeStream: TimeStreamClient;
     private sessionSerive: SessionServiceClient;
-    private messageService: MessageServiceClient;
     private authService: AuthServiceClient;
     private userService: UserServiceClient;
 
@@ -19,7 +17,6 @@ export class ApiClient {
         this.getUrl();
         this.timeStream = new TimeStreamClient(this.baseUrl);
         this.sessionSerive = new SessionServiceClient(this.baseUrl);
-        this.messageService = new MessageServiceClient(this.baseUrl, socketClient);
         this.authService = new AuthServiceClient(this.baseUrl);
         this.userService = new UserServiceClient(this.baseUrl);
     }
@@ -42,13 +39,6 @@ export class ApiClient {
     */
     public async getSessionService(): Promise<SessionServiceClient> {
         return this.sessionSerive;
-    }
-
-    /*
-    ** Message Service
-    */
-    public async getMessageService(): Promise<MessageServiceClient> {
-        return this.messageService;
     }
 
     /*

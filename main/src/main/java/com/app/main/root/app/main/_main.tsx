@@ -3,19 +3,11 @@ import React from 'react';
 import { Component } from 'react';
 import { ApiClient } from './_api-client/api-client';
 import { SocketClientConnect } from './socket-client-connect';
-import { MessageManager } from './_messages_config/message-manager';
 import { CacheServiceClient } from '../_cache/cache-service-client';
 import { CachePreloaderService } from '../_cache/cache-preloader-service';
 import { Dashboard } from './_dashboard';
 import { SessionProvider, SessionType, SessionContext } from './_session/session-provider';
-import { ChatManager } from './chat/chat-manager';
-import { Item } from './chat/chat-manager';
-import { ActiveChat } from './chat/chat-manager';
-
 interface State {
-    chatManager: ChatManager | null;
-    chatList: Item[];
-    activeChat: ActiveChat | null;
     currentSession: SessionType;
     userId: string | null;
     username: string | null;
@@ -26,8 +18,6 @@ export class Main extends Component<any, State> {
     private apiClient: ApiClient;
     private cacheService: CacheServiceClient;
     private cachePreloader: CachePreloaderService;
-    private chatManager!: ChatManager;
-    private messageManager!: MessageManager;
 
     private appContainerRef = React.createRef<HTMLDivElement>();
     private dashboardInstance: Dashboard | null = null;
@@ -37,17 +27,9 @@ export class Main extends Component<any, State> {
         this.socketClientConnect = SocketClientConnect.getInstance();
         this.apiClient = new ApiClient(this.socketClientConnect);
         this.cacheService = CacheServiceClient.getInstance();
-        this.messageManager = new MessageManager(
-            this.socketClientConnect, 
-            this.apiClient, 
-            this.cacheService
-        );
         this.cachePreloader = new CachePreloaderService(this.apiClient, this.cacheService);
         this.cacheService.setApiClient(this.apiClient);
-        this.state = { 
-            chatManager: null,
-            chatList: [],
-            activeChat: null,
+        this.state = {
             currentSession: 'LOGIN',
             userId: null,
             username: null
@@ -56,32 +38,17 @@ export class Main extends Component<any, State> {
 
     async componentDidMount(): Promise<void> {
         await this.connect();
-        this.chatManager = new ChatManager(
-            this.cacheService,
-            this.socketClientConnect,
-            this.messageManager,
-            this.apiClient,
-            this.dashboardInstance,
-            this.appContainerRef.current,
-            this.state.username!,
-            this.setState.bind(this)
-        );
-        this.chatManager.mount();
-        this.messageManager.setChatManager(this.chatManager);
         if(this.state.userId) await this.cacheService.initCache(this.state.userId);
         this.loadData();
     }
 
     componentWillUnmount(): void {
-        if(this.chatManager) this.chatManager.unmount();
     }
     
 
     private loadData = async(): Promise<void> => {
         try {
-            const messageService = await this.apiClient.getMessageService();
-            const trackedMessages = await messageService.getMessagesByUserId(this.state.userId!);
-            this.setState({ chatList: trackedMessages });
+            console.log('drive data')
         } catch(err) {
             console.error('Failed to load chat data:', err);
         }
@@ -90,13 +57,10 @@ export class Main extends Component<any, State> {
     private async connect(): Promise<void> {
         if(!this.socketClientConnect) return;
         await this.socketClientConnect.connect();
-        await this.messageManager.init();
     }
 
     private setDashboardRef = (instance: Dashboard | null): void => {
         this.dashboardInstance = instance;
-        if(instance && this.messageManager) this.messageManager.dashboard = instance;
-        if(this.chatManager && instance) this.chatManager.setDashboard(instance);
     }
 
     //Join
@@ -113,11 +77,6 @@ export class Main extends Component<any, State> {
     private createUsernameRef = React.createRef<HTMLInputElement>();
     private createPasswordRef = React.createRef<HTMLInputElement>();
     private handleJoin = async (sessionContext: any, isCreateAccount: boolean = false): Promise<void> => {
-        if (!this.chatManager) {
-            console.error('Chat manager not initialized');
-            return;
-        }
-
         try {
             let email, username, password;
 
@@ -194,21 +153,15 @@ export class Main extends Component<any, State> {
                 const authData = result;
 
                 if (authData && authData.userId) {
-                    this.chatManager.setUsername(authData.username);
                     
                     this.setState({ 
-                        chatManager: this.chatManager,
                         username: authData.username,
                         userId: authData.userId
                     }, async () => {
                         try {
-                            await this.messageManager.getUserData(authData.sessionId, authData.userId, authData.username);
-                            await this.messageManager.handleJoin(authData.sessionId, authData.userId, authData.username);
                             await this.cacheService.initCache(authData.userId);
                             await this.cachePreloader.startPreloading(authData.userId);
                             await this.dashboardInstance?.getUserData(authData.sessionId, authData.userId);
-                            await this.chatManager.getUserData(authData.sessionId, authData.userId, authData.username);
-                            this.chatManager.getLoader().loadChatItems(authData.userId);
                             sessionContext.setSession('MAIN_DASHBOARD');
                         } catch (err) {
                             console.error('Error in handleJoin:', err);
@@ -232,8 +185,6 @@ export class Main extends Component<any, State> {
     }
 
     render() {
-        const { chatList, activeChat } = this.state;
-
         return (
             <div className='app' ref={this.appContainerRef}>
                 <SessionProvider 
@@ -305,10 +256,6 @@ export class Main extends Component<any, State> {
                                     {sessionContext && sessionContext.currentSession === 'MAIN_DASHBOARD' && (
                                         <Dashboard 
                                             ref={this.setDashboardRef}
-                                            messageManager={this.messageManager}
-                                            chatManager={this.state.chatManager!}
-                                            chatList={chatList}
-                                            activeChat={activeChat}
                                             apiClient={this.apiClient}
                                         />
                                     )}

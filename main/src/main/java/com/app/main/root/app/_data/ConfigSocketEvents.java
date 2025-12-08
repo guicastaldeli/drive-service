@@ -1,7 +1,6 @@
 package com.app.main.root.app._data;
 import com.app.main.root.app.EventTracker;
 import com.app.main.root.app._db.DbService;
-import com.app.main.root.app.main._messages_config.MessageTracker;
 import com.app.main.root.app._server.EventRegistry;
 import com.app.main.root.app._server.ConnectionTracker;
 import org.springframework.context.ApplicationListener;
@@ -30,7 +29,6 @@ public class ConfigSocketEvents implements ApplicationListener<BrokerAvailabilit
     private final SimpAnnotationMethodMessageHandler messageHandler;
     private final EventRegistry eventRegistry;
     private final EventTracker eventTracker;
-    private final MessageTracker messageTracker;
     private final ConnectionTracker connectionTracker;
     private final DbService dbService;
     private final SocketMethods socketMethods;
@@ -41,7 +39,6 @@ public class ConfigSocketEvents implements ApplicationListener<BrokerAvailabilit
         SimpAnnotationMethodMessageHandler messageHandler,
         EventRegistry eventRegistry,
         EventTracker eventTracker,
-        MessageTracker messageTracker,
         ConnectionTracker connectionTracker,
         DbService dbService,
         SocketMethods socketMethods,
@@ -50,7 +47,6 @@ public class ConfigSocketEvents implements ApplicationListener<BrokerAvailabilit
         this.messageHandler = messageHandler;
         this.eventRegistry = eventRegistry;
         this.eventTracker = eventTracker;
-        this.messageTracker = messageTracker;
         this.connectionTracker = connectionTracker;
         this.dbService = dbService;
         this.socketMethods = socketMethods;

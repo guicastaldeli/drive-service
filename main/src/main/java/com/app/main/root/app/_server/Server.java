@@ -2,14 +2,12 @@ package com.app.main.root.app._server;
 import com.app.main.root.app._data.ConfigSocketEvents;
 import com.app.main.root.EnvConfig;
 import com.app.main.root.app.EventTracker;
-import com.app.main.root.app.main._messages_config.MessageTracker;
 import com.app.main.root.app._service.ServiceManager;
 import com.app.main.root.app._service.SessionService;
 import com.app.main.root.app._data.SocketMethods;
 import com.app.main.root.app._utils.ColorConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.annotation.support.SimpAnnotationMethodMessageHandler;
@@ -20,7 +18,6 @@ public class Server implements CommandLineRunner {
     private static Server instance;
     private final EventRegistry eventRegistry;
     private final EventTracker eventTracker;
-    @Lazy @Autowired private final MessageTracker messageTracker;
     private final ServiceManager serviceManager;
     private final SessionService sessionService;
     private final SocketMethods socketMethods;
@@ -41,7 +38,6 @@ public class Server implements CommandLineRunner {
         EventTracker eventTracker,
         EventRegistry eventRegistry,
         SimpMessagingTemplate messagingTemplate,
-        MessageTracker messageTracker,
         SocketMethods socketMethods,
         ConnectionTracker connectionTracker, 
         ConfigSocketEvents configSocketEvents,
@@ -49,7 +45,6 @@ public class Server implements CommandLineRunner {
     ) {
         this.eventRegistry = eventRegistry;
         this.eventTracker = eventTracker;
-        this.messageTracker = messageTracker;
         this.serviceManager = serviceManager;
         this.sessionService = sessionService;
         this.messagingTemplate = messagingTemplate;

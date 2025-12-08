@@ -8,10 +8,7 @@ export interface CacheConfig {
 }
 
 export interface CacheData {
-    messages: Map<string, any>;
-    messageOrder: string[];
     loadedPages: Set<number>;
-    totalMessagesCount: number;
     lastAccessTime: number;
     hasMore: boolean;
     isFullyLoaded: boolean;
@@ -39,14 +36,12 @@ export class CacheServiceClient {
         return CacheServiceClient.instance;
     }
 
-    public init(chatId: string, totalMessagesCount: number = 0): void {
+    public init(): void {
         const time = Date.now();
+        /*
         if(!this.cache.has(chatId)) {
             this.cache.set(chatId, {
-                messages: new Map(),
-                messageOrder: [],
                 loadedPages: new Set(),
-                totalMessagesCount,
                 lastAccessTime: time,
                 hasMore: totalMessagesCount > this.config.pageSize,
                 isFullyLoaded: false,
@@ -54,6 +49,7 @@ export class CacheServiceClient {
             });
         }
         this.selectChat(chatId);
+        */
     }
 
     public setApiClient(apiClient: ApiClient): void {
@@ -65,6 +61,7 @@ export class CacheServiceClient {
     */
     public async initCache(userId: string): Promise<void> {
         try {
+            /*
             const messageService = await this.apiClient.getMessageService();
             const recentChats = await messageService.getRecentChats(userId, 0, 50);
             const chats = recentChats.chats || [];
@@ -72,6 +69,7 @@ export class CacheServiceClient {
                 this.preloadChatData(chat.id || chat.chatId)
             );
             await Promise.all(preloadPromises);
+            */
         } catch(err) {
             console.log('Cache initialization failed: ', err);
             throw err;
@@ -80,7 +78,7 @@ export class CacheServiceClient {
 
     /*
     ** Preload Data
-    */
+    
     private async preloadChatData(chatId: string): Promise<void> {
         try {
             const messageService = await this.apiClient.getMessageService();
@@ -96,10 +94,11 @@ export class CacheServiceClient {
             console.error(`Preload for ${chatId} failed`, err);
         }
     }
+        */
 
     /*
     ** Get Messages
-    */
+    
     public async getMessages(
         chatId: string,
         page: number = 0,
@@ -124,10 +123,11 @@ export class CacheServiceClient {
             this.pendingRequests.delete(cacheKey);
         }
     }
+        */
 
     /*
     ** Fetch and Cache
-    */
+    
     private async fetchAndCachePage(chatId: string, page: number): Promise<any[]> {
         try {
             const messageService = await this.apiClient.getMessageService();
@@ -139,10 +139,11 @@ export class CacheServiceClient {
             throw err;
         }
     }
+        */
 
     /*
     ** Add Messages Page
-    */
+    
     public addMessagesPage(
         chatId: string, 
         messages: any[], 
@@ -193,9 +194,11 @@ export class CacheServiceClient {
         data.isFullyLoaded = !data.hasMore;
     }
 
+    */
+
     /*
     ** Add Message
-    */
+    
     public addMessage(
         chatId: string, 
         messages: any | any[],
@@ -233,10 +236,11 @@ export class CacheServiceClient {
             !data.hasMore && 
             data.loadedPages.size === totalPossiblePages;
     }
+            */
 
     /*
     ** Messages in Range
-    */
+    
     public getMessagesInRange(
         chatId: string, 
         start: number, 
@@ -258,14 +262,16 @@ export class CacheServiceClient {
             return timeA - timeB;
         });
     }
+        */
 
     /*
     ** Get Total Messages
-    */
+    
     public getTotalMessages(chatId: string): number {
         const data = this.cache.get(chatId);
         return data ? data.totalMessagesCount : 0;
     }
+        */
 
     /*
     ** Is Page Loaded
@@ -277,7 +283,7 @@ export class CacheServiceClient {
 
     /*
     ** Get Cached Page
-    */
+    
     private getCachedPage(chatId: string, page: number): any[] {
         const data = this.cache.get(chatId)!;
         const startIdx = page * this.config.pageSize;
@@ -342,6 +348,7 @@ export class CacheServiceClient {
             hasMore: this.hasMoreMessages(chatId)
         });
     }
+        */
 
     public getCacheData(chatId: string): CacheData | undefined {
         return this.cache.get(chatId);

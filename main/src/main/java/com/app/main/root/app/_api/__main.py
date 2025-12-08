@@ -1,8 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from time_stream import TimeStream
-from messages.message_service import MessageService
-from messages.message_routes import MessageRoutes
 from connection.connection_service import ConnectionService
 from connection.connection_routes import ConnectionRoutes
 from session.session_service import SessionService
@@ -48,11 +46,6 @@ class Main:
         self.sessionRoutes = SessionRoutes(self.sessionService)
         self.app.include_router(self.sessionRoutes.router)
         
-        ## Message
-        self.messageService = MessageService(DB_API_URL)
-        self.messageRoutes = MessageRoutes(self.messageService)
-        self.app.include_router(self.messageRoutes.router)
-        
         ## User
         self.userService = UserService(SERVER_URL)
         self.userRoutes = UserRoutes(self.userService)
@@ -63,7 +56,6 @@ class Main:
 instance = Main()
 app = instance.app
 timeStream = instance.timeStream
-messageService = instance.messageService
 
 # Time Update
 def timeCallback(time: str, serverTime: bool):

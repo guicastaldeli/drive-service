@@ -9,37 +9,16 @@ import org.springframework.stereotype.Service;
 @Component
 public class ServiceManager {
     private final DbService dbService;
-    private final MessageService messageService;
-    private final SystemMessageService systemMessageService;
-    private final MessagePerspectiveService messagePerspectiveService;
     private final UserService userService;
-    private final DirectService directService;
-    private final ContactService contactService;
-    private final GroupService groupService;
     private final EmailService emailService;
-    private final ChatManagerService chatManagerService;
 
     public ServiceManager(
         DbService dbService,
-        @Lazy MessageService messageService,
-        @Lazy SystemMessageService systemMessageService,
-        @Lazy MessagePerspectiveService messagePerspectiveService,
-        @Lazy ChatManagerService chatManagerService,
         UserService userService,
-        @Lazy DirectService directService,
-        ContactService contactService,
-        @Lazy GroupService groupService,
         @Lazy EmailService emailService
     ) {
         this.dbService = dbService;
-        this.messageService = messageService;
-        this.systemMessageService = systemMessageService;
-        this.messagePerspectiveService = messagePerspectiveService;
-        this.chatManagerService = chatManagerService;
         this.userService = userService;
-        this.contactService = contactService;
-        this.directService = directService;
-        this.groupService = groupService;
         this.emailService = emailService;
     }
 
@@ -51,59 +30,10 @@ public class ServiceManager {
     }
 
     /*
-    * Message Service 
-    */
-    public MessageService getMessageService() {
-        return messageService;
-    }
-
-    /*
-    * Message Service 
-    */
-    public SystemMessageService getSystemMessageService() {
-        return systemMessageService;
-    }
-
-    /*
-    * Message Perspective Service 
-    */
-    public MessagePerspectiveService getMessagePerspectiveService() {
-        return messagePerspectiveService;
-    }
-
-    /*
-    * Chat Manager Service 
-    */
-    public ChatManagerService getChatManagerService() {
-        return chatManagerService;
-    }
-
-    /*
     * User Service 
     */
     public UserService getUserService() {
         return userService;
-    }
-
-    /*
-    * Direct Service 
-    */
-    public DirectService getDirectService() {
-        return directService;
-    }
-
-    /*
-    * Contact Service 
-    */
-    public ContactService getContactService() {
-        return contactService;
-    }
-
-    /*
-    * Group Service 
-    */
-    public GroupService getGroupService() {
-        return groupService;
     }
 
     /*

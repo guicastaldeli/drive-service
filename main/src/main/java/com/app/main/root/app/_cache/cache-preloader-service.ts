@@ -35,7 +35,7 @@ export class CachePreloaderService {
         if(this.isPreloading) return;
         this.isPreloading = true;
         try {
-            await this.preloadRecentChats(userId);
+            //await this.preloadRecentChats(userId);
             this.processPreloadQueue();
         } catch(err) {
             console.error('Preloading failed!', err);
@@ -44,33 +44,8 @@ export class CachePreloaderService {
         }
     }
 
-    /*
-    ** Preload Recent Chats
-    */
-    private async preloadRecentChats(userId: string): Promise<void> {
-        try {
-            const service = await this.apiClient.getMessageService();
-            const data = await service.getRecentChats(userId, 0, 20);
-            const chats = data.chats || [];
-            for(const chat of chats) this.schedulePreload(chat);
-        } catch(err) {
-            console.error('Failed to preload recent chats:', err);
-        }
-    }
-
     private schedulePreload(data: any): void {
-        const chatId = data.chatId || data.id;
-        if(this.preloadedChats.has(chatId)) return;
-
-        const chatType = data.chatType || data.type || 'DIRECT' || 'direct';
-        const priority = chatType === 'direct' ? 'normal' : 'high';
-
-        if(priority === 'high') {
-            this.preloadQueue.unshift(chatId);
-        } else {
-            this.preloadQueue.push(chatId);
-        }
-        this.preloadedChats.add(chatId);
+        
     }
 
     /*
@@ -95,8 +70,9 @@ export class CachePreloaderService {
     ** Preload Chat
     */
     private async preloadChat(chatId: string): Promise<void> {
-        if(this.cacheService.isChatCached(chatId)) return;
+        //if(this.cacheService.isChatCached(chatId)) return;
         try {
+            /*
             const service = await this.apiClient.getMessageService();
             const res = await service.getMessagesByChatId(chatId, 0);
             const messages = res.messages || [];
@@ -105,6 +81,7 @@ export class CachePreloaderService {
                 this.cacheService.addMessagesPage(chatId, messages, 0);
                 console.log(`Preloaded ${messages.length} messages for ${chatId}`);
             }
+                */
         } catch(err) {
             console.error(`Preload failed for ${chatId}:`, err);
         }
