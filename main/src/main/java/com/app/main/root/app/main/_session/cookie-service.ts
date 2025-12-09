@@ -1,6 +1,6 @@
 interface Options {
     days?: number;
-    path?: number;
+    path?: string;
     domain?: string;
     secure?: boolean;
     sameSite?: 'Strict' | 'Lax' | 'None';
@@ -20,17 +20,18 @@ export class CookieService {
             sameSite = 'Strict'
         } = options;
         const expires = new Date(
-            Date.now() + days + 24 * 60 * 60* 1000
+            Date.now() + (days * 24 * 60 * 60 * 1000)
         ).toUTCString();
 
         let cookie = `
             ${name}=${encodeURIComponent(value)}; 
-            expires=${expires};
+            expires=${expires}; 
             path=${path}
         `;
         if(domain) cookie += `; domain=${domain}`;
         if(secure) cookie += '; Secure';
         if(sameSite) cookie += `; SameSite=${sameSite}`;
+        
         document.cookie = cookie;
     }
     
@@ -57,10 +58,10 @@ export class CookieService {
         domain?: string
     ): void {
         if(typeof document === 'undefined') return;
-        
+
         let cookie = `
-            ${name}=;
-            expires=Thu, 01 Jan 1970 00:00:00 UTC;
+            ${name}=; 
+            expires=Thu, 01 Jan 1970 00:00:00 UTC; 
             path=${path}
         `;
         if(domain) cookie += `; domain=${domain}`;

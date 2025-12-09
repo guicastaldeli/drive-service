@@ -9,6 +9,8 @@ export class SessionConfig {
     }
 
     public setupSessionRefresh(): void {
+        if(typeof window === 'undefined') return;
+
         setInterval(async () => {
             const { isValid, needsRefresh } = SessionManager.checkSessionStatus();
             if(!isValid) {
@@ -18,13 +20,13 @@ export class SessionConfig {
             if(needsRefresh) {
                 try {
                     const authService = await this.apiClient.getAuthService(); 
-                    authService.refreshToken();
+                    await authService.refreshToken();
                     console.log('Session rrefreshed! :)');
                 } catch(err) {
                     console.error('Failed to refresh :(', err);
                 }
             }
-        });
+        }, 60000);
     }
 
     public async initSession(): Promise<boolean> {

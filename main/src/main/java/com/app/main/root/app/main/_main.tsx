@@ -84,7 +84,7 @@ export class Main extends Component<any, State> {
             }
             
             const sessionConfig = await this.apiClient.getSessionConfig(); 
-            const sessionInitalized = sessionConfig.initSession();
+            const sessionInitalized = await sessionConfig.initSession();
             if(!sessionInitalized) return false;
 
             const authService = await this.apiClient.getAuthService();
