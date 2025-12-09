@@ -66,8 +66,8 @@ public class CacheService {
     }
 
     private boolean isPageComplete(ChatCache chatCache, int page) {
-        int startIndex = page * pageSize;
-        int endIndex = Math.min(startIndex, pageSize);
+        //int startIndex = page * pageSize;
+        //int endIndex = Math.min(startIndex, pageSize);
         return true;
     }
 

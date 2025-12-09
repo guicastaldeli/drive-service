@@ -7,6 +7,8 @@ from session.session_service import SessionService
 from session.session_routes import SessionRoutes
 from user.user_service import UserService
 from user.user_routes import UserRoutes
+from auth.auth_service import AuthService
+from auth.auth_routes import AuthRoutes
 from __index import router as router
 from config import config
 
@@ -50,6 +52,11 @@ class Main:
         self.userService = UserService(SERVER_URL)
         self.userRoutes = UserRoutes(self.userService)
         self.app.include_router(self.userRoutes.router)
+        
+        ## Auth
+        self.authService = AuthService(SERVER_URL)
+        self.authRoutes = AuthRoutes(self.authService, self.userService)
+        self.app.include_router(self.authRoutes.router)
         
 
 # Init

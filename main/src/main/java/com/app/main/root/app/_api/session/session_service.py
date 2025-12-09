@@ -45,9 +45,6 @@ class SessionService:
         }
         return await self._request("post", "/api/session/update", params=params)
     
-    ## -----------
-    ##   Wrapper
-    ## -----------
     async def _request(self, method: str, path: str, **kwargs):
         async with httpx.AsyncClient() as client:
             url = f"{self.base_url}{path}"
