@@ -37,10 +37,16 @@ public class TokenService {
     /*
     ** Generate Access Token
     */
-    public String generateAccessToken(String userId, String username, String email) {
+    public String generateAccessToken(
+        String sessionId,
+        String userId, 
+        String username, 
+        String email
+    ) {
         long time = System.currentTimeMillis();
 
         Map<String, Object> claims = new HashMap<>();
+        claims.put("sessionId", sessionId);
         claims.put("userId", userId);
         claims.put("username", username);
         claims.put("email", email);
@@ -113,6 +119,16 @@ public class TokenService {
             token, 
             claims -> claims.get(
                 "userId", 
+                String.class
+            )
+        );
+    }
+
+    public String extractSessionId(String token) {
+        return extractClaim(
+            token, 
+            claims -> claims.get(
+                "sessionId", 
                 String.class
             )
         );

@@ -1,10 +1,8 @@
 package com.app.main.root.app._service;
-import org.springframework.cglib.core.Local;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import com.app.main.root.EnvConfig;
 import com.app.main.root.app.__controllers.SessionController;
-import com.app.main.root.app._service.CookieService;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
@@ -26,7 +24,7 @@ import java.util.UUID;
 @Service
 public class SessionService {
     private final SessionController sessionController;
-    @Autowired @Lazy CookieService cookieService;
+    private @Autowired @Lazy CookieService cookieService;
 
     public enum SessionType {
         LOGIN("LOGIN"),
@@ -339,16 +337,13 @@ public class SessionService {
         if(session != null) session.updateSessionType(type);
     } 
 
-    public void updateUserSession(
-        String sessionId,
-        String userId,
-        String username,
-        String email,
-        String ipAddress,
-        SessionType type
-    ) {
+    public void updateUserSession(String sessionId, String userId, SessionType type) {
         SessionData session = getSession(sessionId);
+
         if(session != null) {
+            String username = session.getUsername();
+            String email = session.getEmail();
+            
             session.updateUserInfo(userId, username, email);
             session.updateSessionType(type);
 
@@ -361,16 +356,7 @@ public class SessionService {
             tokenToUserIdMap.put(sessionId, userId);
             userIdToTokensMap.computeIfAbsent(userId, k -> new HashSet<>()).add(sessionId);
         } else {
-            createSession(
-                type, 
-                userId, 
-                username, 
-                email, 
-                userId, 
-                ipAddress, 
-                cookieSecure, 
-                null
-            );
+            throw new IllegalArgumentException("Session cannot be created!" + sessionId);
         }
     }
 
@@ -636,5 +622,10 @@ public class SessionService {
             );
         }
         return -1;
+    }
+
+    public SessionData getSessionData(String sessionId) {
+        SessionData session = getSession(sessionId);
+        return session;
     }
 }

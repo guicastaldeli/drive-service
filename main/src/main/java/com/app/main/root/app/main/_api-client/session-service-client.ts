@@ -5,17 +5,17 @@ export interface Types {
 }
 
 export class SessionServiceClient {
-    private baseUrl: string | undefined;
+    private url: string | undefined;
 
     constructor(url: string | undefined) {
-        this.baseUrl = url;
+        this.url = url;
     }
 
     /*
     ** Types
     */
     public async getSessionTypes(): Promise<Types> {
-        const res = await fetch(`${this.baseUrl}/api/session/types`);
+        const res = await fetch(`${this.url}/api/session/types`);
         if(!res.ok) throw new Error('Failed to get session');
         return res.json();
     }
@@ -24,7 +24,7 @@ export class SessionServiceClient {
     ** Get Session
     */
     public async getSession(userId: string): Promise<void> {
-        const res = await fetch(`${this.baseUrl}/api/session/${userId}`);
+        const res = await fetch(`${this.url}/api/session/${userId}`);
         if(!res.ok) throw new Error('Failed to get session');
         return res.json();
     }
@@ -33,7 +33,7 @@ export class SessionServiceClient {
     ** Stats
     */
     public async getSessionStats(): Promise<void> {
-        const res = await fetch(`${this.baseUrl}/api/session/stats`);
+        const res = await fetch(`${this.url}/api/session/stats`);
         if(!res.ok) throw new Error('Failed to get session stats');
         return res.json();
     }
@@ -42,7 +42,7 @@ export class SessionServiceClient {
     ** Stats
     */
     public async getActive(): Promise<void> {
-        const res = await fetch(`${this.baseUrl}/api/session/active`);
+        const res = await fetch(`${this.url}/api/session/active`);
         if(!res.ok) throw new Error('Failed to get active sessions');
         return res.json();
     }
@@ -52,7 +52,7 @@ export class SessionServiceClient {
     */
     public async updateSessionType(userId: string, type: SessionType): Promise<void> {
         const params = new URLSearchParams({ sessionType: type });
-        const res = await fetch(`${this.baseUrl}/api/session/${userId}/type?${params}`, {
+        const res = await fetch(`${this.url}/api/session/${userId}/type?${params}`, {
             method: 'PUT'
         });
         if(!res.ok) throw new Error('Failed to update session type');
@@ -72,7 +72,7 @@ export class SessionServiceClient {
             username,
             type
         });
-        const res = await fetch(`${this.baseUrl}/api/session/${userId}/type?${params}`, {
+        const res = await fetch(`${this.url}/api/session/${userId}/type?${params}`, {
             method: 'POST'
         });
         if(!res.ok) throw new Error('Failed to update session');

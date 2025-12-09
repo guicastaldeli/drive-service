@@ -1,12 +1,12 @@
 export class TimeStreamClient {
-    private baseUrl: string | undefined;
+    private url: string | undefined;
 
     constructor(url: string | undefined) {
-        this.baseUrl = url;
+        this.url = url;
     }
 
     public async getTime(): Promise<any[]> {
-        const res = await fetch(`${this.baseUrl}/api/time-stream`);
+        const res = await fetch(`${this.url}/api/time-stream`);
         if(!res.ok) throw new Error('Failed to fetch time!');
         return res.json();
     }

@@ -12,7 +12,6 @@ import org.springframework.util.StringUtils;
 import com.app.main.root.app._service.SessionService;
 import com.app.main.root.app._service.UserService;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
 
 public class AuthFilter extends OncePerRequestFilter {
@@ -44,8 +43,8 @@ public class AuthFilter extends OncePerRequestFilter {
         String token = extractToken(request);
         if(StringUtils.hasText(token) && tokenService.validateToken(token)) {
             String userId = tokenService.extractUserId(token);
-            String username = tokenService.extractUsername(token);
-            if(sessionService.isUserSessionValid(userId, request.getSession().getId())) {
+            String sessionId = tokenService.extractSessionId(token);
+            if(sessionService.validateSession(sessionId)) {
                 UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
                         userId,
@@ -56,8 +55,9 @@ public class AuthFilter extends OncePerRequestFilter {
                         new WebAuthenticationDetailsSource()
                             .buildDetails(request)
                     );
-                    SecurityContextHolder.getContext().setAuthentication(auth);
-                    sessionService.updateLastActivity(userId);
+
+                SecurityContextHolder.getContext().setAuthentication(auth);
+                sessionService.getSession(sessionId).updateActivity();
             }
         }
     }
