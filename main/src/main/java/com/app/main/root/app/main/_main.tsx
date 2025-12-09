@@ -7,10 +7,14 @@ import { CacheServiceClient } from '../_cache/cache-service-client';
 import { CachePreloaderService } from '../_cache/cache-preloader-service';
 import { Dashboard } from './_dashboard';
 import { SessionProvider, SessionType, SessionContext } from './_session/session-provider';
+import { SessionManager } from './_session/session-manager';
+
 interface State {
     currentSession: SessionType;
     userId: string | null;
     username: string | null;
+    isLoading: boolean;
+    rememberUser: boolean;
 }
 
 export class Main extends Component<any, State> {
@@ -32,20 +36,77 @@ export class Main extends Component<any, State> {
         this.state = {
             currentSession: 'LOGIN',
             userId: null,
-            username: null
+            username: null,
+            isLoading: true,
+            rememberUser: false
         }
     }
 
     async componentDidMount(): Promise<void> {
-        await this.connect();
-        if(this.state.userId) await this.cacheService.initCache(this.state.userId);
+        try {
+            const validSession = await this.autoLogin();
+            if(validSession) {
+                await this.connect();
+                const sessionData = SessionManager.getCurrentSession();
+
+                if(sessionData) {
+                    await this.cacheService.initCache(sessionData.userId);
+                    await this.cachePreloader.startPreloading(sessionData.userId);
+                    this.setState({
+                        currentSession: 'MAIN_DASHBOARD',
+                        userId: sessionData.userId,
+                        username: sessionData.username,
+                        isLoading: false
+                    });
+                } else {
+                    this.setState({ isLoading: false });
+                }
+            }
+        } catch(err) {
+            console.error(err);
+            this.setState({ isLoading: false });
+        }
+
         this.loadData();
     }
 
     componentWillUnmount(): void {
     }
     
+    /**
+     * Auto Login
+     */
+    private async autoLogin(): Promise<boolean> {
+        try {
+            const sessionConfig = await this.apiClient.getSessionConfig(); 
+            const sessionInitalized = sessionConfig.initSession();
+            if(!sessionInitalized) return false;
 
+            const authService = await this.apiClient.getAuthService();
+            const isAuth = await authService.isAuth();
+            if(!isAuth) {
+                SessionManager.clearSession();
+                return false;
+            }
+
+            const userInfo = SessionManager.getUserInfo();
+            if(userInfo) {
+                this.setState({
+                    userId: userInfo.userId,
+                    username: userInfo.username
+                });
+            }
+
+            return true;
+        } catch(err) {
+            console.error('Login failed', err);
+            return false;
+        }
+    }
+    
+    /**
+     * Load Data
+     */
     private loadData = async(): Promise<void> => {
         try {
             console.log('drive data')

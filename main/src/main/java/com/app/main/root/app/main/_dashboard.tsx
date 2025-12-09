@@ -2,26 +2,30 @@ import "./__styles/styles.scss";
 import React, { Component } from "react";
 import { SessionContext, SessionType } from "./_session/session-provider";
 import { ApiClient } from "./_api-client/api-client";
+import { SessionManager } from "./_session/session-manager";
 
 interface Props {
     apiClient: ApiClient;
-    onChatListUpdate?: (chatList: any[]) => void;
+    onLogout?: () => void;
 }
 
 interface State {
+    userData: any;
     currentSession: SessionType;
+    isLoading: boolean;
 }
 
 export class Dashboard extends Component<Props, State> {
     private apiClient: ApiClient;
-
     private socketId!: string;
     private userId!: string;
 
     constructor(props: Props) {
         super(props);
         this.state = {
-            currentSession: 'MAIN_DASHBOARD'
+            userData: null,
+            currentSession: 'MAIN_DASHBOARD',
+            isLoading: true
         }
         this.apiClient = props.apiClient;
     }
@@ -33,6 +37,7 @@ export class Dashboard extends Component<Props, State> {
 
     async componentDidMount(): Promise<void> {
         this.setSession('MAIN_DASHBOARD');
+        await this.loadUserData();
     }
 
     componentWillUnmount(): void {
@@ -41,11 +46,27 @@ export class Dashboard extends Component<Props, State> {
     componentDidUpdate(prevProps: Props): void {
     }
 
+    /**
+     * Load User Data
+     */
+    private async loadUserData() {
+        try {
+            const sessionData = SessionManager.getCurrentSession();
+            if(sessionData) this.setState({ userData: sessionData });
+        } catch(err) {
+            console.error(err);
+        }
+    }
+
     private setSession = (session: SessionType): void => {
         this.setState({ currentSession: session });
     }
 
     render() {
+        if(this.state.isLoading) {
+            return <div>Loading dashboard...</div>;
+        }
+
         return (
             <SessionContext.Consumer>
                 {(sessionContext) => {

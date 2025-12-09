@@ -31,7 +31,7 @@ export class CachePreloaderService {
     /*
     ** Start Preload
     */
-    public async startPreloading(userId: string): Promise<void> {
+    public async startPreloading(userId: string | null): Promise<void> {
         if(this.isPreloading) return;
         this.isPreloading = true;
         try {

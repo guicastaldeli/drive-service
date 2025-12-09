@@ -59,7 +59,7 @@ export class CacheServiceClient {
     /*
     ** Init Cache
     */
-    public async initCache(userId: string): Promise<void> {
+    public async initCache(userId: string | null): Promise<void> {
         try {
             /*
             const messageService = await this.apiClient.getMessageService();
