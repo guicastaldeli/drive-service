@@ -450,7 +450,7 @@ public class AuthController {
     /**
      * Extract Token 
      */
-    private String extarctTokenFromRequest(HttpServletRequest request) {
+    private String extractTokenFromRequest(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if(authHeader != null && authHeader.startsWith("Bearer ")) {
             return authHeader.substring(7);
