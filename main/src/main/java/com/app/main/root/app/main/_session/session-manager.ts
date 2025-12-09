@@ -1,9 +1,9 @@
 import { CookieService } from "./cookie-service";
 
 export interface UserSessionData {
-    userId: string;
-    username: string;
-    email: string;
+    userId: string | null;
+    username: string | null;
+    email: string | null;
     sessionId: string;
     currentSession: string;
     rememberUser: boolean;
@@ -12,9 +12,9 @@ export interface UserSessionData {
 }
 
 export interface UserData {
-    userId: string;
-    username: string;
-    email: string;
+    userId: string | null;
+    username: string | null;
+    email: string | null; 
 }
 
 interface SessionDate {
@@ -29,7 +29,7 @@ export class SessionManager {
     private static readonly REMEMBER_USER_COOKIE = 'REMEMBER_USER';
     private static readonly LOCAL_STORAGE_KEY = 'DRIVE_SESSION_DATA';
 
-    private static setDate(rememberUser: boolean): SessionDate {
+    public static setDate(rememberUser: boolean): SessionDate {
         const now = Date.now();
         return {
             createdAt: now,
