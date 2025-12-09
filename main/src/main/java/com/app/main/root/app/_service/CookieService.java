@@ -11,6 +11,9 @@ import com.app.main.root.EnvConfig;
 @Service
 public class CookieService {
     private String webUrl = EnvConfig.get("WEB_URL");
+    public String sessionIdKey = "SESSION_ID";
+    public String userInfoKey = "USER_INFO";
+    public String sessionStatusKey = "SESSION_STATUS";
 
     @Value("${cookie.domain:localhost}")
     private String cookieDomain;
@@ -100,21 +103,21 @@ public class CookieService {
         String userRes = String.format("{\"userId\":\"%s\",\"username\":\"%s\"}", userId, username);
 
         Cookie sessionCookie = createCookie(
-            "SESSION_ID",
+            sessionIdKey,
             sessionId,
             rememberRes
         );
         response.addCookie(sessionCookie);
 
         Cookie userCookie = createClientCookie(
-            "USER_INFO",
+            userInfoKey,
             userRes,
             rememberRes
         );
         response.addCookie(userCookie);
 
         Cookie statusCookie = createClientCookie(
-            "SESSION_STATUS",
+            sessionStatusKey,
             "active",
             rememberRes
         );
