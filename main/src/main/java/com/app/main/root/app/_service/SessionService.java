@@ -9,6 +9,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-
 
 @Service
 public class SessionService {
@@ -59,12 +61,11 @@ public class SessionService {
 
     @Value("${session.rememberuser.timeout.days:7}")
     private int rememberUserTimeoutDays;
-
-    @Value("${cookie.domain:webUrl}")
-    private String cookieDomain;
-
+    
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
+    
+    private String cookieDomain;
 
     public static class SessionData {
         private String sessionId;
@@ -489,6 +490,21 @@ public class SessionService {
         return "sess_" + UUID.randomUUID().toString().replace("-", "");
     }
 
+    private String extractDomainFromUrl(String url) {
+        try {
+            URI uri = new URI(url);
+            String host = uri.getHost();
+
+            if (host.equals("localhost") || host.equals("127.0.0.1")) {
+                return "localhost";
+            }
+            return host;
+        } catch(URISyntaxException err) {
+            System.out.println(err);
+            return "localhost";
+        }
+    }
+
     /*
     ** Set Session Cookie
     */
@@ -498,11 +514,14 @@ public class SessionService {
         HttpServletResponse response
     ) {
         if(response != null) {
+            String domain = extractDomainFromUrl(webUrl);
+
             /* Cookie */
             Cookie cookie = new Cookie(cookieService.sessionIdKey, sessionId);
             cookie.setHttpOnly(true);
             cookie.setSecure(cookieSecure);
             cookie.setPath("/");
+            cookie.setDomain(domain);
             if(rememberUser) {
                 cookie.setMaxAge(rememberUserTimeoutDays * 24 * 60 * 60);
             } else {
@@ -511,6 +530,15 @@ public class SessionService {
             if(!cookieDomain.equals(webUrl)) {
                 cookie.setDomain(cookieDomain);
             }
+            String cookieHeader = String.format(
+                "%s=%s; Max-Age=%d; Path=%s; Domain=%s; HttpOnly; SameSite=Lax",
+                cookieService.sessionIdKey, 
+                sessionId,
+                cookie.getMaxAge(), 
+                "/", 
+                domain
+            );
+            response.addHeader("Set-Cookie", cookieHeader);
             response.addCookie(cookie);
 
             /* Client Cookie */

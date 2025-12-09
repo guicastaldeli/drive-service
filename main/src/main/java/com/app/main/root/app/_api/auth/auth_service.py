@@ -1,11 +1,13 @@
 from fastapi import HTTPException
 from typing import Dict, Any, Optional
+from session.session_service import SessionService
 import httpx
 import json
 
 class AuthService:
-    def __init__(self, url: str):
+    def __init__(self, url: str, sessionService: SessionService):
         self.url = url
+        self.sessionService = sessionService
         
     ##
     ## Register User
@@ -45,17 +47,27 @@ class AuthService:
     ##
     ## Validate Session
     ##
-    async def validateSession(self, cookies: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
-        headers = {}
-        if(cookies):
-            cookieHeader = "; ".join([f"{k}={v}" for k, v in cookies.items()])
-            headers["Cookie"] = cookieHeader
+    async def validateSession(self, cookies: Optional[Dict[str, str]]) -> Dict[str, Any]:
+        try:
+            sessionId = cookies.get("SESSION_ID")
             
-        return await self._request(
-            "post", 
-            f"{self.url}/api/auth/validate", 
-            headers=headers
-        )
+            if(not sessionId):
+                return { "valid": False, "user": None }
+            
+            sessionData = await self.sessionService.getSession(sessionId)
+            if(not sessionData):
+                return { "valid": False, "user": None }
+            
+            return {
+                "valid": True,
+                "user": {
+                    "userId": sessionData["user_id"],
+                    "username": sessionData["username"],
+                    "email": sessionData["email"]
+                }
+            }
+        except Exception as e:
+            return { "valid": False, "user": None }
         
     ##
     ## Refresh Session Token

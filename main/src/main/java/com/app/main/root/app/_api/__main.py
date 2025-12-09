@@ -1,5 +1,7 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from starlette.middleware.base import BaseHTTPMiddleware
 from time_stream import TimeStream
 from connection.connection_service import ConnectionService
 from connection.connection_routes import ConnectionRoutes
@@ -54,14 +56,28 @@ class Main:
         self.app.include_router(self.userRoutes.router)
         
         ## Auth
-        self.authService = AuthService(SERVER_URL)
+        self.authService = AuthService(SERVER_URL, self.sessionService)
         self.authRoutes = AuthRoutes(self.authService, self.userService)
         self.app.include_router(self.authRoutes.router)
         
+class NoWWWAuthenticateMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if('WWW-Authenticate' in response.headers):
+            del response.headers['WWW-Authenticate']
+        return response
 
 # Init
 instance = Main()
 app = instance.app
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+    expose_headers=["*"]
+)
+app.add_middleware(NoWWWAuthenticateMiddleware)
 timeStream = instance.timeStream
 
 # Time Update

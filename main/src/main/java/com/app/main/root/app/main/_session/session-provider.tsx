@@ -87,8 +87,10 @@ export class SessionProvider extends Component<Props, State> {
                     isAuth: true
                 });
 
-                const isValid = await this.checkAuth();
-                if(!isValid) await this.clearSession();
+                setTimeout(async () => {
+                    const isValid = await this.checkAuth();
+                    if(!isValid) await this.clearSession();
+                }, 1000);
             } else {
                 this.setState({
                     currentSession: 'LOGIN',

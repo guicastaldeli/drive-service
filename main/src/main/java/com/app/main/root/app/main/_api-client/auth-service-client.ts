@@ -92,14 +92,19 @@ export class AuthServiceClient {
      */
     public async validateSession(): Promise<{ valid: boolean; user?: UserData }> {
         try {
+            console.log(`${this.url}/api/auth/validate`)
             const res = await fetch(`${this.url}/api/auth/validate`, {
                 method: 'GET',
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                }
             });
             if(res.ok) {
                 const data = await res.json();
                 return {
-                    valid: data.valid,
+                    valid: data.valid || data.authenticated || false,
                     user: data.user
                 }
             } else {
@@ -150,8 +155,14 @@ export class AuthServiceClient {
      */
     public async isAuth(): Promise<boolean> {
         if(!SessionManager.isSessionValid) return false;
-        const validation = await this.validateSession();
-        return validation.valid;
+
+        try {
+            const validation = await this.validateSession();
+            return validation.valid;
+        } catch(err) {
+            console.error('Auth failed', err);
+            return false;
+        }
     }
 
     /**

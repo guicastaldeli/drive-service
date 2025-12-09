@@ -93,7 +93,7 @@ class AuthRoutes:
                 
                 result = await self.authService.loginUser(data)
                 if("_cookies" in result):
-                    setCookies(res, res["_cookies"])
+                    setCookies(res, result["_cookies"])
                     del result["_cookies"]
             except HTTPException as err:
                 raise err
@@ -134,20 +134,36 @@ class AuthRoutes:
             try:
                 cookies = extractCookies(req)
                 result = await self.authService.validateSession(cookies)
+                
                 if("_cookies" in result):
                     setCookies(res, result["_cookies"])
                     del result["_cookies"]
-                return result
+                    
+                return {
+                    "valid": result.get("valid", False),
+                    "user": result.get("user"),
+                    "authenticated": result.get("valid", False)
+                }
+                
             except HTTPException as err:
-                if(err.status_code == 401):
-                    for cookieName in ["SESSION_ID", "USER_INFO", "SESSION_STATUS", "auth_token"]:
-                        res.delete_cookie(cookieName)
-                raise err
+                for cookieName in ["SESSION_ID", "USER_INFO", "SESSION_STATUS", "auth_token"]:
+                    res.delete_cookie(cookieName)
+                return {
+                    "valid": False,
+                    "user": None,
+                    "authenticated": False,
+                    "error": str(err.detail) if hasattr(err, 'detail') else "Session invalid"
+                }
+                
             except Exception as err:
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"Validation failed: {str(err)}"
-                )
+                for cookieName in ["SESSION_ID", "USER_INFO", "SESSION_STATUS", "auth_token"]:
+                    res.delete_cookie(cookieName)
+                return {
+                    "valid": False,
+                    "user": None,
+                    "authenticated": False,
+                    "error": f"Validation error: {str(err)}"
+                }
                 
         ##
         ## Refresh Token
