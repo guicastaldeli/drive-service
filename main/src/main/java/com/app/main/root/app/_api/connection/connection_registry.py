@@ -16,7 +16,6 @@ class ConnectionRegistry:
         self.os()
         self.rules()
         self.status()
-        self.train()
         
     ## Devices
     def devices(self):

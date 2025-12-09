@@ -2,7 +2,6 @@ package com.app.main.root.app._service;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.scheduling.annotation.Scheduled;
 import com.app.main.root.EnvConfig;
-import com.app.main.root.app.__controllers.SessionController;
 import org.springframework.stereotype.Service;
 import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
@@ -23,7 +22,6 @@ import java.util.UUID;
 
 @Service
 public class SessionService {
-    private final SessionController sessionController;
     private @Autowired @Lazy CookieService cookieService;
 
     public enum SessionType {
@@ -244,10 +242,6 @@ public class SessionService {
             this.rememberUser = rememberUser;
             this.updateActivity();
         }
-    }
-
-    SessionService(SessionController sessionController) {
-        this.sessionController = sessionController;
     }
 
     @PostConstruct

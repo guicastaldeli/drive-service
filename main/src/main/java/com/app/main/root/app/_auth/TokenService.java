@@ -17,7 +17,7 @@ public class TokenService {
     @Value("${jwt.expiration:86400000}")
     private long jwtExpiration;
 
-    @Value("{jwt.refresh-expiration:604800000")
+    @Value("${jwt.refresh-expiration:604800000}")
     private long refreshExpiration;
 
     private final Map<String, String> tokenBlackList = new ConcurrentHashMap<>();
