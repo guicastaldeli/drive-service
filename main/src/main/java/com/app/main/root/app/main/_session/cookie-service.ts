@@ -8,6 +8,8 @@ interface Options {
 
 export class CookieService {
     static set(name: string, value: string, options: Options): void {
+        if(typeof document === 'undefined') return;
+
         const {
             days = 7,
             path = '/',
@@ -36,6 +38,8 @@ export class CookieService {
      * Get Value
      */
     static getValue(name: string): string | null {
+        if(typeof document === 'undefined') return null;
+
         const cookies = document.cookie.split(';');
         for(let cookie of cookies) {
             const [cookieName, cookieVal] = cookie.trim().split('=');
@@ -52,6 +56,8 @@ export class CookieService {
         path: string = '/',
         domain?: string
     ): void {
+        if(typeof document === 'undefined') return;
+        
         let cookie = `
             ${name}=;
             expires=Thu, 01 Jan 1970 00:00:00 UTC;

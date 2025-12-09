@@ -44,9 +44,9 @@ export class Main extends Component<any, State> {
 
     async componentDidMount(): Promise<void> {
         try {
+            await this.connect();
             const validSession = await this.autoLogin();
             if(validSession) {
-                await this.connect();
                 const sessionData = SessionManager.getCurrentSession();
 
                 if(sessionData) {
@@ -78,6 +78,11 @@ export class Main extends Component<any, State> {
      */
     private async autoLogin(): Promise<boolean> {
         try {
+            if(!SessionManager.isSessionValid()) {
+                SessionManager.clearSession();
+                return false;
+            }
+            
             const sessionConfig = await this.apiClient.getSessionConfig(); 
             const sessionInitalized = sessionConfig.initSession();
             if(!sessionInitalized) return false;

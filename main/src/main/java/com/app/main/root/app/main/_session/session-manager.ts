@@ -65,10 +65,12 @@ export class SessionManager {
                         ...dates
                     }
 
-                    const storedData = localStorage.getItem(this.LOCAL_STORAGE_KEY);
-                    if(storedData) {
-                        const parsedData = JSON.parse(storedData);
-                        data = { ...data, ...parsedData };
+                    if(typeof localStorage !== 'undefined') {
+                        const storedData = localStorage.getItem(this.LOCAL_STORAGE_KEY);
+                        if(storedData) {
+                            const parsedData = JSON.parse(storedData);
+                            data = { ...data, ...parsedData };
+                        }
                     }
                 } catch(err) {
                     console.error(err);
@@ -133,7 +135,10 @@ export class SessionManager {
                 process.env.NODE_ENV === 'development',
             sameSite: 'Lax'
         });
-        localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(data));
+
+        if(typeof localStorage !== 'undefined') {
+            localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(data));
+        }
     }
 
     /**
@@ -146,7 +151,10 @@ export class SessionManager {
                 ...currentData,
                 ...data
             }
-            localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(updatedData));
+
+            if(typeof localStorage !== 'undefined') {
+                localStorage.setItem(this.LOCAL_STORAGE_KEY, JSON.stringify(updatedData));
+            }
 
             if(data.userId || data.username || data.email) {
                 CookieService.set(this.USER_COOKIE, JSON.stringify({
@@ -168,6 +176,8 @@ export class SessionManager {
      * Get Current Session
      */
     public static getCurrentSession(): UserSessionData | null {
+        if(typeof localStorage === 'undefined') return null;
+
         const storedData = localStorage.getItem(this.LOCAL_STORAGE_KEY);
         if(storedData) {
             try {
@@ -206,8 +216,10 @@ export class SessionManager {
         CookieService.deleteCookie(this.SESSION_STATUS_COOKIE);
         CookieService.deleteCookie(this.REMEMBER_USER_COOKIE);
         
-        localStorage.removeItem(this.LOCAL_STORAGE_KEY);
-        sessionStorage.clear();
+        if(typeof localStorage !== 'undefined') {
+            localStorage.removeItem(this.LOCAL_STORAGE_KEY);
+            sessionStorage.clear();
+        }
     }
 
     public static getSessionId(): string | null {
