@@ -87,7 +87,6 @@ export class Main extends Component<any, State> {
         this.dashboardInstance = instance;
     }
 
-    //Join
     /*
     **
     ** THIS *PROBABLY BUGGIER CODE IS A AI CODE FOR-
@@ -282,6 +281,34 @@ export class Main extends Component<any, State> {
             }
         }
 
+        public handleLogout = async (sessionContext: any): Promise<void> => {
+            try {
+                console.log('Logging out...');
+                const authService = await this.apiClient.getAuthService();
+                await authService.logoutUser();
+                
+                SessionManager.clearSession();
+                sessionContext.setSession('LOGIN');
+                
+                if (sessionContext && sessionContext.clearSession) {
+                    await sessionContext.clearSession();
+                }
+                if (this.props.onLogout) {
+                    this.props.onLogout();
+                }
+                
+                console.log('Logged out successfully');
+            } catch (err) {
+                console.error('Logout failed:', err);
+                SessionManager.clearSession();
+                
+                if (sessionContext && sessionContext.setSession) {
+                    sessionContext.setSession('LOGIN');
+                }
+            }
+        }
+    /* */
+
     render() {
         return (
             <div className='app' ref={this.appContainerRef}>
@@ -357,6 +384,7 @@ export class Main extends Component<any, State> {
                                     {sessionContext && sessionContext.currentSession === 'MAIN_DASHBOARD' && (
                                         <Dashboard 
                                             ref={this.setDashboardRef}
+                                            main={this}
                                             apiClient={this.apiClient}
                                         />
                                     )}

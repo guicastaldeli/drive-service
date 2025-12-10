@@ -3,8 +3,10 @@ import React, { Component } from "react";
 import { SessionContext, SessionType } from "./_session/session-provider";
 import { ApiClient } from "./_api-client/api-client";
 import { SessionManager } from "./_session/session-manager";
+import { Main } from "./_main";
 
 interface Props {
+    main: Main;
     apiClient: ApiClient;
     onLogout?: () => void;
 }
@@ -17,6 +19,7 @@ interface State {
 
 export class Dashboard extends Component<Props, State> {
     private apiClient: ApiClient;
+    private main: Main;
     private socketId!: string;
     private userId!: string;
 
@@ -27,6 +30,7 @@ export class Dashboard extends Component<Props, State> {
             currentSession: 'MAIN_DASHBOARD',
             isLoading: true
         }
+        this.main = props.main;
         this.apiClient = props.apiClient;
     }
 
@@ -85,11 +89,12 @@ export class Dashboard extends Component<Props, State> {
                         <>
                             {sessionContext && sessionContext.currentSession === 'MAIN_DASHBOARD' && (
                                 <div className="screen main-dashboard">
-                                    <div className="sidebar">
-                                    </div>
-                                    <div className="container-upload-file">
-                                        <input type="file" id="upload-file" />
-                                        <label htmlFor="upload-file">Upload</label>
+                                    <div className="upper-bar">
+                                        <button id="logout-actn" onClick={() => this.main.handleLogout(sessionContext)}>Logout</button>
+                                        <div id="container-upload-file">
+                                            <label htmlFor="upload-file">Upload</label>
+                                            <input type="file" id="upload-file" />
+                                        </div>
                                     </div>
                                 </div>
                             )}

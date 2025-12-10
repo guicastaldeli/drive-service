@@ -112,7 +112,7 @@ class AuthRoutes:
         async def logoutUser(req: Request, res: Response):
             try:
                 cookies = extractCookies(req)
-                result = self.authService.logoutUser(cookies)
+                result = await self.authService.logoutUser(cookies)
                 for cookieName in ["SESSION_ID", "USER_INFO", "SESSION_STATUS", "auth_token"]:
                     res.delete_cookie(cookieName)
                 return result

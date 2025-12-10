@@ -82,7 +82,10 @@ export class AuthServiceClient {
         try {
             await fetch(`${this.url}/api/auth/logout`, {
                 method: 'POST',
-                credentials: 'include'
+                credentials: 'include',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
             });
         } finally {
             SessionManager.clearSession();

@@ -570,3 +570,31 @@ li {
     font-style: italic;
     padding: 20px;
 }
+
+.upper-bar {
+    display: flex;
+    gap: 2rem;
+
+    input[type="file"] {
+        border: 0px;
+        margin: auto;
+    }
+
+    button {
+        width: 5rem;
+    }
+
+    #container-upload-file {
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        display: flex;
+        padding: 0.5rem;
+        gap: 0.5rem;
+        background-color: rgb(37, 126, 195);
+
+        label {
+            color: white;
+        }
+    }
+}
