@@ -9,7 +9,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
@@ -55,6 +54,7 @@ public class SessionService {
     private final Map<String, String> tokenToUserIdMap = new ConcurrentHashMap<>();
     private final Map<String, Set<String>> userIdToTokensMap = new ConcurrentHashMap<>();
     private String webUrl = EnvConfig.get("WEB_URL");
+    private String cookieDomain = EnvConfig.get("WEB_URL");
 
     @Value("${session.timeout.minutes:30}")
     private int sessionTimeoutMinutes;
@@ -64,8 +64,6 @@ public class SessionService {
     
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
-    
-    private String cookieDomain;
 
     public static class SessionData {
         private String sessionId;
@@ -508,55 +506,65 @@ public class SessionService {
     /*
     ** Set Session Cookie
     */
-    private void setSessionCookie(
-        String sessionId, 
-        boolean rememberUser, 
-        HttpServletResponse response
-    ) {
-        if(response != null) {
-            String domain = extractDomainFromUrl(webUrl);
+    /*
+** Set Session Cookie
+*/
+private void setSessionCookie(
+    String sessionId, 
+    boolean rememberUser, 
+    HttpServletResponse response
+) {
+    if(response != null && cookieService != null) {
+        String domain = extractDomainFromUrl(webUrl);
 
-            /* Cookie */
-            Cookie cookie = new Cookie(cookieService.sessionIdKey, sessionId);
-            cookie.setHttpOnly(true);
-            cookie.setSecure(cookieSecure);
-            cookie.setPath("/");
-            cookie.setDomain(domain);
-            if(rememberUser) {
-                cookie.setMaxAge(rememberUserTimeoutDays * 24 * 60 * 60);
-            } else {
-                cookie.setMaxAge(sessionTimeoutMinutes * 60);
-            }
-            if(!cookieDomain.equals(webUrl)) {
-                cookie.setDomain(cookieDomain);
-            }
-            String cookieHeader = String.format(
-                "%s=%s; Max-Age=%d; Path=%s; Domain=%s; HttpOnly; SameSite=Lax",
-                cookieService.sessionIdKey, 
-                sessionId,
-                cookie.getMaxAge(), 
-                "/", 
-                domain
-            );
-            response.addHeader("Set-Cookie", cookieHeader);
-            response.addCookie(cookie);
+        /* Cookie */
+        String sessionCookieName = CookieService.SESSION_ID_KEY != null ? 
+            CookieService.SESSION_ID_KEY : "SESSION_ID";
+        String statusCookieName = CookieService.SESSION_STATUS_KEY != null ?
+            CookieService.SESSION_STATUS_KEY : "SESSION_STATUS";
 
-            /* Client Cookie */
-            Cookie clientCookie = new Cookie(cookieService.sessionStatusKey, "active");
-            clientCookie.setHttpOnly(false);
-            clientCookie.setSecure(cookieSecure);
-            clientCookie.setPath("/");
-            clientCookie.setMaxAge(sessionTimeoutMinutes * 60);
-            if(!cookieDomain.equals(webUrl)) clientCookie.setDomain(cookieDomain);
-
-            response.addCookie(clientCookie);
+        Cookie cookie = new Cookie(sessionCookieName, sessionId);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(cookieSecure);
+        cookie.setPath("/");
+        cookie.setDomain(domain);
+        if(rememberUser) {
+            cookie.setMaxAge(rememberUserTimeoutDays * 24 * 60 * 60);
+        } else {
+            cookie.setMaxAge(sessionTimeoutMinutes * 60);
         }
+        if(!cookieDomain.equals(webUrl)) {
+            cookie.setDomain(cookieDomain);
+        }
+        String cookieHeader = String.format(
+            "%s=%s; Max-Age=%d; Path=%s; Domain=%s; HttpOnly; SameSite=Lax",
+            sessionCookieName, 
+            sessionId,
+            cookie.getMaxAge(), 
+            "/", 
+            domain
+        );
+        response.addHeader("Set-Cookie", cookieHeader);
+        response.addCookie(cookie);
+
+        /* Client Cookie */
+        Cookie clientCookie = new Cookie(statusCookieName, "active");
+        clientCookie.setHttpOnly(false);
+        clientCookie.setSecure(cookieSecure);
+        clientCookie.setPath("/");
+        clientCookie.setMaxAge(sessionTimeoutMinutes * 60);
+        if(!cookieDomain.equals(webUrl)) clientCookie.setDomain(cookieDomain);
+
+        response.addCookie(clientCookie);
+    } else {
+        System.err.println("ERR response or cookieService is null!");
     }
+}
 
     private void clearSessionCookie(HttpServletResponse response) {
         if(response != null) {
             /* Cookie */
-            Cookie cookie = new Cookie(cookieService.sessionIdKey, null);
+            Cookie cookie = new Cookie(CookieService.SESSION_ID_KEY, null);
             cookie.setHttpOnly(true);
             cookie.setSecure(cookieSecure);
             cookie.setPath("/");
@@ -566,7 +574,7 @@ public class SessionService {
             response.addCookie(cookie);
 
             /* Client Cookie */
-            Cookie clientCookie = new Cookie(cookieService.sessionStatusKey, null);
+            Cookie clientCookie = new Cookie(CookieService.SESSION_STATUS_KEY, null);
             clientCookie.setHttpOnly(true);
             clientCookie.setSecure(cookieSecure);
             clientCookie.setPath("/");
@@ -584,7 +592,7 @@ public class SessionService {
         Cookie[] cookies = request.getCookies();
         if(cookies != null) {
             for(Cookie c : cookies) {
-                if(cookieService.sessionIdKey.equals(c.getName())) {
+                if(CookieService.SESSION_ID_KEY.equals(c.getName())) {
                     return c.getValue();
                 }
             }

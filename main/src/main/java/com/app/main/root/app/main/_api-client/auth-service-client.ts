@@ -52,7 +52,9 @@ export class AuthServiceClient {
     }) {
         const res = await fetch(`${this.url}/api/auth/login`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+                'Content-Type': 'application/json' 
+            },
             body: JSON.stringify(userData),
             credentials: 'include'
         });

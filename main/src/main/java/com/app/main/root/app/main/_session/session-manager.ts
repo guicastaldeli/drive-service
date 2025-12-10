@@ -23,11 +23,11 @@ interface SessionDate {
 }
 
 export class SessionManager {
-    private static readonly SESSION_COOKIE = 'SESSION_ID';
-    private static readonly USER_COOKIE = 'USER_INFO';
-    private static readonly SESSION_STATUS_COOKIE = 'SESSION_STATUS';
-    private static readonly REMEMBER_USER_COOKIE = 'REMEMBER_USER';
-    private static readonly LOCAL_STORAGE_KEY = 'DRIVE_SESSION_DATA';
+    public static readonly SESSION_ID_KEY = "SESSION_ID";
+    public static readonly USER_INFO_KEY = "USER_INFO";
+    public static readonly REMEMBER_USER = "REMEMBER_USER";
+    public static readonly SESSION_STATUS_KEY = "SESSION_STATUS";
+    public static readonly LOCAL_STORAGE_KEY = 'DRIVE_SESSION_DATA';
 
     public static setDate(rememberUser: boolean): SessionDate {
         const now = Date.now();
@@ -41,12 +41,14 @@ export class SessionManager {
 
     public static async initSession(): Promise<UserSessionData | null> {
         try {
-            const sessionId = CookieService.getValue(this.SESSION_COOKIE);
-            const userInfo = CookieService.getValue(this.USER_COOKIE);
-            const rememberUser = CookieService.getValue(this.REMEMBER_USER_COOKIE) === 'true';
+            const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+            const userInfo = CookieService.getValue(this.USER_INFO_KEY);
+            const rememberUser = CookieService.getValue(this.REMEMBER_USER) === 'true';
+            console.log('uijsiuojfd', rememberUser)
             if(!sessionId) {
                 this.clearSession();
                 console.log('session cleared, no session!');
+                console.log(sessionId)
                 return null;
             }
 
@@ -104,13 +106,13 @@ export class SessionManager {
             ...addData
         }
 
-        CookieService.set(this.SESSION_COOKIE, sessionId, {
+        CookieService.set(this.SESSION_ID_KEY, sessionId, {
             days: rememberUser ? 7 : undefined,
             secure: 
                 process.env.NODE_ENV === 'production' ||
                 process.env.NODE_ENV === 'development'
         });
-        CookieService.set(this.USER_COOKIE, JSON.stringify({
+        CookieService.set(this.USER_INFO_KEY, JSON.stringify({
             userId: userData.userId,
             username: userData.username,
             email: userData.email
@@ -121,14 +123,14 @@ export class SessionManager {
                 process.env.NODE_ENV === 'development',
             sameSite: 'Lax'
         });
-        CookieService.set(this.SESSION_STATUS_COOKIE, 'active', {
+        CookieService.set(this.SESSION_STATUS_KEY, 'active', {
             days: rememberUser ? 7 : undefined,
             secure: 
                 process.env.NODE_ENV === 'production' ||
                 process.env.NODE_ENV === 'development',
             sameSite: 'Lax'
         });
-        CookieService.set(this.REMEMBER_USER_COOKIE, rememberUser.toString(), {
+        CookieService.set(this.REMEMBER_USER, rememberUser.toString(), {
             days: rememberUser ? 7 : undefined,
             secure: 
                 process.env.NODE_ENV === 'production' ||
@@ -157,7 +159,7 @@ export class SessionManager {
             }
 
             if(data.userId || data.username || data.email) {
-                CookieService.set(this.USER_COOKIE, JSON.stringify({
+                CookieService.set(this.USER_INFO_KEY, JSON.stringify({
                     userId: updatedData.userId,
                     username: updatedData.username,
                     email: updatedData.email
@@ -196,7 +198,7 @@ export class SessionManager {
         const sessionData = this.getCurrentSession();
         if(!sessionData) return false;
 
-        const sessionId = CookieService.getValue(this.SESSION_COOKIE);
+        const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
         if(!sessionId || sessionId !== sessionData.sessionId) return false;
 
         if(Date.now() > sessionData.expiresAt) {
@@ -211,10 +213,10 @@ export class SessionManager {
      * Clear Session
      */
     public static clearSession(): void {
-        CookieService.deleteCookie(this.SESSION_COOKIE);
-        CookieService.deleteCookie(this.USER_COOKIE);
-        CookieService.deleteCookie(this.SESSION_STATUS_COOKIE);
-        CookieService.deleteCookie(this.REMEMBER_USER_COOKIE);
+        CookieService.deleteCookie(this.SESSION_ID_KEY);
+        CookieService.deleteCookie(this.USER_INFO_KEY);
+        CookieService.deleteCookie(this.SESSION_STATUS_KEY);
+        CookieService.deleteCookie(this.REMEMBER_USER);
         
         if(typeof localStorage !== 'undefined') {
             localStorage.removeItem(this.LOCAL_STORAGE_KEY);
@@ -223,23 +225,53 @@ export class SessionManager {
     }
 
     public static getSessionId(): string | null {
-        return CookieService.getValue(this.SESSION_COOKIE);
+        const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+        if (sessionId) {
+            return sessionId;
+        }
+        
+        const userInfo = this.getUserInfo();
+        if (userInfo && userInfo.sessionId) {
+            return userInfo.sessionId;
+        }
+        
+        return null;
     }
 
     public static getUserInfo(): {
+        sessionId: string;
         userId: string;
         username: string;
-        email: string
+        email: string;
     } | null {
-        const userCookie = CookieService.getValue(this.USER_COOKIE);
-        if(userCookie) {
-            try {
-                return JSON.parse(userCookie);
-            } catch(err) {
-                console.error(err);
+        try {
+            const userCookie = CookieService.getValue(this.USER_INFO_KEY);
+            if(!userCookie) return null;
+            
+            console.log('USER_INFO cookie:', userCookie);
+            
+            let value = userCookie.trim();
+            if(value.startsWith('"') && value.endsWith('"')) {
+                value = value.slice(1, -1);
             }
+        
+            if(value.includes(':')) {
+                const parts = value.split(':');
+                if (parts.length >= 4) {
+                    return {
+                        sessionId: parts[0] || '', 
+                        userId: parts[1] || '',
+                        username: parts[2] || '',
+                        email: parts[3] || ''
+                    };
+                }
+            }
+            
+            return null;
+        } catch(err) {
+            console.error('Error in getUserInfo:', err);
+            return null;
         }
-        return null;
     }
 
     public static checkSessionStatus(): {

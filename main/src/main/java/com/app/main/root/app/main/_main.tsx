@@ -8,6 +8,7 @@ import { CachePreloaderService } from '../_cache/cache-preloader-service';
 import { Dashboard } from './_dashboard';
 import { SessionProvider, SessionType, SessionContext } from './_session/session-provider';
 import { SessionManager } from './_session/session-manager';
+import { CookieService } from './_session/cookie-service';
 
 interface State {
     currentSession: SessionType;
@@ -45,70 +46,58 @@ export class Main extends Component<any, State> {
     async componentDidMount(): Promise<void> {
         try {
             await this.connect();
-            const validSession = await this.autoLogin();
-            if(validSession) {
-                const sessionData = SessionManager.getCurrentSession();
-
-                if(sessionData) {
-                    await this.cacheService.initCache(sessionData.userId);
-                    await this.cachePreloader.startPreloading(sessionData.userId);
-                    this.setState({
-                        currentSession: 'MAIN_DASHBOARD',
-                        userId: sessionData.userId,
-                        username: sessionData.username,
-                        isLoading: false
-                    });
-                } else {
-                    this.setState({ isLoading: false });
-                }
+            const autoLoginSuccess = await this.tryAutoLogin();
+            
+            if (autoLoginSuccess) {
+                console.log('Auto-login successful');
+                return;
             }
+            
+            this.setState({ isLoading: false });
         } catch(err) {
-            console.error(err);
+            console.error('Error in componentDidMount:', err);
             this.setState({ isLoading: false });
         }
 
         this.loadData();
     }
 
-    componentWillUnmount(): void {
-    }
-    
-    /**
-     * Auto Login
-     */
-    private async autoLogin(): Promise<boolean> {
-        try {
-            if(!SessionManager.isSessionValid()) {
-                SessionManager.clearSession();
+    private async tryAutoLogin(): Promise<boolean> {
+        try {            
+            const sessionId = SessionManager.getSessionId();
+            const userInfo = SessionManager.getUserInfo();
+            
+            console.log('Session ID from cookies:', sessionId);
+            console.log('User info from cookies:', userInfo);
+            
+            if (!sessionId || !userInfo || !userInfo.userId) {
+                console.log('No valid session data found');
                 return false;
             }
             
+            console.log('Validating session with server...');
             const sessionConfig = await this.apiClient.getSessionConfig(); 
-            const sessionInitalized = await sessionConfig.initSession();
-            if(!sessionInitalized) return false;
-
-            const authService = await this.apiClient.getAuthService();
-            const isAuth = await authService.isAuth();
-            if(!isAuth) {
-                SessionManager.clearSession();
-                return false;
-            }
-
-            const userInfo = SessionManager.getUserInfo();
-            if(userInfo) {
-                this.setState({
-                    userId: userInfo.userId,
-                    username: userInfo.username
-                });
-            }
-
+            await sessionConfig.initSession();
+            
+            console.log('Session validated successfully');
+            
+            await this.cacheService.initCache(userInfo.userId);
+            await this.cachePreloader.startPreloading(userInfo.userId);
+            this.setState({
+                currentSession: 'MAIN_DASHBOARD',
+                userId: userInfo.userId,
+                username: userInfo.username,
+                isLoading: false
+            });
+            
             return true;
         } catch(err) {
-            console.error('Login failed', err);
+            console.error('Auto-login failed:', err);
+            SessionManager.clearSession();
             return false;
         }
     }
-    
+        
     /**
      * Load Data
      */
@@ -137,81 +126,137 @@ export class Main extends Component<any, State> {
     ** SWITCH THIS THING LATER. THANK YOU!!
     **
     */
-    private loginEmailRef = React.createRef<HTMLInputElement>();
-    private loginPasswordRef = React.createRef<HTMLInputElement>();
-    private createEmailRef = React.createRef<HTMLInputElement>();
-    private createUsernameRef = React.createRef<HTMLInputElement>();
-    private createPasswordRef = React.createRef<HTMLInputElement>();
-    private handleJoin = async (sessionContext: any, isCreateAccount: boolean = false): Promise<void> => {
-        try {
-            let email, username, password;
-
-            if (isCreateAccount) {
-                if (!this.createEmailRef.current || !this.createUsernameRef.current || !this.createPasswordRef.current) {
-                    alert('Form elements not found');
-                    return;
-                }
-                
-                email = this.createEmailRef.current.value.trim();
-                username = this.createUsernameRef.current.value.trim();
-                password = this.createPasswordRef.current.value.trim();
-
-                if (!email || !username || !password) {
-                    alert('All fields are required for account creation');
-                    return;
-                }
-                try {
-                    const userService = await this.apiClient.getUserService();
-                    const usernameExists = await userService.checkUsernameExists(username);
-                    if (usernameExists) {
-                        alert('Username already taken');
-                        return;
-                    }
-                } catch (err) {
-                    console.error('Error checking username:', err);
-                }
-                try {
-                    const userService = await this.apiClient.getUserService();
-                    const emailExists = await userService.checkUserExists(email);
-                    if (emailExists) {
-                        alert('Email already registered');
-                        return;
-                    }
-                } catch (err) {
-                    console.error('Error checking email:', err);
-                }
-            } else {
-                if (!this.loginEmailRef.current || !this.loginPasswordRef.current) {
-                    alert('Form elements not found');
-                    return;
-                }
-                
-                email = this.loginEmailRef.current.value.trim();
-                password = this.loginPasswordRef.current.value.trim();
-
-                if (!email || !password) {
-                    alert('Email and password are required');
-                    return;
-                }
-            }
-
-            const sessionId = await this.socketClientConnect.getSocketId();
-            let result;
-
+        private loginEmailRef = React.createRef<HTMLInputElement>();
+        private loginPasswordRef = React.createRef<HTMLInputElement>();
+        private createEmailRef = React.createRef<HTMLInputElement>();
+        private createUsernameRef = React.createRef<HTMLInputElement>();
+        private createPasswordRef = React.createRef<HTMLInputElement>();
+        private handleJoin = async (sessionContext: any, isCreateAccount: boolean = false): Promise<void> => {
             try {
+                let email: any, username: any, password: any;
+
+                if (isCreateAccount) {
+                    if (!this.createEmailRef.current || !this.createUsernameRef.current || !this.createPasswordRef.current) {
+                        alert('Form elements not found');
+                        return;
+                    }
+                    
+                    email = this.createEmailRef.current.value.trim();
+                    username = this.createUsernameRef.current.value.trim();
+                    password = this.createPasswordRef.current.value.trim();
+
+                    if (!email || !username || !password) {
+                        alert('All fields are required for account creation');
+                        return;
+                    }
+                    try {
+                        const userService = await this.apiClient.getUserService();
+                        const usernameExists = await userService.checkUsernameExists(username);
+                        if (usernameExists) {
+                            alert('Username already taken');
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Error checking username:', err);
+                    }
+                    try {
+                        const userService = await this.apiClient.getUserService();
+                        const emailExists = await userService.checkUserExists(email);
+                        if (emailExists) {
+                            alert('Email already registered');
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Error checking email:', err);
+                    }
+                } else {
+                    if (!this.loginEmailRef.current || !this.loginPasswordRef.current) {
+                        alert('Form elements not found');
+                        return;
+                    }
+                    
+                    email = this.loginEmailRef.current.value.trim();
+                    password = this.loginPasswordRef.current.value.trim();
+
+                    if (!email || !password) {
+                        alert('Email and password are required');
+                        return;
+                    }
+                }
+
+                const existingSessionId = SessionManager.getSessionId();
+                const isSessionValid = SessionManager.isSessionValid();
+                const userInfo = SessionManager.getUserInfo();
+                
+                console.log('=== Session Check Before Login ===');
+                console.log('Existing session ID:', existingSessionId);
+                console.log('Is session valid?', isSessionValid);
+                console.log('User info from cookies:', userInfo);
+                console.log('Requested email:', email);
+
+                if (isSessionValid && userInfo && userInfo.email === email) {
+                    console.log('Valid session exists for this user, skipping login API');
+                    this.setState({ 
+                        username: userInfo.username,
+                        userId: userInfo.userId
+                    }, async () => {
+                        try {
+                            await this.cacheService.initCache(userInfo.userId);
+                            await this.cachePreloader.startPreloading(userInfo.userId);
+                            const authService = await this.apiClient.getAuthService();
+                            const validation = await authService.validateSession();
+                            
+                            if(validation && validation.valid) {
+                                console.log('Session validated with server');
+                                sessionContext.setSession('MAIN_DASHBOARD');
+                            } else {
+                                console.log('Session invalid on server, forcing new login');
+                                SessionManager.clearSession();
+                                this.forceNewLogin(sessionContext, email, password, isCreateAccount, username);
+                            }
+                        } catch(err: any) {
+                            console.error('Error in existing session flow:', err);
+                            alert('Session error: ' + err.message);
+                        }
+                    });
+                    return;
+                }
+
+                await this.forceNewLogin(sessionContext, email, password, isCreateAccount, username);
+            } catch (err: any) {
+                console.error('Authentication error:', err);
+                alert(`Authentication failed: ${err.message}`);
+            }
+        }
+
+        private forceNewLogin = async (
+            sessionContext: any, 
+            email: string, 
+            password: string, 
+            isCreateAccount: boolean, 
+            username?: string
+        ): Promise<void> => {
+            try {
+                SessionManager.clearSession();
+                
+                const socketId = await this.socketClientConnect.getSocketId();
+                console.log('Creating new session with socket ID:', socketId);
+
+                let result;
                 const authService = await this.apiClient.getAuthService();
+                
                 if (isCreateAccount) {
                     result = await authService.registerUser({
                         email: email,
                         username: username!,
                         password: password,
-                        sessionId: sessionId
+                        sessionId: socketId
                     });
                 } else {
                     result = await authService.loginUser({
                         email: email,
                         password: password,
-                        sessionId: sessionId
+                        sessionId: socketId
                     });
                 }
 
@@ -219,6 +264,21 @@ export class Main extends Component<any, State> {
                 const authData = result;
 
                 if (authData && authData.userId) {
+                    SessionManager.saveSession(
+                        {
+                            userId: authData.userId,
+                            username: authData.username,
+                            email: authData.email
+                        },
+                        authData.sessionId,
+                        false
+                    );
+                    
+                    console.log('New session saved with ID:', authData.sessionId);
+                    
+                    if (typeof localStorage !== 'undefined') {
+                        localStorage.setItem('LAST_SOCKET_ID', socketId);
+                    }
                     
                     this.setState({ 
                         username: authData.username,
@@ -227,11 +287,16 @@ export class Main extends Component<any, State> {
                         try {
                             await this.cacheService.initCache(authData.userId);
                             await this.cachePreloader.startPreloading(authData.userId);
-                            await this.dashboardInstance?.getUserData(authData.sessionId, authData.userId);
+                            
+                            if (this.dashboardInstance) {
+                                await this.dashboardInstance.getUserData(authData.sessionId, authData.userId);
+                            }
+                            
                             sessionContext.setSession('MAIN_DASHBOARD');
-                        } catch (err) {
-                            console.error('Error in handleJoin:', err);
-                            alert('Failed to join chat: ' + err);
+                            console.log('Successfully logged in and switched to dashboard');
+                        } catch (err: any) {
+                            console.error('Error in post-login setup:', err);
+                            alert('Login successful but setup failed: ' + err.message);
                         }
                     });
                 } else {
@@ -242,13 +307,9 @@ export class Main extends Component<any, State> {
             } catch (err: any) {
                 console.error('Authentication API error:', err);
                 alert(`Authentication failed: ${err.message}`);
+                throw err;
             }
-
-        } catch (err: any) {
-            console.error('Authentication error:', err);
-            alert(`Authentication failed: ${err.message}`);
         }
-    }
 
     render() {
         return (

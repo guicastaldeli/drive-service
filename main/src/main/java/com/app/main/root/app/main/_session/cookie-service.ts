@@ -7,7 +7,7 @@ interface Options {
 }
 
 export class CookieService {
-    static set(name: string, value: string, options: Options): void {
+    public static set(name: string, value: string, options: Options): void {
         if(typeof document === 'undefined') return;
 
         const {
@@ -38,21 +38,32 @@ export class CookieService {
     /**
      * Get Value
      */
-    static getValue(name: string): string | null {
-        if(typeof document === 'undefined') return null;
+    public static getValue(name: string): string | null {
+    if(typeof document === 'undefined') return null;
 
-        const cookies = document.cookie.split(';');
-        for(let cookie of cookies) {
-            const [cookieName, cookieVal] = cookie.trim().split('=');
-            if(cookieName === name) return decodeURIComponent(cookieVal);
+    console.log('=== CookieService.getValue DEBUG ===');
+    console.log('Looking for cookie:', name);
+    console.log('All cookies string:', document.cookie);
+    
+    const cookies = document.cookie.split(';');
+    console.log('Split cookies:', cookies);
+    
+    for(let cookie of cookies) {
+        const [cookieName, cookieVal] = cookie.trim().split('=');
+        console.log('Checking:', cookieName, 'value:', cookieVal);
+        if(cookieName === name) {
+            console.log('Found cookie:', name, 'value:', cookieVal);
+            return decodeURIComponent(cookieVal);
         }
-        return null;
     }
+    console.log('Cookie not found:', name);
+    return null;
+}
 
     /**
      * Delete Cookie
      */
-    static deleteCookie(
+    public static deleteCookie(
         name: string,
         path: string = '/',
         domain?: string
@@ -71,14 +82,14 @@ export class CookieService {
     /**
      * Has Cookie
      */
-    static hasCookie(name: string): boolean {
+    public static hasCookie(name: string): boolean {
         return this.getValue(name) != null;
     }
     
     /**
      * Get All Cookies
      */
-    static getAllCookies(): Record<string, string> {
+    public static getAllCookies(): Record<string, string> {
         const cookies: Record<string, string> = {};
         document.cookie.split(';').forEach(cookie => {
             const [name, value] = cookie.trim().split('=');
@@ -90,7 +101,7 @@ export class CookieService {
     /**
      * Clear All Cookies
      */
-    static clearAllCookies(): void {
+    public static clearAllCookies(): void {
         const cookies = this.getAllCookies();
         Object.keys(cookies).forEach(name => {
             this.deleteCookie(name);

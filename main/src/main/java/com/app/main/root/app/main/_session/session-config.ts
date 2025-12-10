@@ -36,7 +36,6 @@ export class SessionConfig {
 
             const authService = await this.apiClient.getAuthService(); 
             const validation = await authService.validateSession();
-
             if(!validation) {
                 SessionManager.clearSession();
                 return false;

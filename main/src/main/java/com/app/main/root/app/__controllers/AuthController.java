@@ -14,11 +14,10 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -68,13 +67,6 @@ public class AuthController {
             String username = (String) result.get("username");
             String email = (String) result.get("email");
             boolean rememberUser = request.isRememberUser();
-            String token = serviceManager.getTokenService()
-                .generateAccessToken(
-                    request.getSessionId(), 
-                    userId, 
-                    username, 
-                    email
-                );
 
             String sessionId = serviceManager.getSessionService()
                 .createSession(
@@ -91,9 +83,17 @@ public class AuthController {
                 response, 
                 sessionId, 
                 userId, 
-                username, 
+                username,
+                email,
                 rememberUser
             );
+            String token = serviceManager.getTokenService()
+                .generateAccessToken(
+                    sessionId, 
+                    userId, 
+                    username, 
+                    email
+                );
             result.put("token", token);
             result.put("sessionId", sessionId);
 
@@ -137,22 +137,27 @@ public class AuthController {
             String username = (String) result.get("username");
             String email = (String) result.get("email");
             boolean rememberUser = request.isRememberUser();
-            String token = serviceManager.getTokenService()
-                .generateAccessToken(
-                    request.getSessionId(), 
-                    userId, 
-                    username, 
-                    email
-                );
 
             String sessionId;
-            if(serviceManager.getSessionService().hasValidSession(request.getSessionId())) {
-                serviceManager.getSessionService().updateUserSession(
-                    request.getSessionId(),
-                    userId,
-                    SessionService.SessionType.MAIN_DASHBOARD
+            List<SessionService.SessionData> userSessions = 
+                serviceManager.getSessionService().getSessionsByUserId(userId);
+            
+            SessionService.SessionData existingSession = null;
+            for(SessionService.SessionData session : userSessions) {
+                if(!session.isExpired()) {
+                    existingSession = session;
+                    break;
+                }
+            }
+            
+            if(existingSession != null) {
+                sessionId = existingSession.getSessionId();
+                System.out.println("Using existing session: " + sessionId);
+                serviceManager.getSessionService().refreshSession(
+                    sessionId, 
+                    rememberUser, 
+                    response
                 );
-                sessionId = request.getSessionId();
             } else {
                 sessionId = serviceManager.getSessionService()
                     .createSession(
@@ -165,15 +170,24 @@ public class AuthController {
                         rememberUser,
                         response
                     );
+                System.out.println("Created new session: " + sessionId);
             }
 
             serviceManager.getCookieService().setAuthCookies(
                 response, 
                 sessionId, 
                 userId, 
-                username, 
+                username,
+                email,
                 rememberUser
             );
+            String token = serviceManager.getTokenService()
+                .generateAccessToken(
+                    sessionId, 
+                    userId, 
+                    username, 
+                    email
+                );
             result.put("token", token);
             result.put("sessionId", sessionId);
 
@@ -370,6 +384,7 @@ public class AuthController {
                     sessionId, 
                     sessionData.getUserId(), 
                     sessionData.getUsername(), 
+                    sessionData.getEmail(),
                     true
                 );
             }

@@ -95,6 +95,8 @@ class AuthRoutes:
                 if("_cookies" in result):
                     setCookies(res, result["_cookies"])
                     del result["_cookies"]
+                
+                return result
             except HTTPException as err:
                 raise err
             except Exception as err:

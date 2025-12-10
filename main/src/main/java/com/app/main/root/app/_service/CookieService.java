@@ -1,19 +1,21 @@
 package com.app.main.root.app._service;
 import org.springframework.stereotype.Service;
+import com.app.main.root.EnvConfig;
+import jakarta.annotation.PostConstruct;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
 import java.util.Arrays;
 import java.util.Optional;
-import com.app.main.root.EnvConfig;
 
 @Service
 public class CookieService {
     private String webUrl = EnvConfig.get("WEB_URL");
-    public String sessionIdKey = "SESSION_ID";
-    public String userInfoKey = "USER_INFO";
-    public String sessionStatusKey = "SESSION_STATUS";
+    public static final String SESSION_ID_KEY = "SESSION_ID";
+    public static final String USER_INFO_KEY = "USER_INFO";
+    public static final String REMEMBER_USER = "REMEMBER_USER";
+    public static final String SESSION_STATUS_KEY = "SESSION_STATUS";
 
     @Value("${cookie.domain:localhost}")
     private String cookieDomain;
@@ -21,6 +23,17 @@ public class CookieService {
     @Value("${cookie.secure:false}")
     private boolean cookieSecure;
 
+    @PostConstruct
+    public void init() {
+        System.out.println("=== CookieService Initialized ===");
+        System.out.println("SESSION_ID_KEY: " + SESSION_ID_KEY);
+        System.out.println("USER_INFO_KEY: " + USER_INFO_KEY);
+        System.out.println("SESSION_STATUS_KEY: " + SESSION_STATUS_KEY);
+        System.out.println("cookieDomain: " + cookieDomain);
+        System.out.println("cookieSecure: " + cookieSecure);
+        System.out.println("webUrl: " + webUrl);
+        System.out.println("===============================");
+    }
     /*
     ** Get Cookie Value
     */
@@ -36,27 +49,40 @@ public class CookieService {
     /*
     ** Create Cookie
     */
-    public Cookie createCookie(String name, String value, int maxAge) {
+    public Cookie createCookie(String name, String value, int maxAge) {        
+        if (name == null || name.trim().isEmpty()) {
+            System.err.println("ERR Cookie name is null or empty! name=" + name);
+        }
+        
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(maxAge);
-        if(!cookieDomain.equals(webUrl)) {
+
+        if(cookieDomain != null && 
+            !cookieDomain.equals("localhost") && 
+            !cookieDomain.equals(webUrl)
+        ) {
             cookie.setDomain(cookieDomain);
+        } else {
+            System.out.println("Not setting domain");
         }
+        
         return cookie;
     }
 
-    public Cookie createClientCookie(String name, String value, int maxAge) {
+    public Cookie createClientCookie(String name, String value, int maxAge) {        
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(false);
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(maxAge);
-        if(!cookieDomain.equals(webUrl)) {
+        
+        if(cookieDomain != null && !cookieDomain.equals("localhost")) {
             cookie.setDomain(cookieDomain);
-        } 
+        }
+        
         return cookie;
     }
 
@@ -69,7 +95,7 @@ public class CookieService {
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
-        if(!cookieDomain.equals(webUrl)) {
+        if(cookieDomain != null && !cookieDomain.equals("localhost")) {
             cookie.setDomain(cookieDomain);
         }
         response.addCookie(cookie);
@@ -81,7 +107,7 @@ public class CookieService {
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(0);
-        if(!cookieDomain.equals(webUrl)) {
+        if(cookieDomain != null && !cookieDomain.equals("localhost")) {
             cookie.setDomain(cookieDomain);
         }
         response.addCookie(cookie);
@@ -97,27 +123,48 @@ public class CookieService {
         String sessionId,
         String userId,
         String username,
+        String email,
         boolean remember
     ) {
+        System.out.println("=== Setting Auth Cookies ===");
+        System.out.println("sessionId: " + sessionId);
+        System.out.println("userId: " + userId);
+        System.out.println("username: " + username);
+        System.out.println("remember: " + remember);
+        System.out.println("SESSION_ID_KEY: " + SESSION_ID_KEY);
+        System.out.println("USER_INFO_KEY: " + USER_INFO_KEY);
+        System.out.println("SESSION_STATUS_KEY: " + SESSION_STATUS_KEY);
         int rememberRes = remember ? 7 * 24 * 60 * 60 : 30 * 60;
-        String userRes = String.format("{\"userId\":\"%s\",\"username\":\"%s\"}", userId, username);
+            String userRes = String.format("%s:%s:%s:%s", 
+            sessionId != null ? sessionId : "",
+            userId != null ? userId : "",
+            username != null ? username : "",
+            email != null ? email : ""
+        );
 
         Cookie sessionCookie = createCookie(
-            sessionIdKey,
+            SESSION_ID_KEY,
             sessionId,
             rememberRes
         );
         response.addCookie(sessionCookie);
 
         Cookie userCookie = createClientCookie(
-            userInfoKey,
-            userRes,
+            USER_INFO_KEY, 
+            userRes, 
             rememberRes
         );
         response.addCookie(userCookie);
 
+        Cookie rememberCookie = createClientCookie(
+            REMEMBER_USER, 
+            userRes, 
+            rememberRes
+        );
+        response.addCookie(rememberCookie);
+
         Cookie statusCookie = createClientCookie(
-            sessionStatusKey,
+            SESSION_STATUS_KEY,
             "active",
             rememberRes
         );
@@ -125,8 +172,9 @@ public class CookieService {
     }
 
     public void clearAuthCookies(HttpServletResponse response) {
-        deleteCookie(response, "SESSION_ID");
-        deleteCookie(response, "USER_INFO");
-        deleteClientCookie(response, "SESSION_STATUS");
+        deleteCookie(response, SESSION_ID_KEY);
+        deleteClientCookie(response, USER_INFO_KEY);
+        deleteClientCookie(response, REMEMBER_USER);
+        deleteClientCookie(response, SESSION_STATUS_KEY);
     }
 }

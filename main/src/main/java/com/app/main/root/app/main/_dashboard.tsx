@@ -36,7 +36,6 @@ export class Dashboard extends Component<Props, State> {
     }
 
     async componentDidMount(): Promise<void> {
-        this.setSession('MAIN_DASHBOARD');
         await this.loadUserData();
     }
 
@@ -52,9 +51,17 @@ export class Dashboard extends Component<Props, State> {
     private async loadUserData() {
         try {
             const sessionData = SessionManager.getCurrentSession();
-            if(sessionData) this.setState({ userData: sessionData });
+            if(sessionData) {
+                this.setState({ 
+                    userData: sessionData,
+                    isLoading: false 
+                });
+            }
         } catch(err) {
             console.error(err);
+            this.setState({
+                isLoading: false 
+            });
         }
     }
 
@@ -81,7 +88,8 @@ export class Dashboard extends Component<Props, State> {
                                     <div className="sidebar">
                                     </div>
                                     <div className="container-upload-file">
-                                        <input type="file" id="upload-file">Upload</input>
+                                        <input type="file" id="upload-file" />
+                                        <label htmlFor="upload-file">Upload</label>
                                     </div>
                                 </div>
                             )}
