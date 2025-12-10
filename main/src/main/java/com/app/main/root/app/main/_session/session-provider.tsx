@@ -88,8 +88,11 @@ export class SessionProvider extends Component<Props, State> {
                 });
 
                 setTimeout(async () => {
+                    await this.checkAuth();
+                    /*
                     const isValid = await this.checkAuth();
                     if(!isValid) await this.clearSession();
+                    */
                 }, 1000);
             } else {
                 this.setState({

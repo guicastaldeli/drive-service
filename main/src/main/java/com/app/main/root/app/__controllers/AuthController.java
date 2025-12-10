@@ -209,6 +209,7 @@ public class AuthController {
     /**
      * Logout
      */
+    @PostMapping("/logout")
     public ResponseEntity<?> logoutUser(
         HttpServletRequest request,
         HttpServletResponse response
