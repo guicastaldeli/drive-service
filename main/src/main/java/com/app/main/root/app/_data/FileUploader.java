@@ -1,7 +1,17 @@
 package com.app.main.root.app._data;
+import java.io.IOException;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.multipart.MultipartFile;
+import com.app.main.root.app._service.FileService;
 
 public class FileUploader {
+    private final FileService fileService;
+    private final Map<String, JdbcTemplate> jdbcTemplates;
+
     private String fileId;
     private String fileName;
     private long size;
@@ -9,6 +19,130 @@ public class FileUploader {
     private String fileType;
     private String database;
     private LocalDateTime uploadedAt;
+
+    public FileUploader(FileService fileService, Map<String, JdbcTemplate> jdbcTemplates) {
+        this.fileService = fileService;
+        this.jdbcTemplates = jdbcTemplates;
+    } 
+
+    /**
+     * Upload File
+     */
+    public FileUploader upload(
+        String userId,
+        MultipartFile file,
+        String parentFolderId
+    ) throws SQLException {
+        try {
+            String fileId = generateFileId();
+            String originalFileName = file.getOriginalFilename();
+            String mimeType = file.getContentType();
+            long fileSize = file.getSize();
+            
+            String fileType = getFileTypeFromMime(mimeType);
+            String targetDb = fileService.getDatabaseForMimeType(mimeType);
+    
+            String query = "";
+            JdbcTemplate jdbcTemplate = new JdbcTemplate();
+            jdbcTemplate.update(
+                query,
+                fileId,
+                userId,
+                originalFileName,
+                fileSize,
+                fileType,
+                parentFolderId
+            );
+    
+            byte[] fileBytes = file.getBytes();
+            insertFileContent(
+                targetDb, 
+                fileId, 
+                fileBytes, 
+                mimeType
+            );
+            
+            /*
+            generateThumbnail(targetDb, fileId, fileBytes, mimeType);
+            extractDocMetadata(targetDb, fileId, fileBytes, mimeType);
+            */
+    
+            FileUploader res = this;
+            res.setFileId(fileId);
+            res.setFileName(originalFileName);
+            res.setSize(fileSize);
+            res.setMimeType(mimeType);
+            res.setFileType(fileType);
+            res.setDatabase(targetDb);
+            res.setUploadedAt(LocalDateTime.now());
+            return res;
+        } catch(IOException err) {
+            err.printStackTrace();
+            System.out.println(err);
+            return null;
+        }
+    }
+
+    /**
+     * Insert File Content
+     */
+    private void insertFileContent(
+        String dbType,
+        String fileId,
+        byte[] content,
+        String mimeType
+    ) {
+        String query = "";
+        switch(dbType) {
+            case "images":
+                query = "IMG";
+                break;
+            case "videos":
+                query = "VID";
+                break;
+            case "audios":
+                query = "AUD";
+                break;
+            case "documents":
+                query = "DOC";
+                break;
+            default:
+                query = "DOC";
+        }
+
+        jdbcTemplates.get(dbType).update(query, fileId, content);
+    }
+
+    /**
+     * Get File Type from Mime
+     */
+    public String getFileTypeFromMime(String type) {
+        if(type.startsWith("image/")) return "image";
+        if(type.startsWith("video/")) return "video";
+        if(type.startsWith("audio/")) return "audio";
+        if(type.startsWith("text/")) return "document";
+        if(
+            type.contains("pdf") ||
+            type.contains("document")
+        ) {
+            return "document";
+        }
+        if(
+            type.contains("zip") || 
+            type.contains("rar")
+        ) {
+            return "archive";
+        }
+        return "other";
+    }
+
+    /**
+     * Generate File Id
+     */
+    private String generateFileId() {
+        String rand = UUID.randomUUID().toString();
+        return rand;
+    }
 
     /* File Id */
     public void setFileId(String id) {
@@ -65,5 +199,4 @@ public class FileUploader {
     public LocalDateTime setUploadedAt() {
         return uploadedAt;
     }
-
 }
