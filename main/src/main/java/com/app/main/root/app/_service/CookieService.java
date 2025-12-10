@@ -151,14 +151,16 @@ public class CookieService {
 
         Cookie userCookie = createClientCookie(
             USER_INFO_KEY, 
-            Boolean.toString(remember), 
+            userRes, 
             rememberRes
         );
+        System.out.println("REMEMBER RES " + rememberRes);
+        System.out.println("REMEBER: " + remember);
         response.addCookie(userCookie);
 
         Cookie rememberCookie = createClientCookie(
             REMEMBER_USER, 
-            userRes, 
+            Boolean.toString(remember), 
             rememberRes
         );
         response.addCookie(rememberCookie);

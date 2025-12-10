@@ -506,68 +506,71 @@ public class SessionService {
     /*
     ** Set Session Cookie
     */
-private void setSessionCookie(
-    String sessionId, 
-    boolean rememberUser, 
-    HttpServletResponse response
-) {
-    if(response != null && cookieService != null) {
-        String domain = extractDomainFromUrl(webUrl);
+    private void setSessionCookie(
+        String sessionId, 
+        boolean rememberUser, 
+        HttpServletResponse response
+    ) {
+        if(response != null && cookieService != null) {
+            String domain = extractDomainFromUrl(webUrl);
 
-        /* Session Cookie */
-        String sessionCookieName = CookieService.SESSION_ID_KEY != null ? 
-            CookieService.SESSION_ID_KEY : "SESSION_ID";
-        
-        Cookie cookie = new Cookie(sessionCookieName, sessionId);
-        cookie.setHttpOnly(true);
-        cookie.setSecure(cookieSecure);
-        cookie.setPath("/");
-        cookie.setDomain(domain);
-        if(rememberUser) {
-            cookie.setMaxAge(rememberUserTimeoutDays * 24 * 60 * 60);
+            /* Session Cookie */
+            String sessionCookieName = CookieService.SESSION_ID_KEY != null ? 
+                CookieService.SESSION_ID_KEY : "SESSION_ID";
+            
+            Cookie cookie = new Cookie(sessionCookieName, sessionId);
+            cookie.setHttpOnly(true);
+            cookie.setSecure(cookieSecure);
+            cookie.setPath("/");
+            cookie.setDomain(domain);
+            if(rememberUser) {
+                cookie.setMaxAge(rememberUserTimeoutDays * 24 * 60 * 60);
+            } else {
+                cookie.setMaxAge(sessionTimeoutMinutes * 60);
+            }
+            if(!cookieDomain.equals(webUrl)) {
+                cookie.setDomain(cookieDomain);
+            }
+            String cookieHeader = String.format(
+                "%s=%s; Max-Age=%d; Path=%s; Domain=%s; HttpOnly; SameSite=Lax",
+                sessionCookieName, 
+                sessionId,
+                cookie.getMaxAge(), 
+                "/", 
+                domain
+            );
+            response.addHeader("Set-Cookie", cookieHeader);
+            response.addCookie(cookie);
+
+            /* Client Cookies */
+            Cookie statusCookie = new Cookie(CookieService.SESSION_STATUS_KEY, "active");
+            statusCookie.setHttpOnly(false);
+            statusCookie.setSecure(cookieSecure);
+            statusCookie.setPath("/");
+            statusCookie.setMaxAge(
+                rememberUser ? 
+                rememberUserTimeoutDays * 24 * 60 * 60 : 
+                sessionTimeoutMinutes * 60
+            );
+            if(!cookieDomain.equals(webUrl)) statusCookie.setDomain(cookieDomain);
+            response.addCookie(statusCookie);
+
+            /* Remember Cookies */
+            Cookie rememberCookie = new Cookie(CookieService.REMEMBER_USER, Boolean.toString(rememberUser));
+            rememberCookie.setHttpOnly(false);
+            rememberCookie.setSecure(cookieSecure);
+            rememberCookie.setPath("/");
+            rememberCookie.setMaxAge(
+                rememberUser ? 
+                rememberUserTimeoutDays * 24 * 60 * 60 : 
+                sessionTimeoutMinutes * 60
+            );
+            if(!cookieDomain.equals(webUrl)) rememberCookie.setDomain(cookieDomain);
+            response.addCookie(rememberCookie);
         } else {
-            cookie.setMaxAge(sessionTimeoutMinutes * 60);
+            System.err.println("ERR response or cookieService is null!");
         }
-        if(!cookieDomain.equals(webUrl)) {
-            cookie.setDomain(cookieDomain);
-        }
-        String cookieHeader = String.format(
-            "%s=%s; Max-Age=%d; Path=%s; Domain=%s; HttpOnly; SameSite=Lax",
-            sessionCookieName, 
-            sessionId,
-            cookie.getMaxAge(), 
-            "/", 
-            domain
-        );
-        response.addHeader("Set-Cookie", cookieHeader);
-        response.addCookie(cookie);
-
-        /* Client Cookies */
-        // SESSION_STATUS cookie
-        Cookie statusCookie = new Cookie(CookieService.SESSION_STATUS_KEY, "active");
-        statusCookie.setHttpOnly(false);
-        statusCookie.setSecure(cookieSecure);
-        statusCookie.setPath("/");
-        statusCookie.setMaxAge(rememberUser ? 
-            rememberUserTimeoutDays * 24 * 60 * 60 : 
-            sessionTimeoutMinutes * 60);
-        if(!cookieDomain.equals(webUrl)) statusCookie.setDomain(cookieDomain);
-        response.addCookie(statusCookie);
-
-        // REMEMBER_USER cookie
-        Cookie rememberCookie = new Cookie(CookieService.REMEMBER_USER, Boolean.toString(rememberUser));
-        rememberCookie.setHttpOnly(false);
-        rememberCookie.setSecure(cookieSecure);
-        rememberCookie.setPath("/");
-        rememberCookie.setMaxAge(rememberUser ? 
-            rememberUserTimeoutDays * 24 * 60 * 60 : 
-            sessionTimeoutMinutes * 60);
-        if(!cookieDomain.equals(webUrl)) rememberCookie.setDomain(cookieDomain);
-        response.addCookie(rememberCookie);
-    } else {
-        System.err.println("ERR response or cookieService is null!");
     }
-}
 
     private void clearSessionCookie(HttpServletResponse response) {
         if(response != null) {

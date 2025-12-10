@@ -41,17 +41,23 @@ export class SessionManager {
 
     public static async initSession(): Promise<UserSessionData | null> {
         try {
-            const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+            let sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+            if(!sessionId) {
+                const userInfo = this.getUserInfo();
+                if(userInfo && userInfo.sessionId) {
+                    sessionId = userInfo.sessionId;
+                    console.log('Got sessionId from USER_INFO:', sessionId);
+                }
+            }
             const userInfo = CookieService.getValue(this.USER_INFO_KEY);
             const rememberUser = CookieService.getValue(this.REMEMBER_USER) === 'true';
+
+            let data: UserSessionData | null = null;
             if(!sessionId) {
                 this.clearSession();
                 console.log('session cleared, no session!');
-                console.log(sessionId)
                 return null;
             }
-
-            let data: UserSessionData | null = null;
             if(userInfo) {
                 try {
                     const user = JSON.parse(userInfo);
