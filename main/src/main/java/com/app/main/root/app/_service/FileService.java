@@ -1,4 +1,5 @@
 package com.app.main.root.app._service;
+import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._db.DbManager;
 import org.springframework.stereotype.Service;
 import com.app.main.root.app._data.FileDownloader;
@@ -41,7 +42,7 @@ public class FileService {
     ) {
         List<Map<String, Object>> allFiles = new ArrayList<>();
         for(String dbName : jdbcTemplates.keySet()) {
-            String query = "";
+            String query = CommandQueryManager.GET_ALL_FILES.get();
             List<Map<String, Object>> files = jdbcTemplates
                 .get(dbName)
                 .queryForList(
@@ -66,7 +67,7 @@ public class FileService {
         long totalSize = 0;
 
         for(String dbName : jdbcTemplates.keySet()) {
-            String query = "";
+            String query = CommandQueryManager.GET_FILE_SIZE.get();
             Long dbSize = jdbcTemplates.get(dbName).queryForObject(
                 query, 
                 Long.class, 
@@ -89,7 +90,7 @@ public class FileService {
     public boolean deleteFile(String fileId, String userId) {
         boolean deleted = false;
         for(String dbName : jdbcTemplates.keySet()) {
-            String query = "";
+            String query = CommandQueryManager.DELETE_FILE.get();
             int rowsAffected = jdbcTemplates
                 .get(dbName)
                 .update(
@@ -108,7 +109,7 @@ public class FileService {
     private int countFiles(String userId) {
         int total = 0;
         for(String dbName : jdbcTemplates.keySet()) {
-            String query = "";
+            String query = CommandQueryManager.GET_TOTAL_FILES.get();
             Integer count = jdbcTemplates
                 .get(dbName)
                 .queryForObject(

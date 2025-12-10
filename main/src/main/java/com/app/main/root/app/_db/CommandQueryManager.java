@@ -57,7 +57,7 @@ public enum CommandQueryManager {
     /*
     * ~~~ FILES METADATA ~~~ 
     */
-    INSERT_FILE_METADATA(
+    UPLOAD_FILE(
         """
             INSERT INTO files_metadata(
                 file_id,
@@ -71,7 +71,7 @@ public enum CommandQueryManager {
             ) VALUES (?, ?, ?, ?, ?, ?, ?)
         """
     ),
-    GET_FILE_METADATA(
+    DOWNLOAD_FILE(
         """
             SELECT 
                 mime_type,
@@ -127,12 +127,18 @@ public enum CommandQueryManager {
     ADD_IMAGE(
         "INSERT INTO image_data(file_id, content) VALUES (?, ?)"
     ),
+    GET_IMAGE(
+        "SELECT content FROM image_data WHERE file_id = ?"
+    ),
 
     /*
     * ~~~ VIDEO DATA ~~~ 
     */
     ADD_VIDEO(
         "INSERT INTO video_data(file_id, content) VALUES (?, ?)"
+    ),
+    GET_VIDEO(
+        "SELECT content FROM video_data WHERE file_id = ?"
     ),
 
     /*
@@ -141,12 +147,18 @@ public enum CommandQueryManager {
     ADD_AUDIO(
         "INSERT INTO audio_data(file_id, content) VALUES (?, ?)"
     ),
+    GET_AUDIO(
+        "SELECT content FROM audio_data WHERE file_id = ?"
+    ),
 
     /*
     * ~~~ DOCUMENT DATA ~~~ 
     */
     ADD_DOCUMENT(
         "INSERT INTO document_data(file_id, content) VALUES (?, ?)"
+    ),
+    GET_DOCUMENT(
+        "SELECT content FROM document_data WHERE file_id = ?"
     );
 
     /* Main */

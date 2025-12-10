@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
 
 public class FileUploader {
@@ -42,7 +44,7 @@ public class FileUploader {
             String fileType = getFileTypeFromMime(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
     
-            String query = "";
+            String query = CommandQueryManager.UPLOAD_FILE.get();
             JdbcTemplate jdbcTemplate = new JdbcTemplate();
             jdbcTemplate.update(
                 query,
@@ -95,19 +97,19 @@ public class FileUploader {
         String query = "";
         switch(dbType) {
             case "images":
-                query = "IMG";
+                query = CommandQueryManager.ADD_IMAGE.get();
                 break;
             case "videos":
-                query = "VID";
+                query = CommandQueryManager.ADD_VIDEO.get();
                 break;
             case "audios":
-                query = "AUD";
+                query = CommandQueryManager.ADD_AUDIO.get();
                 break;
             case "documents":
-                query = "DOC";
+                query = CommandQueryManager.ADD_DOCUMENT.get();
                 break;
             default:
-                query = "DOC";
+                query = CommandQueryManager.ADD_DOCUMENT.get();
         }
 
         jdbcTemplates.get(dbType).update(query, fileId, content);

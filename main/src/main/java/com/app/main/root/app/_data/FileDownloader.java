@@ -1,5 +1,7 @@
 package com.app.main.root.app._data;
 import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
 import java.util.Map;
 import java.util.*;
@@ -26,7 +28,7 @@ public class FileDownloader {
      * Download File
      */
     public byte[] download(String fileId, String userId) {
-        String query = "";
+        String query = CommandQueryManager.DOWNLOAD_FILE.get();
 
         for(String dbName : jdbcTemplates.keySet()) {
             List<Map<String, Object>> res = jdbcTemplates
@@ -64,16 +66,16 @@ public class FileDownloader {
      */
     public String getContent(String dbType) {
         switch(dbType) {
-            case "images":
-                return "IMG";
-            case "videos":
-                return "VID";
-            case "audios":
-                return "AUD";
-            case "documents":
-                return "DOC";
+            case "image_data":
+                return CommandQueryManager.GET_IMAGE.get();
+            case "video_data":
+                return CommandQueryManager.GET_VIDEO.get();
+            case "audio_data":
+                return CommandQueryManager.GET_AUDIO.get();
+            case "document_data":
+                return CommandQueryManager.GET_DOCUMENT.get();
             default:
-                return "";
+                return CommandQueryManager.GET_DOCUMENT.get();
         }
     }
 }
