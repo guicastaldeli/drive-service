@@ -52,6 +52,101 @@ public enum CommandQueryManager {
     ),
     GET_USER_PROFILE(
         "SELECT * FROM user_profiles where user_id = ?"
+    ),
+
+    /*
+    * ~~~ FILES METADATA ~~~ 
+    */
+    INSERT_FILE_METADATA(
+        """
+            INSERT INTO files_metadata(
+                file_id,
+                user_id,
+                original_filename,
+                file_size,
+                mime_type,
+                file_type,
+                database_name,
+                parent_folder_id
+            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        """
+    ),
+    GET_FILE_METADATA(
+        """
+            SELECT 
+                mime_type,
+                file_type,
+                database_name
+            FROM
+                files_metadata
+            WHERE
+                file_id = ? AND
+                user_id = ? AND
+                is_deleted = FALSE             
+        """
+    ),
+    GET_ALL_FILES(
+        """
+            SELECT
+                file_id, 
+                original_filename, 
+                file_size, 
+                mime_type,
+                file_type,
+                parent_folder_id,
+                uploaded_at,
+                last_modified
+            FROM
+                files_metadata
+            WEHRE
+                user_id = ? AND
+                parent_folder_id = ? AND
+                is_deleted = FALSE
+            ORDER BY
+                last_modified DESC
+            LIMIT ? OFFSET ?     
+        """
+    ),
+    GET_FILE_SIZE(
+        "SELECT SUM(file_size) as total FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE"
+    ),
+    GET_TOTAL_FILES(
+        "SELECT COUNT(*) FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE"
+    ),
+    DELETE_FILE(
+        """
+           UPDATE files_metadata
+           SET is_deleted = TRUE, deleted_at = CURRENT_TIMESTAMP
+           WHERE file_id = ? AND user_id = ?
+        """
+    ),
+
+    /*
+    * ~~~ IMAGE DATA ~~~ 
+    */
+    ADD_IMAGE(
+        "INSERT INTO image_data(file_id, content) VALUES (?, ?)"
+    ),
+
+    /*
+    * ~~~ VIDEO DATA ~~~ 
+    */
+    ADD_VIDEO(
+        "INSERT INTO video_data(file_id, content) VALUES (?, ?)"
+    ),
+
+    /*
+    * ~~~ AUDIO DATA ~~~ 
+    */
+    ADD_AUDIO(
+        "INSERT INTO audio_data(file_id, content) VALUES (?, ?)"
+    ),
+
+    /*
+    * ~~~ DOCUMENT DATA ~~~ 
+    */
+    ADD_DOCUMENT(
+        "INSERT INTO document_data(file_id, content) VALUES (?, ?)"
     );
 
     /* Main */
