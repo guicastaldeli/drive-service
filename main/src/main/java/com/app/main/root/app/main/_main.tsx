@@ -34,68 +34,37 @@ export class Main extends Component<any, State> {
         this.cacheService = CacheServiceClient.getInstance();
         this.cachePreloader = new CachePreloaderService(this.apiClient, this.cacheService);
         this.cacheService.setApiClient(this.apiClient);
+
+        const rememberUserCookie = 
+            typeof window !== 'undefined' ?
+            CookieService.getValue(SessionManager.REMEMBER_USER) === 'true' :
+            false;
+            
         this.state = {
             currentSession: 'LOGIN',
             userId: null,
             username: null,
             isLoading: true,
-            rememberUser: false
+            rememberUser: rememberUserCookie
         }
     }
 
     async componentDidMount(): Promise<void> {
         try {
             await this.connect();
-            const autoLoginSuccess = await this.tryAutoLogin();
+            const rememberUser = CookieService.getValue(SessionManager.REMEMBER_USER) === 'true';
+            console.log('Remember user from cookie:', rememberUser);
             
-            if (autoLoginSuccess) {
-                console.log('Auto-login successful');
-                return;
-            }
-            
-            this.setState({ isLoading: false });
+            this.setState({ 
+                isLoading: false,
+                rememberUser: rememberUser
+            });
         } catch(err) {
             console.error('Error in componentDidMount:', err);
             this.setState({ isLoading: false });
         }
 
         this.loadData();
-    }
-
-    private async tryAutoLogin(): Promise<boolean> {
-        try {            
-            const sessionId = SessionManager.getSessionId();
-            const userInfo = SessionManager.getUserInfo();
-            
-            console.log('Session ID from cookies:', sessionId);
-            console.log('User info from cookies:', userInfo);
-            
-            if (!sessionId || !userInfo || !userInfo.userId) {
-                console.log('No valid session data found');
-                return false;
-            }
-            
-            console.log('Validating session with server...');
-            const sessionConfig = await this.apiClient.getSessionConfig(); 
-            await sessionConfig.initSession();
-            
-            console.log('Session validated successfully');
-            
-            await this.cacheService.initCache(userInfo.userId);
-            await this.cachePreloader.startPreloading(userInfo.userId);
-            this.setState({
-                currentSession: 'MAIN_DASHBOARD',
-                userId: userInfo.userId,
-                username: userInfo.username,
-                isLoading: false
-            });
-            
-            return true;
-        } catch(err) {
-            console.error('Auto-login failed:', err);
-            SessionManager.clearSession();
-            return false;
-        }
     }
         
     /**
@@ -250,13 +219,15 @@ export class Main extends Component<any, State> {
                         email: email,
                         username: username!,
                         password: password,
-                        sessionId: socketId
+                        sessionId: socketId,
+                        rememberUser: true
                     });
                 } else {
                     result = await authService.loginUser({
                         email: email,
                         password: password,
-                        sessionId: socketId
+                        sessionId: socketId,
+                        rememberUser: true
                     });
                 }
 
@@ -271,7 +242,7 @@ export class Main extends Component<any, State> {
                             email: authData.email
                         },
                         authData.sessionId,
-                        false
+                        true
                     );
                     
                     console.log('New session saved with ID:', authData.sessionId);
@@ -322,6 +293,9 @@ export class Main extends Component<any, State> {
                         {(sessionContext) => {
                             if(!sessionContext) {
                                 return <div>Loading...</div>
+                            }
+                            if(sessionContext.isLoading) {
+                                return <div>Loading session...</div>
                             }
                             
                             return (

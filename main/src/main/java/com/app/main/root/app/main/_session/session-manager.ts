@@ -49,7 +49,7 @@ export class SessionManager {
                     console.log('Got sessionId from USER_INFO:', sessionId);
                 }
             }
-            const userInfo = CookieService.getValue(this.USER_INFO_KEY);
+            const userInfo = this.getUserInfo();
             const rememberUser = CookieService.getValue(this.REMEMBER_USER) === 'true';
 
             let data: UserSessionData | null = null;
@@ -60,12 +60,11 @@ export class SessionManager {
             }
             if(userInfo) {
                 try {
-                    const user = JSON.parse(userInfo);
                     const dates = this.setDate(rememberUser);
                     data = {
-                        userId: user.userId,
-                        username: user.username,
-                        email: user.email || '',
+                        userId: userInfo.userId,
+                        username: userInfo.username,
+                        email: userInfo.email || '',
                         sessionId: sessionId,
                         currentSession: 'MAIN_DASHBOARD',
                         rememberUser: rememberUser,
@@ -203,7 +202,13 @@ export class SessionManager {
         const sessionData = this.getCurrentSession();
         if(!sessionData) return false;
 
-        const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+        let sessionId = CookieService.getValue(this.SESSION_ID_KEY);
+        if (!sessionId) {
+            const userInfo = this.getUserInfo();
+            if (userInfo && userInfo.sessionId) {
+                sessionId = userInfo.sessionId;
+            }
+        }
         if(!sessionId || sessionId !== sessionData.sessionId) return false;
 
         if(Date.now() > sessionData.expiresAt) {
