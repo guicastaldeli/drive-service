@@ -506,9 +506,6 @@ public class SessionService {
     /*
     ** Set Session Cookie
     */
-    /*
-** Set Session Cookie
-*/
 private void setSessionCookie(
     String sessionId, 
     boolean rememberUser, 
@@ -517,12 +514,10 @@ private void setSessionCookie(
     if(response != null && cookieService != null) {
         String domain = extractDomainFromUrl(webUrl);
 
-        /* Cookie */
+        /* Session Cookie */
         String sessionCookieName = CookieService.SESSION_ID_KEY != null ? 
             CookieService.SESSION_ID_KEY : "SESSION_ID";
-        String statusCookieName = CookieService.SESSION_STATUS_KEY != null ?
-            CookieService.SESSION_STATUS_KEY : "SESSION_STATUS";
-
+        
         Cookie cookie = new Cookie(sessionCookieName, sessionId);
         cookie.setHttpOnly(true);
         cookie.setSecure(cookieSecure);
@@ -547,15 +542,28 @@ private void setSessionCookie(
         response.addHeader("Set-Cookie", cookieHeader);
         response.addCookie(cookie);
 
-        /* Client Cookie */
-        Cookie clientCookie = new Cookie(statusCookieName, "active");
-        clientCookie.setHttpOnly(false);
-        clientCookie.setSecure(cookieSecure);
-        clientCookie.setPath("/");
-        clientCookie.setMaxAge(sessionTimeoutMinutes * 60);
-        if(!cookieDomain.equals(webUrl)) clientCookie.setDomain(cookieDomain);
+        /* Client Cookies */
+        // SESSION_STATUS cookie
+        Cookie statusCookie = new Cookie(CookieService.SESSION_STATUS_KEY, "active");
+        statusCookie.setHttpOnly(false);
+        statusCookie.setSecure(cookieSecure);
+        statusCookie.setPath("/");
+        statusCookie.setMaxAge(rememberUser ? 
+            rememberUserTimeoutDays * 24 * 60 * 60 : 
+            sessionTimeoutMinutes * 60);
+        if(!cookieDomain.equals(webUrl)) statusCookie.setDomain(cookieDomain);
+        response.addCookie(statusCookie);
 
-        response.addCookie(clientCookie);
+        // REMEMBER_USER cookie
+        Cookie rememberCookie = new Cookie(CookieService.REMEMBER_USER, Boolean.toString(rememberUser));
+        rememberCookie.setHttpOnly(false);
+        rememberCookie.setSecure(cookieSecure);
+        rememberCookie.setPath("/");
+        rememberCookie.setMaxAge(rememberUser ? 
+            rememberUserTimeoutDays * 24 * 60 * 60 : 
+            sessionTimeoutMinutes * 60);
+        if(!cookieDomain.equals(webUrl)) rememberCookie.setDomain(cookieDomain);
+        response.addCookie(rememberCookie);
     } else {
         System.err.println("ERR response or cookieService is null!");
     }

@@ -44,7 +44,6 @@ export class SessionManager {
             const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
             const userInfo = CookieService.getValue(this.USER_INFO_KEY);
             const rememberUser = CookieService.getValue(this.REMEMBER_USER) === 'true';
-            console.log('uijsiuojfd', rememberUser)
             if(!sessionId) {
                 this.clearSession();
                 console.log('session cleared, no session!');

@@ -151,7 +151,7 @@ public class CookieService {
 
         Cookie userCookie = createClientCookie(
             USER_INFO_KEY, 
-            userRes, 
+            Boolean.toString(remember), 
             rememberRes
         );
         response.addCookie(userCookie);
