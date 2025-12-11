@@ -308,6 +308,10 @@ public class SessionService {
         return sessions;
     }
 
+    public SessionData getSessionBySessionId(String sessionId) {
+        return userSessions.get(sessionId);
+    }
+
     public int getActiveSessionCount(String userId) {
         int count = 0;
         Set<String> sessionIds = userIdToTokensMap.get(userId);

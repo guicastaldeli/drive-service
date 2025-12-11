@@ -285,6 +285,11 @@ public class AuthController {
                     );
             }
 
+            String clientIp = connectionTracker.getClientIpAddress(request);
+            String userAgent = request.getHeader("User-Agent");
+            connectionTracker.trackConnection(sessionId, clientIp, userAgent);
+            connectionTracker.updateUsername(sessionId, sessionData.getUsername());
+
             serviceManager.getSessionService().refreshSession(
                 sessionId, 
                 sessionData.isRememberUser(), 

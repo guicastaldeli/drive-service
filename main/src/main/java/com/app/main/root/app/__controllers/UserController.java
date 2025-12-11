@@ -6,6 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.app.main.root.app._service.ServiceManager;
+import com.app.main.root.app._service.SessionService;
 import com.app.main.root.app._types._User;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -32,7 +33,10 @@ public class UserController {
                     map.put("id", user.getId());
                     map.put("username", user.getUsername());
                     map.put("email", user.getEmail());
-                    map.put("isOnline", serviceManager.getUserService().getSessionByUserId(user.getId()) != null);
+                    List<SessionService.SessionData> userSessions = 
+                        serviceManager.getSessionService().getSessionsByUserId(user.getId());
+                    map.put("isOnline", userSessions != null && !userSessions.isEmpty() && 
+                        userSessions.stream().anyMatch(s -> !s.isExpired()));
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -51,13 +55,21 @@ public class UserController {
         try {
             List<_User> allUsers = serviceManager.getUserService().getAllUsers();
             List<Map<String, Object>> onlineUsers = allUsers.stream()
-                .filter(user -> serviceManager.getUserService().getSessionByUserId(user.getId()) != null)
+                .filter(user -> {
+                    List<SessionService.SessionData> userSessions =
+                        serviceManager.getSessionService().getSessionsByUserId(user.getId());
+                    return userSessions.stream()
+                        .anyMatch(s -> !s.isExpired());
+                })
                 .map(user -> {
                     Map<String, Object> map = new HashMap<>();
                     map.put("id", user.getId());
                     map.put("username", user.getUsername());
                     map.put("email", user.getEmail());
-                    map.put("isOnline", serviceManager.getUserService().getSessionByUserId(user.getId()) != null);
+                    List<SessionService.SessionData> userSessions = 
+                        serviceManager.getSessionService().getSessionsByUserId(user.getId());
+                    map.put("isOnline", userSessions != null && !userSessions.isEmpty() && 
+                        userSessions.stream().anyMatch(s -> !s.isExpired()));
                     return map;
                 })
                 .collect(Collectors.toList());
@@ -76,13 +88,16 @@ public class UserController {
         try {
             _User user = serviceManager.getUserService().getUserByEmail(email);
             if(user != null) {
+                List<SessionService.SessionData> userSessions = 
+                    serviceManager.getSessionService().getSessionsByUserId(user.getId());
                 return ResponseEntity.ok(Map.of(
                     "exists", true,
                     "user", Map.of(
                         "id", user.getId(),
                         "username", user.getUsername(),
                         "email", user.getEmail(),
-                        "isOnline", serviceManager.getUserService().getSessionByUserId(user.getId()) != null
+                        "isOnline", userSessions != null && !userSessions.isEmpty() && 
+                            userSessions.stream().anyMatch(s -> !s.isExpired())
                     )
                 ));
             } else {
@@ -102,13 +117,16 @@ public class UserController {
         try {
             _User user = serviceManager.getUserService().getUserByUsername(username);
             if(user != null) {
+                List<SessionService.SessionData> userSessions = 
+                    serviceManager.getSessionService().getSessionsByUserId(user.getId());
                 return ResponseEntity.ok(Map.of(
                     "exists", true,
                     "user", Map.of(
                         "id", user.getId(),
                         "username", user.getUsername(),
                         "email", user.getEmail(),
-                        "isOnline", serviceManager.getUserService().getSessionByUserId(user.getId()) != null
+                        "isOnline", userSessions != null && !userSessions.isEmpty() && 
+                            userSessions.stream().anyMatch(s -> !s.isExpired())
                     )
                 ));
             } else {
