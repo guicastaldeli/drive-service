@@ -45,4 +45,79 @@ export class FileServiceClient {
             throw err;
         }
     }
+
+    /**
+     * List Files
+     */
+    public async listFiles(
+        userId: string,
+        parentFolderId: string,
+        page: number,
+        pageSize: number,
+    ): Promise<any> {
+        try {
+            const params = new URLSearchParams({
+                userId,
+                parentFolderId,
+                page: page.toString(),
+                pageSize: pageSize.toString()
+            });
+
+            const res = await fetch(`${this.url}/files/list?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if(!res.ok) {
+                throw new Error(`Failed to list files: ${res.statusText}`);
+            }
+            return await res.json();
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    /**
+     * Get Storage Usage
+     */
+    public async getStorageUsage(userId: string): Promise<any> {
+        try {
+            const res = await fetch(`${this.url}/api/files/storage/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if(!res.ok) {
+                throw new Error(`Failed to get storage usage: ${res.statusText}`);
+            }
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    /**
+     * Delete File
+     */
+    public async deleteFile(fileId: string, userId: string): Promise<any> {
+        try {
+            const res = await fetch(`${this.url}/api/files/delete/${fileId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application-json',
+                    'userId': userId
+                }
+            });
+            if(!res.ok) {
+                throw new Error(`Failed to delete file: ${res.statusText}`);
+            }
+            return await res.json();
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+    }
 }

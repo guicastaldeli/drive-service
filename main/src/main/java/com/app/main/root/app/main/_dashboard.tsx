@@ -102,6 +102,9 @@ export class Dashboard extends Component<Props, State> {
                                             }}
                                         />
                                     </div>
+                                    <div id="file-list">
+                                        file list
+                                    </div>
                                 </div>
                             )}
                         </>
