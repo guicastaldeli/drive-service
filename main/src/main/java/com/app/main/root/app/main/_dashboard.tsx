@@ -4,6 +4,7 @@ import { SessionContext, SessionType } from "./_session/session-provider";
 import { ApiClientController } from "./_api-client/api-client-controller";
 import { SessionManager } from "./_session/session-manager";
 import { Main } from "./_main";
+import { FileUploader } from "./_file/file-uploader";
 
 interface Props {
     main: Main;
@@ -91,10 +92,15 @@ export class Dashboard extends Component<Props, State> {
                                 <div className="screen main-dashboard">
                                     <div className="upper-bar">
                                         <button id="logout-actn" onClick={() => this.main.handleLogout(sessionContext)}>Logout</button>
-                                        <div id="container-upload-file">
-                                            <label htmlFor="upload-file">Upload</label>
-                                            <input type="file" id="upload-file" />
-                                        </div>
+                                        <FileUploader
+                                            apiClientController={this.apiClientController}
+                                            onUploadSuccess={(res) => {
+                                                console.log('Upload success!', res);
+                                            }}
+                                            onUploadError={(err) => {
+                                                console.error('Upload failed', err);
+                                            }}
+                                        />
                                     </div>
                                 </div>
                             )}

@@ -19,6 +19,11 @@ public class FileController {
         this.secureMessageService = secureMessageService;
     }
 
+    @GetMapping("/test")
+    public String test() {
+        return "TEST";
+    }
+
     /**
      * Upload
      */
@@ -58,7 +63,7 @@ public class FileController {
      * Download
      */
     @GetMapping("/download/{fileId}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @PathVariable String userId) {
+    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @RequestParam String userId) {
         try {
             byte[] fileContent = fileService.getFileDownloader().download(fileId, userId);
             return ResponseEntity.ok()
@@ -73,6 +78,7 @@ public class FileController {
     /**
      * Delete File
      */
+    @DeleteMapping("/delete")
     public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
         try {
             boolean deleted = fileService.deleteFile(fileId, userId);

@@ -10,7 +10,7 @@ import asyncio
 class FileRoutes:
     def __init__(self, fileService: FileService):
         self.fileService = fileService
-        self.router = APIRouter(prefix="/api/file")
+        self.router = APIRouter(prefix="/api/files")
         self.setupRoutes()
         
     def setupRoutes(self):

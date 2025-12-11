@@ -14,8 +14,6 @@ class FileService:
     def __init__(self, url: str):
         self.url = url
         self.baseUrl = url.rstrip('/')
-        self.uploadDir = Path("uploads")
-        self.updloadDir.mkdir(exist_ok=True)
         
     ## Save File Temp
     async def saveFileTemp(self, file: UploadFile) -> str:
@@ -23,7 +21,7 @@ class FileService:
             fileId = str(uuid.uuid4())
             fileExt = os.path.splitext(file.filename)[1] if '.' in file.filename else ''
             tempFileName = f"{fileId}{fileExt}"
-            tempPath = self.uploadDir / tempFileName
+            tempPath = tempFileName
             
             async with aiofiles.open(tempPath, 'wb') as outFile:
                 content = await file.read()
@@ -55,7 +53,7 @@ class FileService:
                 }
                 
                 res = await client.post(
-                    f"{self.baseUrl}/api/file/upload",
+                    f"{self.baseUrl}/api/files/upload",
                     files=files,
                     data=data
                 )
@@ -94,7 +92,7 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/file/download",
+                    f"{self.baseUrl}/api/files/download",
                     params=params
                 )
                 if(res.status_code == 200):
@@ -135,7 +133,7 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/file/list",
+                    f"{self.baseUrl}/api/files/list",
                     params=params
                 )
                 if(res.status_code == 200):
@@ -158,7 +156,7 @@ class FileService:
                 }
                 
                 res = await client.delete(
-                    f"{self.baseUrl}/api/file/delete",
+                    f"{self.baseUrl}/api/files/delete",
                     json=data
                 )
                 if(res.status_code == 200):
@@ -176,7 +174,7 @@ class FileService:
         try:
             async with httpx.AsyncClient() as client:
                 res = await client.get(
-                    f"{self.baseUrl}/api/file/storage/{userId}"
+                    f"{self.baseUrl}/api/files/storage/{userId}"
                 )
                 if(res.status_code == 200):
                     return res.json()
@@ -212,7 +210,7 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/file/search",
+                    f"{self.baseUrl}/api/files/search",
                     params=params
                 )
                 if(res.status_code == 200):

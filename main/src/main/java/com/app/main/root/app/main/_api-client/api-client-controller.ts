@@ -4,6 +4,7 @@ import { AuthServiceClient } from "./auth-service-client";
 import { UserServiceClient } from "./user-service-client";
 import { SocketClientConnect } from "../socket-client-connect";
 import { SessionConfig } from "../_session/session-config";
+import { FileServiceClient } from "../_file/file-service-client";
 
 export class ApiClientController {
     private url: string | undefined;
@@ -14,6 +15,7 @@ export class ApiClientController {
     private sessionSerive: SessionServiceClient;
     private authService: AuthServiceClient;
     private userService: UserServiceClient;
+    private fileService: FileServiceClient;
 
     constructor(socketClient: SocketClientConnect) {
         this.getUrl();
@@ -23,6 +25,7 @@ export class ApiClientController {
         this.userService = new UserServiceClient(this.url);
         this.sessionConfig = new SessionConfig(this);
         this.sessionConfig.setupSessionRefresh();
+        this.fileService = new FileServiceClient(this.url);
     }
 
     private getUrl(): string {
@@ -64,5 +67,12 @@ export class ApiClientController {
      */
     public async getUserService(): Promise<UserServiceClient> {
         return this.userService;
+    }
+
+    /**
+     * File Service
+     */
+    public async getFileService(): Promise<FileServiceClient> {
+        return this.fileService;
     }
 } 
