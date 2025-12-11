@@ -1,4 +1,5 @@
 package com.app.main.root.app.__controllers;
+import com.app.main.root.app._crypto.message_encoder.SecureMessageService;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._service.FileService;
 import org.springframework.web.bind.annotation.*;
@@ -10,10 +11,13 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
+
+    private final SecureMessageService secureMessageService;
     private final FileService fileService;
 
-    public FileController(@Lazy FileService fileService) {
+    public FileController(@Lazy FileService fileService, SecureMessageService secureMessageService) {
         this.fileService = fileService;
+        this.secureMessageService = secureMessageService;
     }
 
     /**
@@ -68,8 +72,27 @@ public class FileController {
     }
 
     /**
+     * Delete File
+     */
+    public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
+        try {
+            boolean deleted = fileService.deleteFile(fileId, userId);
+            return ResponseEntity.ok(Map.of(
+                "success", deleted,
+                "message", deleted ? "file deleted!" : "file not found"
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
      * Info
      */
+    @GetMapping("/info")
     public ResponseEntity<?> getFileInfo(@PathVariable String fileId, @PathVariable String userId) {
         try {
             String database = fileService.findFileDatabase(fileId, userId);
@@ -84,6 +107,70 @@ public class FileController {
             }
         } catch(Exception err) {
             return ResponseEntity.status(500).body(Map.of(
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Storage Usage
+     */
+    public ResponseEntity<?> getStorageUsage(@PathVariable String userId) {
+        try {
+            Map<String, Object> usage = fileService.getStorageUsage(userId);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", usage
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Search Files
+     */
+    @GetMapping("/search")
+    public ResponseEntity<?> searchFiles(
+        @RequestParam String userId,
+        @RequestParam String query,
+        @RequestParam(required = false) String fileType,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        try {
+            /*
+                REMINDER:::
+                FULL IMPLEMENTATION LATER... (if needed),
+                FOR NOW LET IT LIKE THIS!!
+                - for future me
+
+            List<Map<String, Object>> res = fileService.searchFiles(
+                userId,
+                query,
+                fileType,
+                page,
+                pageSize
+            );
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "results", res,
+                "query", query,
+                "count", res.size()
+            ));
+            */
+           return ResponseEntity.ok(Map.of(
+                "success", true,
+                "results", "",
+                "query", query,
+                "count", 0
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
                 "error", err.getMessage()
             ));
         }
