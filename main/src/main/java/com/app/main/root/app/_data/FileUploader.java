@@ -44,11 +44,18 @@ public class FileUploader {
             
             String fileType = getFileType(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
+
+            JdbcTemplate metadataTemplate = jdbcTemplates.get("files_metadata");
+                if (metadataTemplate == null) {
+                System.err.println("ERROR: No files_metadata database configured");
+                throw new SQLException("No files_metadata database configured");
+            }
             JdbcTemplate jdbcTemplate = jdbcTemplates.get(targetDb);
             if (jdbcTemplate == null) {
+                System.err.println("ERROR: No database configured for type: " + targetDb);
                 throw new SQLException("No database configured for type: " + targetDb);
             }
-            jdbcTemplate.update(
+            metadataTemplate.update(
                 query,
                 fileId,
                 userId,

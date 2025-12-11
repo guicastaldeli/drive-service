@@ -98,7 +98,7 @@ public enum CommandQueryManager {
                 last_modified
             FROM
                 files_metadata
-            WEHRE
+            WHERE
                 user_id = ? AND
                 parent_folder_id = ? AND
                 is_deleted = FALSE

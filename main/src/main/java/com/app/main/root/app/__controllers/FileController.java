@@ -39,6 +39,7 @@ public class FileController {
                 file, 
                 parentFolderId
             );
+            System.out.println(res);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
