@@ -1,0 +1,91 @@
+package com.app.main.root.app.__controllers;
+import com.app.main.root.app._data.FileUploader;
+import com.app.main.root.app._service.FileService;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.http.ResponseEntity;
+import java.util.*;
+
+@RestController
+@RequestMapping("/api/files")
+public class FileController {
+    private final FileService fileService;
+
+    public FileController(@Lazy FileService fileService) {
+        this.fileService = fileService;
+    }
+
+    /**
+     * Upload
+     */
+    @PostMapping("/upload")
+    public ResponseEntity<?> uploadFile(
+        @RequestParam("file") MultipartFile file,
+        @RequestParam("userId") String userId,
+        @RequestParam(value = "parentFolderId", defaultValue = "root") String parentFolderId
+    ) {
+        try {
+            FileUploader res = fileService.getFileUploader().upload(
+                userId, 
+                file, 
+                parentFolderId
+            );
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "fileId", res.getFileId(),
+                "filename", res.getFileName(),
+                "size", res.getSize(),
+                "mimeType", res.getMimeType(),
+                "fileType", res.getFileType(),
+                "database", res.getDatabase(),
+                "uploadedAt", res.getUploadedAt(),
+                "message", "File uploaded to " + res.getDatabase() 
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Download
+     */
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @PathVariable String userId) {
+        try {
+            byte[] fileContent = fileService.getFileDownloader().download(fileId, userId);
+            return ResponseEntity.ok()
+                .header("Content-Type", "application/octet-stream")
+                .header("Content-Disposition", "attachment; filename=\"" + fileId + "\"")
+                .body(fileContent);
+        } catch(Exception err) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Info
+     */
+    public ResponseEntity<?> getFileInfo(@PathVariable String fileId, @PathVariable String userId) {
+        try {
+            String database = fileService.findFileDatabase(fileId, userId);
+            if(database != null) {
+                return ResponseEntity.ok(Map.of(
+                    "fileId", fileId,
+                    "database", database,
+                    "location", "Stored in " + database
+                ));
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "error", err.getMessage()
+            ));
+        }
+    }
+}

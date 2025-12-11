@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
-
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
 
@@ -36,15 +35,15 @@ public class FileUploader {
         String parentFolderId
     ) throws SQLException {
         try {
+            String query = CommandQueryManager.UPLOAD_FILE.get();
+
             String fileId = generateFileId();
             String originalFileName = file.getOriginalFilename();
             String mimeType = file.getContentType();
             long fileSize = file.getSize();
             
-            String fileType = getFileTypeFromMime(mimeType);
+            String fileType = getFileType(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
-    
-            String query = CommandQueryManager.UPLOAD_FILE.get();
             JdbcTemplate jdbcTemplate = new JdbcTemplate();
             jdbcTemplate.update(
                 query,
@@ -116,9 +115,9 @@ public class FileUploader {
     }
 
     /**
-     * Get File Type from Mime
+     * Get File Type
      */
-    public String getFileTypeFromMime(String type) {
+    public String getFileType(String type) {
         if(type.startsWith("image/")) return "image";
         if(type.startsWith("video/")) return "video";
         if(type.startsWith("audio/")) return "audio";
@@ -198,7 +197,7 @@ public class FileUploader {
     public void setUploadedAt(LocalDateTime date) {
         this.uploadedAt = date;
     }
-    public LocalDateTime setUploadedAt() {
+    public LocalDateTime getUploadedAt() {
         return uploadedAt;
     }
 }
