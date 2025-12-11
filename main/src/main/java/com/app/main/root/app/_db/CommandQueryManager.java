@@ -120,6 +120,9 @@ public enum CommandQueryManager {
            WHERE file_id = ? AND user_id = ?
         """
     ),
+    GET_FILE_DATABASE(
+        "SELECT 1 FROM files_metadata WHERE file_id = ? AND user_id = ?"
+    ),
 
     /*
     * ~~~ IMAGE DATA ~~~ 

@@ -138,4 +138,24 @@ public class FileService {
     public FileDownloader getFileDownloader() {
         return fileDownloader;
     }
+
+    /**
+     * Find File Database
+     */
+    public String findFileDatabase(String fileId, String userId) {
+        for(String dbName : jdbcTemplates.keySet()) {
+            String query = CommandQueryManager.GET_FILE_DATABASE.get();
+            List<Map<String, Object>> res = jdbcTemplates
+                .get(dbName)
+                .queryForList(
+                    query, 
+                    fileId, 
+                    userId
+                );
+            if(res.size() < 0) {
+                return dbName;
+            }
+        }
+        return null;
+    }
 }
