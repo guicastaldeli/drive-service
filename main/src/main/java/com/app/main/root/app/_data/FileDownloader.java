@@ -66,13 +66,13 @@ public class FileDownloader {
      */
     public String getContent(String dbType) {
         switch(dbType) {
-            case "image_data":
+            case FileService.IMAGE_DB:
                 return CommandQueryManager.GET_IMAGE.get();
-            case "video_data":
+            case FileService.VIDEO_DB:
                 return CommandQueryManager.GET_VIDEO.get();
-            case "audio_data":
+            case FileService.AUDIO_DB:
                 return CommandQueryManager.GET_AUDIO.get();
-            case "document_data":
+            case FileService.DOCUMENT_DB:
                 return CommandQueryManager.GET_DOCUMENT.get();
             default:
                 return CommandQueryManager.GET_DOCUMENT.get();

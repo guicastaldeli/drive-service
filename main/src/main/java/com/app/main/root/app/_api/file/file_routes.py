@@ -101,14 +101,14 @@ class FileRoutes:
             
         ## File List
         @self.router.get("/list")
-        async def fileList(
+        async def listFiles(
             userId: str = Query(...),
             parentFolderId: str = Query("root"),
             page: int = Query(1, ge=1),
             pageSize: int = Query(20, ge=1, le=100)
         ):
             try:
-                files = await self.fileService.fileList(
+                files = await self.fileService.listFiles(
                     userId=userId,
                     parentFolderId=parentFolderId,
                     page=page,

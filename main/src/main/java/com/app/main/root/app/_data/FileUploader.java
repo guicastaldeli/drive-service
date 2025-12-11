@@ -104,18 +104,18 @@ public class FileUploader {
         byte[] content,
         String mimeType
     ) {
-        String query = "";
+        String query;
         switch(dbType) {
-            case "image_data":
+            case FileService.IMAGE_DB:
                 query = CommandQueryManager.ADD_IMAGE.get();
                 break;
-            case "video_data":
+            case FileService.VIDEO_DB:
                 query = CommandQueryManager.ADD_VIDEO.get();
                 break;
-            case "audio_data":
+            case FileService.AUDIO_DB:
                 query = CommandQueryManager.ADD_AUDIO.get();
                 break;
-            case "document_data":
+            case FileService.DOCUMENT_DB:
                 query = CommandQueryManager.ADD_DOCUMENT.get();
                 break;
             default:

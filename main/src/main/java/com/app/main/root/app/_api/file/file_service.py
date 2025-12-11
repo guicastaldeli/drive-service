@@ -116,7 +116,7 @@ class FileService:
             raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
         
     ## List Files
-    async def fileList(
+    async def listFiles(
         self,
         userId: str,
         parentFolderId: str = "root",

@@ -123,6 +123,16 @@ public enum CommandQueryManager {
     GET_FILE_DATABASE(
         "SELECT 1 FROM files_metadata WHERE file_id = ? AND user_id = ?"
     ),
+    GET_TYPE_FILES(
+        """
+            SELECT file_type, SUM(file_size) as type_size, COUNT(*) as type_count
+            FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE
+            GROUP BY file_type     
+        """
+    ),
+    GET_DB_NAME_FILES(
+        "SELECT database_name FROM files_metadata WHERE file_id = ? AND user_id = ?"
+    ),
 
     /*
     * ~~~ IMAGE DATA ~~~ 

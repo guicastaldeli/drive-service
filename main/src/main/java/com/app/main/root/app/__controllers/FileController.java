@@ -19,11 +19,6 @@ public class FileController {
         this.secureMessageService = secureMessageService;
     }
 
-    @GetMapping("/test")
-    public String test() {
-        return "TEST";
-    }
-
     /**
      * Upload
      */
@@ -39,7 +34,6 @@ public class FileController {
                 file, 
                 parentFolderId
             );
-            System.out.println(res);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
