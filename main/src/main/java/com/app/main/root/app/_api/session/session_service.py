@@ -30,6 +30,12 @@ class SessionService:
         return await self._request("put", f"/api/session/{userId}/type", params={"sessionType": sessionType})
     
     ##
+    ## Session by Id
+    ##
+    async def getSessionById(self, sessionId: str) -> dict:
+        return await self._request("get", f"/api/session/id/{sessionId}")
+    
+    ##
     ## Update Session
     ##
     async def updateSession(

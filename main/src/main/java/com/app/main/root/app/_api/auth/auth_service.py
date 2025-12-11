@@ -49,49 +49,26 @@ class AuthService:
     ##
     async def validateSession(self, cookies: Optional[Dict[str, str]]) -> Dict[str, Any]:
         try:
-            # Fix: Extract session ID from USER_INFO cookie instead of SESSION_ID
-            userInfo = cookies.get("USER_INFO")
-            if not userInfo:
+            sessionId = cookies.get("SESSION_ID")
+            
+            if(not sessionId):
                 return { "valid": False, "user": None }
             
-            # Parse the USER_INFO cookie format: "sessionId:userId:username:email"
-            userInfoParts = userInfo.strip('"').split(":")
-            if len(userInfoParts) < 4:
+            sessionData = await self.sessionService.getSession(sessionId)
+            if(not sessionData):
                 return { "valid": False, "user": None }
-                
-            sessionId = userInfoParts[0]
-            userId = userInfoParts[1]
-            username = userInfoParts[2]
-            email = userInfoParts[3]
-            
-            # Try to get session data from backend
-            sessionData = await self._getSessionBySessionId(sessionId)
-            if not sessionData:
-                return { "valid": False, "user": None }
-            
-            # Update connection tracker
-            await self._request("POST", f"{self.url}/api/connection-tracker/connections/track",
-                json={
-                    "socketId": sessionId,
-                    "sessionId": sessionId,
-                    "username": username,
-                    "ipAddress": "IP",
-                    "userAgent": "UA"
-                } 
-            )
             
             return {
                 "valid": True,
                 "user": {
-                    "userId": userId,
-                    "username": username,
-                    "email": email
+                    "userId": sessionData["user_id"],
+                    "username": sessionData["username"],
+                    "email": sessionData["email"]
                 }
             }
         except Exception as e:
-            print(f"Session validation error: {e}")
             return { "valid": False, "user": None }
-      
+        
     ##
     ## Refresh Session Token
     ##
@@ -121,13 +98,6 @@ class AuthService:
             f"{self.url}/api/auth/status", 
             headers=headers
         )
-        
-    async def _getSessionBySessionId(self, sessionId: str) -> Optional[Dict[str, Any]]:
-        try:
-            return await self._request("GET", f"{self.url}/api/session/id/{sessionId}")
-        except Exception as e:
-            print(f"Error getting session by ID: {e}")
-            return None
     
     async def _request(self, method: str, url: str, **kwargs) -> Dict[str, Any]:
         async with httpx.AsyncClient() as client:
