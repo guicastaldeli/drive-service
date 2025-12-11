@@ -3,6 +3,5 @@ CREATE TABLE IF NOT EXISTS audio_data(
     content BLOB NOT NULL,
     waveform BLOB,
     duration INTEGER,
-    format VARCHAR(10),
-    FOREIGN KEY (file_id) REFERENCES files_metadata(file_id) ON DELETE CASCADE
+    format VARCHAR(10)
 );

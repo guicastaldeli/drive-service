@@ -44,7 +44,10 @@ public class FileUploader {
             
             String fileType = getFileType(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
-            JdbcTemplate jdbcTemplate = new JdbcTemplate();
+            JdbcTemplate jdbcTemplate = jdbcTemplates.get(targetDb);
+            if (jdbcTemplate == null) {
+                throw new SQLException("No database configured for type: " + targetDb);
+            }
             jdbcTemplate.update(
                 query,
                 fileId,
@@ -52,6 +55,7 @@ public class FileUploader {
                 originalFileName,
                 fileSize,
                 fileType,
+                targetDb,
                 parentFolderId
             );
     
@@ -95,16 +99,16 @@ public class FileUploader {
     ) {
         String query = "";
         switch(dbType) {
-            case "images":
+            case "image_data":
                 query = CommandQueryManager.ADD_IMAGE.get();
                 break;
-            case "videos":
+            case "video_data":
                 query = CommandQueryManager.ADD_VIDEO.get();
                 break;
-            case "audios":
+            case "audio_data":
                 query = CommandQueryManager.ADD_AUDIO.get();
                 break;
-            case "documents":
+            case "document_data":
                 query = CommandQueryManager.ADD_DOCUMENT.get();
                 break;
             default:

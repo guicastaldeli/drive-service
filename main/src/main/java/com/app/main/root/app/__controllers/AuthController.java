@@ -217,6 +217,7 @@ public class AuthController {
         try {
             String sessionId = serviceManager.getSessionService().extractSessionId(request);
             if(sessionId != null) {
+                connectionTracker.trackDisconnection(sessionId);
                 serviceManager.getSessionService().destroySession(sessionId, response);
                 serviceManager.getCookieService().clearAuthCookies(response);
 

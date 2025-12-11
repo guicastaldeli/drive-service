@@ -2,7 +2,7 @@ export class FileServiceClient {
     private url: string | undefined;
     
     constructor(url: string | undefined) {
-        this.url = "http://localhost:3001/main";
+        this.url = "http://localhost:3001";
     }
 
     /**

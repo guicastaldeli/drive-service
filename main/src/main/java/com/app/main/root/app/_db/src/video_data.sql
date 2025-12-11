@@ -3,6 +3,5 @@ CREATE TABLE IF NOT EXISTS video_data(
     content BLOB NOT NULL,
     thumbnail BLOB,
     duration INTEGER,
-    resolution VARCHAR(20),
-    FOREIGN KEY (file_id) REFERENCES files_metadata(file_id) ON DELETE CASCADE
+    resolution VARCHAR(20)
 );

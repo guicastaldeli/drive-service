@@ -50,7 +50,7 @@ public class UserService {
     }
 
     private Connection getConnection() throws SQLException {
-        return dataSourceService.setDb("user").getConnection();
+        return dataSourceService.setDb("user_service").getConnection();
     }
 
     public void addUser(String id, String username, String sessionId) throws SQLException {

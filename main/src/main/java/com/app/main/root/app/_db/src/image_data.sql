@@ -4,6 +4,5 @@ CREATE TABLE IF NOT EXISTS image_data(
     thumbnail BLOB,
     width INTEGER,
     height INTEGER,
-    resolution VARCHAR(20),
-    FOREIGN KEY (file_id) REFERENCES files_metadata(file_id) ON DELETE CASCADE
+    resolution VARCHAR(20)
 );

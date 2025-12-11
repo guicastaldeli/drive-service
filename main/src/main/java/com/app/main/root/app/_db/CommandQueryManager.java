@@ -68,7 +68,7 @@ public enum CommandQueryManager {
                 file_type,
                 database_name,
                 parent_folder_id
-            ) VALUES (?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         """
     ),
     DOWNLOAD_FILE(
