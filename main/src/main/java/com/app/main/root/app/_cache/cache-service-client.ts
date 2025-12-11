@@ -1,4 +1,4 @@
-import { ApiClient } from "../main/_api-client/api-client";
+import { ApiClientController } from "../main/_api-client/api-client-controller";
 
 export interface CacheConfig {
     pageSize: number;
@@ -17,7 +17,7 @@ export interface CacheData {
 
 export class CacheServiceClient {
     private static instance: CacheServiceClient;
-    private apiClient!: ApiClient;
+    private apiClientController!: ApiClientController;
     private cache: Map<string, CacheData> = new Map();
     private accessQueue: string[] = [];
     private pendingRequests: Map<string, Promise<any>> = new Map();
@@ -52,8 +52,8 @@ export class CacheServiceClient {
         */
     }
 
-    public setApiClient(apiClient: ApiClient): void {
-        this.apiClient = apiClient;
+    public setApiClient(apiClientController: ApiClientController): void {
+        this.apiClientController = apiClientController;
     }
 
     /*

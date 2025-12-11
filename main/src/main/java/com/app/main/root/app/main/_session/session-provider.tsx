@@ -1,5 +1,5 @@
 import React, { createContext, useContext, Component } from 'react';
-import { ApiClient } from '../_api-client/api-client';
+import { ApiClientController } from '../_api-client/api-client-controller';
 import { useSessionTypes } from './useSessionTypes';
 import { SessionManager, UserData, UserSessionData } from './session-manager';
 
@@ -24,7 +24,7 @@ export interface ContextType {
 interface Props {
     children: React.ReactNode;
     initialSession?: SessionType;
-    apiClient: ApiClient;
+    apiClientController: ApiClientController;
 }
 
 interface State {
@@ -40,13 +40,13 @@ interface State {
 export const SessionContext = createContext<ContextType | undefined>(undefined);
 
 export class SessionProvider extends Component<Props, State> {
-    private apiClient: ApiClient;
+    private apiClientController: ApiClientController;
     private sessionTypes: ReturnType<typeof useSessionTypes>;
     private sessionCheckInterval: NodeJS.Timeout | null = null;
 
     constructor(props: Props) {
         super(props);
-        this.apiClient = props.apiClient;
+        this.apiClientController = props.apiClientController;
         this.sessionTypes = {} as any;
         
         this.state = {
@@ -147,7 +147,7 @@ export class SessionProvider extends Component<Props, State> {
         }
         if(this.state.userId) {
             try {
-                const service = await this.apiClient.getSessionService();
+                const service = await this.apiClientController.getSessionService();
                 await service.updateSessionType(this.state.userId, session);
             } catch(err) {
                 console.error(err);
@@ -203,7 +203,7 @@ export class SessionProvider extends Component<Props, State> {
         this.setState({ isLoading: true });
 
         try {
-            const service = await this.apiClient.getSessionService();
+            const service = await this.apiClientController.getSessionService();
             const sessionData = await service.getSession(this.state.userId);
             if(sessionData) {
                 const mergedData = {
@@ -245,7 +245,7 @@ export class SessionProvider extends Component<Props, State> {
      */
     checkAuth = async (): Promise<boolean> => {
         try {
-            const authService = await this.apiClient.getAuthService(); 
+            const authService = await this.apiClientController.getAuthService(); 
             const isValid = await authService.isAuth();
             this.setState({ isAuth: isValid });
             return isValid;
@@ -261,7 +261,7 @@ export class SessionProvider extends Component<Props, State> {
      */
     refreshSessionToken = async (): Promise<boolean> => {
         try {
-            const authService = await this.apiClient.getAuthService();
+            const authService = await this.apiClientController.getAuthService();
             const res = await authService.refreshToken();
             if(res.success) {
                 const sessionData = SessionManager.getCurrentSession();
@@ -314,7 +314,7 @@ export class SessionProvider extends Component<Props, State> {
      */
     clearSession = async (): Promise<void> => {
         try {
-            const sessionConfig = await this.apiClient.getSessionConfig();
+            const sessionConfig = await this.apiClientController.getSessionConfig();
             await sessionConfig.logout();
         } catch(err) {
             console.error('Error logout', err);

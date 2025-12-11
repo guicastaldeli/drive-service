@@ -1,7 +1,7 @@
 import './__styles/styles.scss';
 import React from 'react';
 import { Component } from 'react';
-import { ApiClient } from './_api-client/api-client';
+import { ApiClientController } from './_api-client/api-client-controller';
 import { SocketClientConnect } from './socket-client-connect';
 import { CacheServiceClient } from '../_cache/cache-service-client';
 import { CachePreloaderService } from '../_cache/cache-preloader-service';
@@ -20,7 +20,7 @@ interface State {
 
 export class Main extends Component<any, State> {
     private socketClientConnect: SocketClientConnect;
-    private apiClient: ApiClient;
+    private apiClientController: ApiClientController;
     private cacheService: CacheServiceClient;
     private cachePreloader: CachePreloaderService;
 
@@ -30,10 +30,10 @@ export class Main extends Component<any, State> {
     constructor(props: any) {
         super(props);
         this.socketClientConnect = SocketClientConnect.getInstance();
-        this.apiClient = new ApiClient(this.socketClientConnect);
+        this.apiClientController = new ApiClientController(this.socketClientConnect);
         this.cacheService = CacheServiceClient.getInstance();
-        this.cachePreloader = new CachePreloaderService(this.apiClient, this.cacheService);
-        this.cacheService.setApiClient(this.apiClient);
+        this.cachePreloader = new CachePreloaderService(this.apiClientController, this.cacheService);
+        this.cacheService.setApiClient(this.apiClientController);
 
         const rememberUserCookie = 
             typeof window !== 'undefined' ?
@@ -118,7 +118,7 @@ export class Main extends Component<any, State> {
                         return;
                     }
                     try {
-                        const userService = await this.apiClient.getUserService();
+                        const userService = await this.apiClientController.getUserService();
                         const usernameExists = await userService.checkUsernameExists(username);
                         if (usernameExists) {
                             alert('Username already taken');
@@ -128,7 +128,7 @@ export class Main extends Component<any, State> {
                         console.error('Error checking username:', err);
                     }
                     try {
-                        const userService = await this.apiClient.getUserService();
+                        const userService = await this.apiClientController.getUserService();
                         const emailExists = await userService.checkUserExists(email);
                         if (emailExists) {
                             alert('Email already registered');
@@ -171,7 +171,7 @@ export class Main extends Component<any, State> {
                         try {
                             await this.cacheService.initCache(userInfo.userId);
                             await this.cachePreloader.startPreloading(userInfo.userId);
-                            const authService = await this.apiClient.getAuthService();
+                            const authService = await this.apiClientController.getAuthService();
                             const validation = await authService.validateSession();
                             
                             if(validation && validation.valid) {
@@ -211,7 +211,7 @@ export class Main extends Component<any, State> {
                 console.log('Creating new session with socket ID:', socketId);
 
                 let result;
-                const authService = await this.apiClient.getAuthService();
+                const authService = await this.apiClientController.getAuthService();
                 
                 if (isCreateAccount) {
                     result = await authService.registerUser({
@@ -284,7 +284,7 @@ export class Main extends Component<any, State> {
         public handleLogout = async (sessionContext: any): Promise<void> => {
             try {
                 console.log('Logging out...');
-                const authService = await this.apiClient.getAuthService();
+                const authService = await this.apiClientController.getAuthService();
                 await authService.logoutUser();
                 
                 SessionManager.clearSession();
@@ -313,7 +313,7 @@ export class Main extends Component<any, State> {
         return (
             <div className='app' ref={this.appContainerRef}>
                 <SessionProvider 
-                    apiClient={this.apiClient} 
+                    apiClientController={this.apiClientController} 
                     initialSession='LOGIN'
                 >
                     <SessionContext.Consumer>
@@ -385,7 +385,7 @@ export class Main extends Component<any, State> {
                                         <Dashboard 
                                             ref={this.setDashboardRef}
                                             main={this}
-                                            apiClient={this.apiClient}
+                                            apiClientController={this.apiClientController}
                                         />
                                     )}
                                 </>

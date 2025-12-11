@@ -1,13 +1,13 @@
 import "./__styles/styles.scss";
 import React, { Component } from "react";
 import { SessionContext, SessionType } from "./_session/session-provider";
-import { ApiClient } from "./_api-client/api-client";
+import { ApiClientController } from "./_api-client/api-client-controller";
 import { SessionManager } from "./_session/session-manager";
 import { Main } from "./_main";
 
 interface Props {
     main: Main;
-    apiClient: ApiClient;
+    apiClientController: ApiClientController;
     onLogout?: () => void;
 }
 
@@ -18,7 +18,7 @@ interface State {
 }
 
 export class Dashboard extends Component<Props, State> {
-    private apiClient: ApiClient;
+    private apiClientController: ApiClientController;
     private main: Main;
     private socketId!: string;
     private userId!: string;
@@ -31,7 +31,7 @@ export class Dashboard extends Component<Props, State> {
             isLoading: true
         }
         this.main = props.main;
-        this.apiClient = props.apiClient;
+        this.apiClientController = props.apiClientController;
     }
 
     public async getUserData(sessionId: string, userId: string): Promise<void> {

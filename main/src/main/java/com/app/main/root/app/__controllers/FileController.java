@@ -11,7 +11,6 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
-
     private final SecureMessageService secureMessageService;
     private final FileService fileService;
 
@@ -115,6 +114,7 @@ public class FileController {
     /**
      * Storage Usage
      */
+    @GetMapping("/storage/{userId}")
     public ResponseEntity<?> getStorageUsage(@PathVariable String userId) {
         try {
             Map<String, Object> usage = fileService.getStorageUsage(userId);

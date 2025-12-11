@@ -1,15 +1,15 @@
-import { ApiClient } from "../main/_api-client/api-client";
+import { ApiClientController } from "../main/_api-client/api-client-controller";
 import { CacheServiceClient } from "./cache-service-client";
 
 export class CachePreloaderService {
-    private apiClient: ApiClient;
+    private apiClientController: ApiClientController;
     private cacheService: CacheServiceClient;
     private isPreloading: boolean = false;
     private preloadedChats = new Set<string>();
     private preloadQueue: string[] = [];
 
-    constructor(apiClient: ApiClient, cacheService: CacheServiceClient) {
-        this.apiClient = apiClient;
+    constructor(apiClientController: ApiClientController, cacheService: CacheServiceClient) {
+        this.apiClientController = apiClientController;
         this.cacheService = cacheService;
         this.setupEventListeners();
     }

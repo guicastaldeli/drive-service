@@ -1,11 +1,11 @@
-import { ApiClient } from "../_api-client/api-client";
+import { ApiClientController } from "../_api-client/api-client-controller";
 import { SessionManager } from "./session-manager";
 
 export class SessionConfig {
-    private apiClient: ApiClient;
+    private apiClientController: ApiClientController;
 
-    constructor(apiClient: ApiClient) {
-        this.apiClient = apiClient;
+    constructor(apiClientController: ApiClientController) {
+        this.apiClientController = apiClientController;
     }
 
     public setupSessionRefresh(): void {
@@ -19,7 +19,7 @@ export class SessionConfig {
             }
             if(needsRefresh) {
                 try {
-                    const authService = await this.apiClient.getAuthService(); 
+                    const authService = await this.apiClientController.getAuthService(); 
                     await authService.refreshToken();
                     console.log('Session rrefreshed! :)');
                 } catch(err) {
@@ -34,7 +34,7 @@ export class SessionConfig {
             const sessionData = await SessionManager.initSession();
             if(!sessionData) return false;
 
-            const authService = await this.apiClient.getAuthService(); 
+            const authService = await this.apiClientController.getAuthService(); 
             const validation = await authService.validateSession();
             if(!validation) {
                 SessionManager.clearSession();
@@ -68,7 +68,7 @@ export class SessionConfig {
 
     public async logout(): Promise<void> {
         try {
-            const authService = await this.apiClient.getAuthService(); 
+            const authService = await this.apiClientController.getAuthService(); 
             await authService.logoutUser();
         } catch(err) {
             console.error('Logout err', err);

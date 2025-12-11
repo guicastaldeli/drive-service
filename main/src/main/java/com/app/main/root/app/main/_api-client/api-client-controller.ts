@@ -5,7 +5,7 @@ import { UserServiceClient } from "./user-service-client";
 import { SocketClientConnect } from "../socket-client-connect";
 import { SessionConfig } from "../_session/session-config";
 
-export class ApiClient {
+export class ApiClientController {
     private url: string | undefined;
     private socketClient!: SocketClientConnect
     private sessionConfig: SessionConfig;
