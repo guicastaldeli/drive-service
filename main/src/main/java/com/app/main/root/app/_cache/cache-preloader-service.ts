@@ -5,8 +5,8 @@ export class CachePreloaderService {
     private apiClientController: ApiClientController;
     private cacheService: CacheServiceClient;
     private isPreloading: boolean = false;
-    private preloadedChats = new Set<string>();
-    private preloadQueue: string[] = [];
+    private preloadedFolders = new Set<string>();
+    private preloadQueue: Array<{ userId: string, folderId: string }> = [];
 
     constructor(apiClientController: ApiClientController, cacheService: CacheServiceClient) {
         this.apiClientController = apiClientController;
@@ -17,11 +17,11 @@ export class CachePreloaderService {
     private setupEventListeners(): void {
         if(typeof window === 'undefined') return;
         
-        window.addEventListener('chat-item-added', ((e: CustomEvent) => {
-            this.schedulePreload(e.detail);
+        window.addEventListener('folder-navigated', ((e: CustomEvent) => {
+            this.schedulePreload(e.detail.userId, e.detail.folderId);
         }) as EventListener);
-        window.addEventListener('chat-activated', ((e: CustomEvent) => {
-            this.preloadAdjacentChats(e.detail.chatId);
+        window.addEventListener('file-uploaded', ((e: CustomEvent) => {
+            this.schedulePreload(e.detail.userId, e.detail.parentFolderId);
         }) as EventListener);
         window.addEventListener('user-authenticated', ((e: CustomEvent) => {
             this.startPreloading(e.detail.userId);
@@ -31,11 +31,11 @@ export class CachePreloaderService {
     /*
     ** Start Preload
     */
-    public async startPreloading(userId: string | null): Promise<void> {
+    public async startPreloading(userId: string): Promise<void> {
         if(this.isPreloading) return;
         this.isPreloading = true;
         try {
-            //await this.preloadRecentChats(userId);
+            await this.preloadRecentFolders(userId);
             this.processPreloadQueue();
         } catch(err) {
             console.error('Preloading failed!', err);
@@ -44,8 +44,28 @@ export class CachePreloaderService {
         }
     }
 
-    private schedulePreload(data: any): void {
-        
+    /**
+     * Preload Recent Folders
+     */
+    private async preloadRecentFolders(userId: string): Promise<void> {
+        try {
+            this.schedulePreload(userId, "root");
+        } catch(err) {
+            console.error('Failed to get recent folders:', err);
+        }
+    }
+
+    private schedulePreload(userId: string, folderId: string): void {
+        const queueItem = { userId, folderId };
+        const key = `${userId}_${folderId}`;
+
+        if(this.cacheService.isFolderCached(userId, folderId) ||
+            this.preloadedFolders.has(key)
+        ) {
+            return;    
+        }
+        this.preloadQueue.push(queueItem);
+        this.preloadedFolders.add(key);
     }
 
     /*
@@ -53,13 +73,13 @@ export class CachePreloaderService {
     */
     private async processPreloadQueue(): Promise<void> {
         while(this.preloadQueue.length > 0) {
-            const chatId = this.preloadQueue.shift();
-            if(chatId) {
+            const item = this.preloadQueue.shift();
+            if(item) {
                 try {
-                    await this.preloadChat(chatId);
+                    await this.preloadFolder(item.userId, item.folderId);
                     await new Promise(res => setTimeout(res, 50));
                 } catch(err) {
-                    console.error(`Failed to preload chat ${chatId}:`, err);
+                    console.error(`Failed to preload folder ${item.folderId}:`, err);
                 }
             }
         }
@@ -69,47 +89,37 @@ export class CachePreloaderService {
     /*
     ** Preload Chat
     */
-    private async preloadChat(chatId: string): Promise<void> {
-        //if(this.cacheService.isChatCached(chatId)) return;
+    private async preloadFolder(userId: string, folderId: string): Promise<void> {
+        if(this.cacheService.isFolderCached(userId, folderId)) return;
         try {
-            /*
-            const service = await this.apiClient.getMessageService();
-            const res = await service.getMessagesByChatId(chatId, 0);
-            const messages = res.messages || [];
-            if(messages.length >= 0) {
-                this.cacheService.init(chatId, messages.length);
-                this.cacheService.addMessagesPage(chatId, messages, 0);
-                console.log(`Preloaded ${messages.length} messages for ${chatId}`);
+            const fileService = await this.apiClientController.getFileService();
+            const res = await fileService.listFiles(userId, folderId);
+
+            const files = res.data?.files || res.files || [];
+            const pagination = res.data?.pagination || res.pagination;
+            if(files.length >= 0) {
+                this.cacheService.initUserCache(userId, folderId, pagination.total);
+                this.cacheService.addFilesPage(userId, folderId, files);
+                console.log(`Preloaded ${files.length} messages for ${folderId}`);
             }
-                */
         } catch(err) {
-            console.error(`Preload failed for ${chatId}:`, err);
+            console.error(`Preload failed for ${folderId}:`, err);
         }
     }
 
-    private preloadAdjacentChats(currentChatId: string): void {
-        const el = '.chat-item'
-        const chatElements = Array.from(document.querySelectorAll(el));
-        const currentIndex = chatElements.findIndex(el =>
-            el.getAttribute('data-chat-id') === currentChatId
-        );
-
-        if(currentIndex !== -1) {
-            const nextChats = chatElements.slice(currentIndex + 1, currentIndex + 3);
-            nextChats.forEach(el => {
-                this.schedulePreload(el);
-            });
-            const prevChat = chatElements.slice(Math.max(0, currentIndex - 1), currentIndex);
-            prevChat.forEach(el => {
-                this.schedulePreload(el);
-            });
-        }
+    private preloadAdjacentFolders(userId: string, currentFolderId: string): void {
+       if(currentFolderId !== "root") this.schedulePreload(userId, "root");
     }
 
-    public getPreloadedStats(): { preloaded: number; queued: number } {
+    public getPreloadedStats(): { 
+        preloaded: number; 
+        queued: number;
+        folders: string[]
+    } {
         return {
-            preloaded: this.preloadedChats.size,
-            queued: this.preloadQueue.length
+            preloaded: this.preloadedFolders.size,
+            queued: this.preloadQueue.length,
+            folders: Array.from(this.preloadedFolders)
         }
     }
 }   

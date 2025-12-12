@@ -110,4 +110,25 @@ export class FileServiceClient {
             throw err;
         }
     }
+
+    /**
+     * Get File Info
+     */
+    public async getFileInfo(fileId: string, userId: string): Promise<any> {
+        try {
+            const res = await fetch(`${this.url}/api/files/info/${fileId}/${userId}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            if(!res.ok) {
+                throw new Error(`Failed top get file info: ${res.statusText}`);
+            }
+            return await res.json();
+        } catch(err) {
+            console.error(err);
+            throw err;
+        }
+    }
 }
