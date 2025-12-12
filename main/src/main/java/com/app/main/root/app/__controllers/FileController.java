@@ -123,7 +123,7 @@ public class FileController {
         @RequestParam(defaultValue = "20") int pageSize
     ) {
         try {
-            List<Map<String, Object>> res = fileService.listFiles(
+            Map<String, Object> res = fileService.listFiles(
                 userId, 
                 parentFolderId, 
                 page, 

@@ -113,6 +113,9 @@ public enum CommandQueryManager {
     GET_TOTAL_FILES(
         "SELECT COUNT(*) FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE"
     ),
+    GET_TOTAL_FILES_FOLDER(
+        "SELECT COUNT(*) from files_metadata WHERE user_id = ? AND parent_folder_id = ? AND is_deleted = FALSE"
+    ),
     DELETE_FILE(
         """
            UPDATE files_metadata
@@ -132,6 +135,22 @@ public enum CommandQueryManager {
     ),
     GET_DB_NAME_FILES(
         "SELECT database_name FROM files_metadata WHERE file_id = ? AND user_id = ?"
+    ),
+    GET_FILE_INFO(
+        """
+            SELECT
+                file_id,
+                original_filename,
+                file_size,
+                mime_type,
+                file_type,
+                parent_folder_id,
+                database_name,
+                uploaded_at,
+                last_modified
+            FROM files_metadata
+            WHERE file_id = ? AND user_id = ? AND is_deleted = FALSE     
+        """
     ),
 
     /*

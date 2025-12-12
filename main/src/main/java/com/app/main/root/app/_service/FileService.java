@@ -2,21 +2,24 @@ package com.app.main.root.app._service;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._db.DbManager;
 import org.springframework.stereotype.Service;
+import com.app.main.root.app._cache.CacheService;
 import com.app.main.root.app._crypto.message_encoder.MessageEncoderWrapper;
 import com.app.main.root.app._data.FileDownloader;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._data.MimeToDb;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.*;
 
 @Service
 public class FileService {
-
     private final MessageEncoderWrapper messageEncoderWrapper;
     private final Map<String, JdbcTemplate> jdbcTemplates;
     private final DbManager dbManager;
     private final ServiceManager serviceManager;
+    @Lazy @Autowired private CacheService cacheService;
 
     private FileUploader fileUploader;
     private FileDownloader fileDownloader;
@@ -30,8 +33,9 @@ public class FileService {
     public FileService(
         Map<String, JdbcTemplate> jdbcTemplates,
         @Lazy ServiceManager serviceManager,
-        @Lazy DbManager dbManager
-    , MessageEncoderWrapper messageEncoderWrapper) {
+        @Lazy DbManager dbManager,
+        MessageEncoderWrapper messageEncoderWrapper
+    ) {
         this.jdbcTemplates = jdbcTemplates;
         this.serviceManager = serviceManager;
         this.dbManager = dbManager;
@@ -44,12 +48,28 @@ public class FileService {
     /**
      * List Files
      */
-    public List<Map<String, Object>> listFiles(
+    public Map<String, Object> listFiles(
         String userId,
         String parentFolderId,
         int page,
         int pageSize
     ) {
+        List<Map<String, Object>> cachedFiles = cacheService.getCachedFilesPage(
+            userId, 
+            parentFolderId, 
+            page
+        );
+        if(cachedFiles != null) {
+            return createRes(
+                cachedFiles,
+                page,
+                pageSize,
+                userId,
+                parentFolderId,
+                true
+            );
+        }
+
         JdbcTemplate metadataTemplate = jdbcTemplates.get(METADATA_DB);
         if(metadataTemplate == null) throw new RuntimeException("files_metadata database not available");
 
@@ -61,7 +81,21 @@ public class FileService {
             pageSize,
             (page - 1) * pageSize
         );
-        return files;
+        cacheService.cacheFilesPage(
+            userId, 
+            parentFolderId, 
+            page, 
+            files
+        );
+
+        return createRes(
+            files,
+            page,
+            pageSize,
+            userId,
+            parentFolderId,
+            false
+        );
     }
 
     /**
@@ -105,13 +139,24 @@ public class FileService {
         JdbcTemplate metadataTemplate = jdbcTemplates.get(METADATA_DB);
         if(metadataTemplate == null) throw new RuntimeException("files_metadata database not available");
 
-        String query = CommandQueryManager.DELETE_FILE.get();
-        int rowsAffected = metadataTemplate.update(
-            query,
+        String getInfoQuery = CommandQueryManager.GET_FILE_INFO.get();
+        Map<String, Object> info = metadataTemplate.queryForMap(
+            getInfoQuery,
             fileId,
             userId
         );
-        return rowsAffected > 0;
+        String deleteQuery = CommandQueryManager.DELETE_FILE.get();
+        int rowsAffected = metadataTemplate.update(
+            deleteQuery,
+            fileId,
+            userId
+        );
+
+        String parentFolderId = (String) info.get("parent_folder_id");
+        boolean res = rowsAffected > 0;
+        if(res) cacheService.invalidateFolderCache(userId, parentFolderId);
+
+        return res;
     }
 
     /**
@@ -170,5 +215,54 @@ public class FileService {
             System.out.println("Could not find database for file " + fileId + ": " + err.getMessage());
             return null;
         }
+    }
+
+    /**
+     * Create Response
+     */
+    private Map<String, Object> createRes(
+        List<Map<String, Object>> files,
+        int page,
+        int pageSize,
+        String userId,
+        String folderId,
+        boolean fromCache
+    ) {
+        Map<String, Object> res = new HashMap<>();
+        res.put("files", files);
+        res.put("pagination", Map.of(
+            "page", page,
+            "pageSize", pageSize,
+            "total", countTotalFiles(userId, folderId),
+            "hasMore", hasMoreFiles(userId, folderId, page, pageSize),
+            "fromCache", fromCache
+        ));
+        return res;
+    }
+    
+    private int countTotalFiles(String userId, String folderId) {
+        JdbcTemplate metadataTemplate = jdbcTemplates.get(METADATA_DB);
+        if(metadataTemplate == null) return 0;
+
+        String query = CommandQueryManager.GET_TOTAL_FILES_FOLDER.get();
+        Integer count = metadataTemplate.queryForObject(
+            query,
+            Integer.class,
+            userId,
+            folderId
+        );
+
+        Integer res = count != null ? count : 0; 
+        return res;
+    }
+
+    private boolean hasMoreFiles(
+        String userId,
+        String folderId,
+        int currentPage,
+        int pageSize
+    ) {
+        int totalFiles = countTotalFiles(userId, folderId);
+        return (currentPage * pageSize) < totalFiles;
     }
 }

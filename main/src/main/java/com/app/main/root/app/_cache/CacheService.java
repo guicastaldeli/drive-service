@@ -6,20 +6,21 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.*;
 
 @Service
 public class CacheService {
-    private final Map<String, ChatCache> cache = new ConcurrentHashMap<>();
+    private final Map<String, UserFileCache> cache = new ConcurrentHashMap<>();
     private ScheduledExecutorService cleanupExecutor = Executors.newScheduledThreadPool(1);
 
-    @Value("${app.cache.pageSize:100}")
+    @Value("${app.fileCache.pageSize:20}")
     private int pageSize;
 
-    @Value("${app.cache.maxPagesPerChat:20}")
-    private int maxPagesPerChat;
+    @Value("${app.fileCache.maxPagesPerUser:50}")
+    private int maxPagesPerUser;
 
-    @Value("${app.cache.evictionTimeMinutes:60}")
+    @Value("${app.fileCache.evictionTimeMinutes:60}")
     private int evictionTimeMinutes;
 
     public CacheService() {
@@ -31,49 +32,102 @@ public class CacheService {
         );
     }
 
-    public void initChatCache(String chatId, int totalMessageCount) {
-        cache.computeIfAbsent(chatId, id -> new ChatCache(totalMessageCount));
-        enforceSizeLimits();
+    public void initUserFileCache(String userId, int totalFileCount) {
+        cache.computeIfAbsent(userId, id -> new UserFileCache(totalFileCount));
     }
 
+    /**
+     * Cache Files Page
+     */
+    public void cacheFilesPage(
+        String userId,
+        String folderId,
+        int page,
+        List<Map<String, Object>> files
+    ) {
+        UserFileCache userCache = cache.get(userId);
+        if(userCache == null) {
+            userCache = new UserFileCache(0);
+            cache.put(userId, userCache);
+        }
+        userCache.writeLock().lock();
+
+        try {
+            String cacheKey = folderId + "_page_" + page;
+            userCache.cachedPages.put(cacheKey, files);
+            userCache.lastAccessTime = System.currentTimeMillis();
+        } finally {
+            userCache.writeLock().unlock();
+        }
+    }
+
+    /**
+     * Get Cached Files Page
+     */
+    public List<Map<String, Object>> getCachedFilesPage(
+        String userId,
+        String folderId,
+        int page
+    ) {
+        UserFileCache userCache = cache.get(userId);
+        if(userCache == null) return null;
+        userCache.readLock().lock();
+
+        try {
+            String cacheKey = folderId + "_page_" + page;
+            userCache.lastAccessTime = System.currentTimeMillis();
+            return userCache.cachedPages.get(cacheKey); 
+        } finally {
+            userCache.readLock().unlock();
+        }
+    }
+
+    /**
+     * Get Missing Pages
+     */
     public List<Integer> getMissingPages(
-        String chatId,
+        String userId,
+        String folderId,
         int startPage,
         int endPage
     ) {
-        ChatCache chatCache = cache.get(chatId);
-        if(chatCache == null) {
+        UserFileCache userCache = cache.get(userId);
+        if(userCache == null) {
             List<Integer> allPages = new ArrayList<>();
             for(int i = startPage; i <= endPage; i++) allPages.add(i);
             return allPages;
         }
-        chatCache.readLock().lock();
+        userCache.readLock().lock();
 
         try {
             List<Integer> missingPages = new ArrayList<>();
             for(int page = startPage; page <= endPage; page++) {
-                if(
-                    !chatCache.loadedPages.contains(page) ||
-                    !isPageComplete(chatCache, page)
-                ) {
+                String cacheKey = folderId + "_page_" + page;
+                if(!userCache.loadedPages.contains(cacheKey)) {
                     missingPages.add(page);
                 }
             }
             return missingPages;
         } finally {
-            chatCache.readLock().unlock();
+            userCache.readLock().unlock();
         }
     }
 
-    private boolean isPageComplete(ChatCache chatCache, int page) {
-        //int startIndex = page * pageSize;
-        //int endIndex = Math.min(startIndex, pageSize);
-        return true;
+    public void invalidateUserCache(String userId) {
+        cache.remove(userId);
     }
 
-    private void enforceSizeLimits() {
-        List<Map.Entry<String, ChatCache>> sortedEntries = new ArrayList<>(cache.entrySet());
-        sortedEntries.sort(Comparator.comparingLong(entry -> entry.getValue().lastAccessTime));
+    public void invalidateFolderCache(String userId, String folderId) {
+        UserFileCache userCache = cache.get(userId);
+        if(userCache != null) {
+            userCache.writeLock().lock();
+            try {
+                userCache.loadedPages.removeIf(k -> k.startsWith(folderId + "_page_"));
+                userCache.cachedPages.keySet().removeIf(k -> k.startsWith(folderId + "_page_"));
+            } finally {
+                userCache.writeLock().unlock();
+            }
+        }
     }
 
     @PreDestroy
@@ -82,16 +136,44 @@ public class CacheService {
     }
 
     private void cleanupExpired() {
-        long cuttoffTime = 
+        long cutoffTime = 
             System.currentTimeMillis() -
             TimeUnit.MINUTES.toMillis(evictionTimeMinutes);
 
-        Iterator<Map.Entry<String, ChatCache>> iterator = cache.entrySet().iterator();
+        Iterator<Map.Entry<String, UserFileCache>> iterator = cache.entrySet().iterator();
         while(iterator.hasNext()) {
-            Map.Entry<String, ChatCache> entry = iterator.next();
-            if(entry.getValue().lastAccessTime < cuttoffTime) {
+            Map.Entry<String, UserFileCache> entry = iterator.next();
+            if(entry.getValue().lastAccessTime < cutoffTime) {
                 iterator.remove();
             }
         }
     }
+
+    /**
+     * 
+     * User File Cache
+     * 
+     */
+    public class UserFileCache {
+        public final Set<String> loadedPages = new HashSet<>();
+        public final Map<String, List<Map<String, Object>>> cachedPages = new HashMap<>();
+
+        public int totalFileCount;
+        public long lastAccessTime = System.currentTimeMillis();
+        public final ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
+
+        public UserFileCache(int totalFileCount) {
+            this.totalFileCount = totalFileCount;
+        }
+
+        public ReentrantReadWriteLock.ReadLock readLock() {
+            return lock.readLock();
+        }
+
+        public ReentrantReadWriteLock.WriteLock writeLock() {
+            return lock.writeLock();
+        }           
+    }
 }
+
+
