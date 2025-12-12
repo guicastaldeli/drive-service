@@ -107,8 +107,7 @@ class FileService:
         self,
         userId: str,
         parentFolderId: str = "root",
-        page: int = 0,
-        pageSize: int = 20
+        page: int = 0
     ) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
@@ -116,7 +115,7 @@ class FileService:
                     'userId': userId,
                     'parentFolderId': parentFolderId,
                     'page': page,
-                    'pageSize': pageSize
+                    'pageSize': 20
                 }
                 
                 res = await client.get(f"{self.url}/api/files/list", params=params)
@@ -168,8 +167,7 @@ class FileService:
         userId: str,
         query: str,
         fileType: Optional[str] = None,
-        page: int = 0,
-        pageSize: int = 20
+        page: int = 0
     ) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
@@ -178,7 +176,7 @@ class FileService:
                     'query': query,
                     'fileType': fileType,
                     'page': page,
-                    'pageSize': pageSize
+                    'pageSize': 20
                 }
                 params = {
                     k: v for k, v in params.items()
@@ -223,15 +221,14 @@ class FileService:
     async def countPages(
         self, 
         userId: str, 
-        folderId: str = "root", 
-        pageSize: int = 20
+        folderId: str = "root"
     ) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
                 params = {
                     'userId': userId,
                     'folderId': folderId,
-                    'pageSize': pageSize
+                    'pageSize': 20
                 }
                 
                 res = await client.get(f"{self.url}/api/files/count-pages", params=params)

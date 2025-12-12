@@ -104,15 +104,13 @@ class FileRoutes:
         async def listFiles(
             userId: str = Query(...),
             parentFolderId: str = Query("root"),
-            page: int = Query(0, ge=0),
-            pageSize: int = Query(20, ge=1, le=100)
+            page: int = Query(0, ge=0)
         ):
             try:
                 res = await self.fileService.listFiles(
                     userId=userId,
                     parentFolderId=parentFolderId,
-                    page=page,
-                    pageSize=pageSize
+                    page=page
                 )
                 return res
             except Exception as err:
@@ -148,16 +146,14 @@ class FileRoutes:
             userId: str = Query(...),
             query: str = Query(...),
             fileType: Optional[str] = Query(None),
-            page: int = Query(1, ge=1),
-            pageSize: int = Query(20, ge=1, le=100)
+            page: int = Query(1, ge=1)
         ):
             try:
                 res = await self.fileService.searchFiles(
                     userId=userId,
                     query=query,
                     fileType=fileType,
-                    page=page,
-                    pageSize=pageSize
+                    page=page
                 )
                 return {
                     "success": True,
@@ -182,11 +178,10 @@ class FileRoutes:
         @self.router.get("/count-pages")
         async def countPages(
             userId: str = Query(...),
-            folderId: str = Query("root"),
-            pageSize: int = Query(20, ge=1, le=100)
+            folderId: str = Query("root")
         ):
             try:
-                res = await self.fileService.countPages(userId, folderId, pageSize)
+                res = await self.fileService.countPages(userId, folderId)
                 return res
             except Exception as err:
                 raise HTTPException(status_code=500, detail=f"Failed to count pages: {str(err)}")

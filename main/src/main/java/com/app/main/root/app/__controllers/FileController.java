@@ -93,7 +93,7 @@ public class FileController {
     /**
      * Info
      */
-    @GetMapping("/info/{fileId}")
+    @GetMapping("/info/{userId}/{fileId}")
     public ResponseEntity<?> getFileInfo(@PathVariable String fileId, @PathVariable String userId) {
         try {
             String database = serviceManager.getFileService().findFileDatabase(fileId, userId);

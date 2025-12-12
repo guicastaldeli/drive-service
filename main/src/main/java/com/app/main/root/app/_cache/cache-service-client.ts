@@ -42,13 +42,14 @@ export class CacheServiceClient {
     /**
      * Init User Cache
      */
-    public initUserCache(
+    public async initUserCache(
         userId: string,
         folderId: string,
         totalFilesCount: number
-    ): void {
+    ): Promise<void> {
         const time = Date.now();
-        const cacheKey = this.getCacheKey(userId, folderId);
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
 
         if(!this.cache.has(cacheKey)) {
             this.cache.set(cacheKey, {
@@ -88,21 +89,23 @@ export class CacheServiceClient {
     public async getFiles(
         userId: string,
         folderId: string = "root",
-        page: number = 0,
+        page: any,
         forceRefresh: boolean = false
     ): Promise<any[]> {
-        const cacheKey = this.getCacheKey(userId, folderId);
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+
         this.selectedCache(cacheKey);
         const reqKey = `${cacheKey}_${page}`;
 
         if(!forceRefresh && this.isPageLoaded(cacheKey)) {
-            return this.getCachedPage(cacheKey, page);
+            return this.getCachedPage(cacheKey, page.data);
         }
         if(this.pendingRequests.has(reqKey)) {
             return this.pendingRequests.get(reqKey)!;
         }
 
-        const reqPromise = this.fetchAndCachePage(userId, folderId, page);
+        const reqPromise = this.fetchAndCachePage(userId, folderId, page.data);
         this.pendingRequests.set(reqKey, reqPromise);
         try {
             const files = await reqPromise;
@@ -147,13 +150,13 @@ export class CacheServiceClient {
     public async addFile(
         userId: string,
         folderId: string,
-        file: any,
-        page: number = 0
+        file: any
     ): Promise<void> {
         const fileService = await this.apiClientController.getFileService();
         const totalFiles = await fileService.countFiles(userId);
 
-        const cacheKey = this.getCacheKey(userId, folderId);
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
         if(!this.cache.has(cacheKey)) this.initUserCache(userId, folderId, totalFiles);
 
         const data = this.cache.get(cacheKey)!;
@@ -176,16 +179,14 @@ export class CacheServiceClient {
         folderId: string,
         files: any[]
     ): Promise<void> {
-        const fileService = await this.apiClientController.getFileService();
-        const page = await fileService.countPages(userId);
-
-        const cacheKey = this.getCacheKey(userId, folderId);
-        if(!this.cache.has(cacheKey)) this.initUserCache(userId, folderId, page.total);
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+        if(!this.cache.has(cacheKey)) this.initUserCache(userId, folderId, pageKey.total);
 
         const data = this.cache.get(cacheKey)!;
         const time = Date.now();
 
-        const startIndex = (page.current - 1) * this.config.pageSize;
+        const startIndex = (pageKey.current - 1) * this.config.pageSize;
         files.forEach((f, i) => {
             const fileId = f.file_id || f.id;
             if(fileId && !data.cachedFiles.has(fileId)) {
@@ -207,8 +208,8 @@ export class CacheServiceClient {
         data.loadedPages.add(cacheKey);
         data.lastAccessTime = time;
         data.lastUpdated = time;
-        data.hasMore = page.hasMore || false;
-        data.totalFiles = page.total || Math.max(data.totalFiles, data.fileOrder.length);
+        data.hasMore = pageKey.hasMore || false;
+        data.totalFiles = pageKey.total || Math.max(data.totalFiles, data.fileOrder.length);
         data.isFullyLoaded = !data.hasMore;
 
         this.selectedCache(cacheKey);
@@ -238,8 +239,10 @@ export class CacheServiceClient {
         return !!data;
     }
 
-    public invalidateFolderCache(userId: string, folderId: string): void {
-        const cacheKey = this.getCacheKey(userId, folderId);
+    public async invalidateFolderCache(userId: string, folderId: string): Promise<void> {
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+
         this.cache.delete(cacheKey);
         this.accessQueue = this.accessQueue.filter(k => k !== cacheKey);
         this.evictionListeners.forEach(l => l(cacheKey));
@@ -260,13 +263,15 @@ export class CacheServiceClient {
     /**
      * Get Files in Range
      */
-    public getFilesInRange(
+    public async getFilesInRange(
         userId: string,
         folderId: string,
         start: number,
         end: number
-    ): any[] {
-        const cacheKey = this.getCacheKey(userId, folderId);
+    ): Promise<any[]> {
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+
         const data = this.cache.get(cacheKey);
         if(!data) return [];
 
@@ -291,15 +296,21 @@ export class CacheServiceClient {
         });
     }
 
-    public isFolderCached(userId: string, folderId: string): boolean {
-        return this.cache.has(this.getCacheKey(userId, folderId));
+    public async isFolderCached(userId: string, folderId: string): Promise<boolean> {
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+        return this.cache.has(cacheKey);
     }
 
     /**
      * Has More
      */
-    public hasMoreFiles(userId: string, folderId: string): boolean {
-        const data = this.cache.get(this.getCacheKey(userId, folderId));
+    public async hasMoreFiles(userId: string, folderId: string): Promise<boolean> {
+        const fileService = await this.apiClientController.getFileService();
+        const page = await fileService.countPages(userId, folderId);
+        const cacheKey = await fileService.getCacheKey(userId, folderId, page.current);
+
+        const data = this.cache.get(cacheKey);
         if(!data) return true;
         return data.hasMore;
     }
@@ -307,18 +318,12 @@ export class CacheServiceClient {
     /**
      * Get Total Files
      */
-    public getTotalFiles(userId: string, folderId: string): number {
-        const data = this.cache.get(this.getCacheKey(userId, folderId));
+    public async getTotalFiles(userId: string, folderId: string): Promise<number> {
+        const pageKey = await this.getPage(userId, folderId)
+        const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+
+        const data = this.cache.get(cacheKey);
         return data ? data.totalFiles : 0;
-    }
-
-    private getCacheKey(userId: string, folderId: string, page?: number): string {
-        try {
-            if(!this.apiClientController) throw new Error('API client not initialized');
-
-            const fileService = await this.apiClientController.getFileService();
-            const res = await fileService.getCacheKey(userId, folderId)
-        }
     }
 
     private selectedCache(cacheKey: string): void {
@@ -342,12 +347,15 @@ export class CacheServiceClient {
 
     public async preloadFolderData(userId: string, folderId: string): Promise<void> {
         try {
-            await this.getFiles(userId, folderId);
+            const pageKey = await this.getPage(userId, folderId)
+            const cacheKey = await this.getCacheKey(userId, folderId, pageKey);
+            await this.getFiles(userId, folderId, pageKey);
             
-            const data = this.cache.get(this.getCacheKey(userId, folderId));
+            const data = this.cache.get(cacheKey);
             if(data && data.hasMore && this.config.preloadPages > 1) {
                 for(let i = 2; i <= this.config.preloadPages; i++) {
-                    if(!data.loadedPages.has(this.getCacheKey(userId, folderId, i))) {
+                    const pageCacheKey = await this.getCacheKey(userId, folderId, i);
+                    if(!data.loadedPages.has(pageCacheKey)) {
                         await this.getFiles(userId, folderId, i);
                         break;
                     }
@@ -357,6 +365,28 @@ export class CacheServiceClient {
             console.error(err);
             throw err;
         }
+    }
+
+    private async getCacheKey(userId: string, folderId: string, page: any): Promise<string> {
+        const fileService = await this.apiClientController.getFileService();
+        const cacheKey = await fileService.getCacheKey(userId, folderId, page.current);
+        return cacheKey;
+    }
+
+    private async getPage(userId: string, folderId: string): Promise<{
+        data: number,
+        current: number, 
+        total: number, 
+        hasMore: boolean
+    }> {
+        const fileService = await this.apiClientController.getFileService();
+        const page = await fileService.countPages(userId, folderId);
+        return {
+            data: page,
+            current: page.current || 0,
+            total: page.total || 0,
+            hasMore: page.hasMore || false
+        };
     }
     
     public clear(): void {
