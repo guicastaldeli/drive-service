@@ -19,9 +19,6 @@ public class CacheService {
     @Value("${app.fileCache.pageSize:20}")
     private int pageSize;
 
-    @Value("${app.fileCache.maxPagesPerUser:50}")
-    private int maxPagesPerUser;
-
     @Value("${app.fileCache.evictionTimeMinutes:60}")
     private int evictionTimeMinutes;
 

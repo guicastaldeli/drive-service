@@ -13,7 +13,7 @@ from pathlib import Path
 class FileService:
     def __init__(self, url: str):
         self.url = url
-        self.baseUrl = url.rstrip('/')
+        self.url = url.rstrip('/')
         
     ## Save File Temp
     async def saveFileTemp(self, file: UploadFile) -> str:
@@ -53,7 +53,7 @@ class FileService:
                 }
                 
                 res = await client.post(
-                    f"{self.baseUrl}/api/files/upload",
+                    f"{self.url}/api/files/upload",
                     files=files,
                     data=data
                 )
@@ -92,7 +92,7 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/files/download",
+                    f"{self.url}/api/files/download",
                     params=params
                 )
                 if(res.status_code == 200):
@@ -120,7 +120,7 @@ class FileService:
         self,
         userId: str,
         parentFolderId: str = "root",
-        page: int = 1,
+        page: int = 0,
         pageSize: int = 20
     ) -> Dict[str, Any]:
         try:
@@ -133,7 +133,7 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/files/list",
+                    f"{self.url}/api/files/list",
                     params=params
                 )
                 if(res.status_code == 200):
@@ -150,15 +150,7 @@ class FileService:
     async def deleteFile(self, fileId: str, userId: str) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
-                data = {
-                    'fileId': fileId,
-                    'userId': userId
-                }
-                
-                res = await client.delete(
-                    f"{self.baseUrl}/api/files/delete",
-                    json=data
-                )
+                res = await client.delete(f"{self.url}/api/files/delete/{userId}/{fileId}")
                 if(res.status_code == 200):
                     return res.json()
                 else:
@@ -174,7 +166,7 @@ class FileService:
         try:
             async with httpx.AsyncClient() as client:
                 res = await client.get(
-                    f"{self.baseUrl}/api/files/storage/{userId}"
+                    f"{self.url}/api/files/storage/{userId}"
                 )
                 if(res.status_code == 200):
                     return res.json()
@@ -192,7 +184,7 @@ class FileService:
         userId: str,
         query: str,
         fileType: Optional[str] = None,
-        page: int = 1,
+        page: int = 0,
         pageSize: int = 20
     ) -> Dict[str, Any]:
         try:
@@ -210,9 +202,64 @@ class FileService:
                 }
                 
                 res = await client.get(
-                    f"{self.baseUrl}/api/files/search",
+                    f"{self.url}/api/files/search",
                     params=params
                 )
+                if(res.status_code == 200):
+                    return res.json()
+                else:
+                    raise HTTPException(
+                        status_code=res.status_code,
+                        detail=res.text
+                    )
+        except httpx.RequestError as err:
+            raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
+        
+    ## Count Files
+    async def countFiles(self, userId: str, folderId: str = "root") -> Dict[str, Any]:
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}")
+                if(res.status_code == 200):
+                    return res.json()
+                else:
+                    raise HTTPException(
+                        status_code=res.status_code,
+                        detail=res.text
+                    )
+        except httpx.RequestError as err:
+            raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
+        
+    ## Count Pages
+    async def countPages(
+        self, 
+        userId: str, 
+        folderId: str = "root", 
+        pageSize: int = 20
+    ) -> Dict[str, Any]:
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}/{pageSize}")
+                if(res.status_code == 200):
+                    return res.json()
+                else:
+                    raise HTTPException(
+                        status_code=res.status_code,
+                        detail=res.text
+                    )
+        except httpx.RequestError as err:
+            raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
+        
+    ## Get Cache Key
+    async def getCacheKey(
+        self, 
+        userId: str, 
+        folderId: str = "root", 
+        page: int = 0
+    ) -> Dict[str, Any]:
+        try:
+            async with httpx.AsyncClient() as client:
+                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}/{page}")
                 if(res.status_code == 200):
                     return res.json()
                 else:

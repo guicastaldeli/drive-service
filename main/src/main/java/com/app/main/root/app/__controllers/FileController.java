@@ -74,7 +74,7 @@ public class FileController {
     /**
      * Delete File
      */
-    @DeleteMapping("/delete/{fileId}/{userId}")
+    @DeleteMapping("/delete/{userId}/{fileId}")
     public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
         try {
             boolean deleted = serviceManager.getFileService().deleteFile(fileId, userId);
@@ -120,7 +120,7 @@ public class FileController {
     public ResponseEntity<?> listFiles(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String parentFolderId,
-        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int pageSize
     ) {
         try {
@@ -179,7 +179,7 @@ public class FileController {
         @RequestParam String userId,
         @RequestParam String query,
         @RequestParam(required = false) String fileType,
-        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "0") int page,
         @RequestParam(defaultValue = "20") int pageSize
     ) {
         try {
@@ -212,6 +212,30 @@ public class FileController {
         } catch(Exception err) {
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+
+    /**
+     * Count Files
+     */
+    @GetMapping("/count/{userId}/{folderId}")
+    public ResponseEntity<?> countFiles(
+        @RequestParam String userId,
+        @RequestParam(defaultValue = "root") String folderId
+    ) {
+        try {
+            int totalFiles = serviceManager.getFileService().countTotalFiles(userId, folderId);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "total", totalFiles,
+                "folderId", folderId
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", true,
                 "error", err.getMessage()
             ));
         }
@@ -271,5 +295,4 @@ public class FileController {
             ));
         }
     }
-
 }
