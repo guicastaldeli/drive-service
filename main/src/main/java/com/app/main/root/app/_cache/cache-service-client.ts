@@ -93,11 +93,9 @@ export class CacheServiceClient {
     ): Promise<any[]> {
         const cacheKey = this.getCacheKey(userId, folderId);
         this.selectedCache(cacheKey);
-        
-        const pageKey = this.getPageKey(folderId, page);
         const reqKey = `${cacheKey}_${page}`;
 
-        if(!forceRefresh && this.isPageLoaded(cacheKey, pageKey)) {
+        if(!forceRefresh && this.isPageLoaded(cacheKey)) {
             return this.getCachedPage(cacheKey, page);
         }
         if(this.pendingRequests.has(reqKey)) {
@@ -156,7 +154,6 @@ export class CacheServiceClient {
         const totalFiles = await fileService.countFiles(userId);
 
         const cacheKey = this.getCacheKey(userId, folderId);
-        const pageKey = this.getPageKey(folderId, page);
         if(!this.cache.has(cacheKey)) this.initUserCache(userId, folderId, totalFiles);
 
         const data = this.cache.get(cacheKey)!;
@@ -164,7 +161,7 @@ export class CacheServiceClient {
         const fileId = file.file_id || file.id;
         if(fileId && !data.cachedFiles.has(fileId)) {
             data.cachedFiles.set(fileId, file);
-            data.loadedPages.add(pageKey);
+            data.loadedPages.add(cacheKey);
             data.lastAccessTime = time;
             data.lastUpdated = time;
             data.totalFiles += 1;
@@ -183,7 +180,6 @@ export class CacheServiceClient {
         const page = await fileService.countPages(userId);
 
         const cacheKey = this.getCacheKey(userId, folderId);
-        const pageKey = this.getPageKey(folderId, page);
         if(!this.cache.has(cacheKey)) this.initUserCache(userId, folderId, page.total);
 
         const data = this.cache.get(cacheKey)!;
@@ -237,16 +233,131 @@ export class CacheServiceClient {
         return res;
     }
 
-    private isPageLoaded(cacheKey: string, pageKey: string): boolean {
+    private isPageLoaded(cacheKey: string): boolean {
         const data = this.cache.get(cacheKey);
-        return !!data && data.loadedPages.has(pageKey);
+        return !!data;
     }
 
     public invalidateFolderCache(userId: string, folderId: string): void {
         const cacheKey = this.getCacheKey(userId, folderId);
         this.cache.delete(cacheKey);
+        this.accessQueue = this.accessQueue.filter(k => k !== cacheKey);
+        this.evictionListeners.forEach(l => l(cacheKey));
+        console.log(`Cache invalidated for folder ${folderId} (user: ${userId})`)
     }
 
+    public invalidUserCache(userId: string): void {
+        const userKeys = Array.from(this.cache.keys())
+            .filter(k => k.startsWith(`${userId}`));
+        userKeys.forEach(key => {
+            this.cache.delete(key);
+            this.accessQueue = this.accessQueue(k => k !== key);
+            this.evictionListeners.forEach(l => l(key));
+        });
+        console.log(`Cache invalidated for user ${userId}`);
+    }
+
+    /**
+     * Get Files in Range
+     */
+    public getFilesInRange(
+        userId: string,
+        folderId: string,
+        start: number,
+        end: number
+    ): any[] {
+        const cacheKey = this.getCacheKey(userId, folderId);
+        const data = this.cache.get(cacheKey);
+        if(!data) return [];
+
+        const result: any[] = [];
+        const endIndex = Math.min(end, data.fileOrder.length - 1);
+        
+        for(let i = start; i <= endIndex; i++) {
+            const fileId = data.fileOrder[i];
+            const file = data.cachedFiles.get(fileId);
+            if(file) {
+                result.push({ 
+                    ...file, 
+                    virtualIndex: i 
+                });
+            }
+        }
+        
+        return result.sort((a, b) => {
+            const timeA = a.uploaded_at || a.last_modified || 0;
+            const timeB = b.uploaded_at || b.last_modified || 0;
+            return new Date(timeB).getTime() - new Date(timeA).getTime();
+        });
+    }
+
+    public isFolderCached(userId: string, folderId: string): boolean {
+        return this.cache.has(this.getCacheKey(userId, folderId));
+    }
+
+    /**
+     * Has More
+     */
+    public hasMoreFiles(userId: string, folderId: string): boolean {
+        const data = this.cache.get(this.getCacheKey(userId, folderId));
+        if(!data) return true;
+        return data.hasMore;
+    }
+
+    /**
+     * Get Total Files
+     */
+    public getTotalFiles(userId: string, folder: string): number {
+        const data = this.cache.get(this.getCacheKey(userId, folderId));
+        return data ? data.totalFiles : 0;
+    }
+
+    private getCacheKey(userId: string, folderId: string, page?: number): string {
+        """"'get from server'"""";
+    }
+
+    private selectCache(cacheKey: string): void {
+        this.accessQueue = this.accessQueue.filter(k => k !== cacheKey);
+        this.accessQueue.push(cacheKey);
+    }
+
+    public addEvictionListener(listener: (cacheKey: string) => void): void {
+        this.evictionListeners.push(listener);
+    }
+
+    public removeEvictionListener(listener: (cacheKey: string) => void): void {
+        this.evictionListeners = this.evictionListeners.filter(l => l !== listener);
+    }
+
+    public getCachedFolders(userId: string): string[] {
+        return Array.from(this.cache.keys())
+            .filter(key => key.startsWith(`${userId}_`))
+            .map(key => key.split('_')[1]);
+    }
+
+    public async preloadFolderData(userId: string, folderId: string): Promise<void> {
+        try {
+            await this.getFiles(userId, folderId);
+            
+            const data = this.cache.get(this.getCacheKey(userId, folderId));
+            if(data && data.hasMore && this.config.preloadPages > 1) {
+                for(let i = 2; i <= this.config.preloadPages; i++) {
+                    if(!data.loadedPages.has(this.getCacheKey(userId, folderId, i))) {
+                        await this.getFiles(userId, folderId, i);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    
+    public clear(): void {
+        this.cache.clear();
+        this.accessQueue = [];
+        this.pendingRequests.clear();
+        console.log('Cache cleared');
+    }
+    
     /**
      * Set Api Client
      */
