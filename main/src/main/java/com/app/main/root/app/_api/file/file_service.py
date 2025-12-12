@@ -47,15 +47,10 @@ class FileService:
                 files = {
                     'file': (originalFileName, fileContent)
                 }
-                data = {
-                    'userId': userId,
-                    'parentFolderId': parentFolderId,
-                }
                 
                 res = await client.post(
-                    f"{self.url}/api/files/upload",
-                    files=files,
-                    data=data
+                    f"{self.url}/api/files/upload/{userId}/{parentFolderId}",
+                    files=files
                 )
                 if(os.path.exists(filePath)):
                     os.remove(filePath)
@@ -86,15 +81,7 @@ class FileService:
     async def downloadFile(self, fileId: str, userId: str) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
-                params = {
-                    'fileId': fileId,
-                    'userId': userId
-                }
-                
-                res = await client.get(
-                    f"{self.url}/api/files/download",
-                    params=params
-                )
+                res = await client.get(f"{self.url}/api/files/download/{userId}/{fileId}")
                 if(res.status_code == 200):
                     contentDisposition = res.headers.get('content-disposition', '')
                     if 'filename=' or 'fileName=' in contentDisposition:
@@ -132,10 +119,7 @@ class FileService:
                     'pageSize': pageSize
                 }
                 
-                res = await client.get(
-                    f"{self.url}/api/files/list",
-                    params=params
-                )
+                res = await client.get(f"{self.url}/api/files/list", params=params)
                 if(res.status_code == 200):
                     return res.json()
                 else:
@@ -219,7 +203,12 @@ class FileService:
     async def countFiles(self, userId: str, folderId: str = "root") -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
-                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}")
+                params = {
+                    'userId': userId,
+                    'folderId': folderId
+                }
+                
+                res = await client.get(f"{self.url}/api/files/count", params=params)
                 if(res.status_code == 200):
                     return res.json()
                 else:
@@ -239,7 +228,13 @@ class FileService:
     ) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
-                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}/{pageSize}")
+                params = {
+                    'userId': userId,
+                    'folderId': folderId,
+                    'pageSize': pageSize
+                }
+                
+                res = await client.get(f"{self.url}/api/files/count-pages", params=params)
                 if(res.status_code == 200):
                     return res.json()
                 else:
@@ -259,7 +254,13 @@ class FileService:
     ) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
-                res = await client.get(f"{self.url}/api/files/count/{userId}/{folderId}/{page}")
+                params = {
+                    'userId': userId,
+                    'folderId': folderId,
+                    'page': page
+                }
+                
+                res = await client.get(f"{self.url}/api/files/cache-key", params=params)
                 if(res.status_code == 200):
                     return res.json()
                 else:

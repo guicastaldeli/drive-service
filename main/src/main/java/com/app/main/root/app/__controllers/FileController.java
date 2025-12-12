@@ -22,7 +22,7 @@ public class FileController {
     /**
      * Upload
      */
-    @PostMapping("/upload")
+    @PostMapping("/upload/{userId}/{parentFolderId}")
     public ResponseEntity<?> uploadFile(
         @RequestParam("file") MultipartFile file,
         @RequestParam("userId") String userId,
@@ -58,7 +58,7 @@ public class FileController {
     /**
      * Download
      */
-    @GetMapping("/download/{fileId}")
+    @GetMapping("/download/{userId}/{fileId}")
     public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @RequestParam String userId) {
         try {
             byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(fileId, userId);
@@ -93,7 +93,7 @@ public class FileController {
     /**
      * Info
      */
-    @GetMapping("/info")
+    @GetMapping("/info/{fileId}")
     public ResponseEntity<?> getFileInfo(@PathVariable String fileId, @PathVariable String userId) {
         try {
             String database = serviceManager.getFileService().findFileDatabase(fileId, userId);
@@ -116,7 +116,7 @@ public class FileController {
     /**
      * List FIles
      */
-    @GetMapping("/list/{userId}")
+    @GetMapping("/list")
     public ResponseEntity<?> listFiles(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String parentFolderId,
@@ -221,7 +221,7 @@ public class FileController {
     /**
      * Count Files
      */
-    @GetMapping("/count/{userId}/{folderId}")
+    @GetMapping("/count")
     public ResponseEntity<?> countFiles(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String folderId
@@ -244,7 +244,7 @@ public class FileController {
     /**
      * Count Pages
      */
-    @GetMapping("/count-pages/{userId}/{folderId}")
+    @GetMapping("/count-pages")
     public ResponseEntity<?> countPages(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String folderId,
@@ -273,7 +273,7 @@ public class FileController {
     /**
      * Get Cache Key
      */
-    @GetMapping("/cache-key/{userId}/{folderId}/{page}")
+    @GetMapping("/cache-key")
     public ResponseEntity<?> getCacheKey(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String folderId,

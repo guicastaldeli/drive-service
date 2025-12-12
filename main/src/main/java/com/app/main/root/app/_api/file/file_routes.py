@@ -15,7 +15,7 @@ class FileRoutes:
         
     def setupRoutes(self):
         ## Upload File
-        @self.router.post("/upload")
+        @self.router.post("/upload/{userId}/{parentFolderId}")
         async def uploadFile(
             file: UploadFile = File(...),
             userId: str = Form(...),
@@ -42,7 +42,7 @@ class FileRoutes:
             except Exception as err:
                 raise HTTPException(status_code=500, detail=f"Upload failed: {str(err)}")
         
-        @self.router.post("/upload-multiple")
+        @self.router.post("/upload-multiple/{userId}/{parentFolderId}")
         async def uploadMultipleFiles(
             files: List[UploadFile] = File(...),
             userId: str = Form(...),
@@ -84,7 +84,7 @@ class FileRoutes:
                 raise HTTPException(status_code=500, detail=f"Upload failed: {str(err)}")
             
         ## Download File
-        @self.router.get("/download")
+        @self.router.get("/download/{userId}/{fileId}")
         async def downloadFile(fileId: str = Query(...), userId: str = Query(...)):
             try:
                 fileData = await self.fileService.downloadFile(fileId, userId)
