@@ -15,6 +15,7 @@ public class ServiceManager {
     private final SessionService sessionService;
     private final TokenService tokenService;
     private final CookieService cookieService;
+    private final FileService fileService;
 
     public ServiceManager(
         DbService dbService,
@@ -22,7 +23,8 @@ public class ServiceManager {
         @Lazy EmailService emailService,
         @Lazy SessionService sessionService,
         @Lazy TokenService tokenService,
-        @Lazy CookieService cookieService
+        @Lazy CookieService cookieService,
+        @Lazy FileService fileService
     ) {
         this.dbService = dbService;
         this.userService = userService;
@@ -30,6 +32,7 @@ public class ServiceManager {
         this.sessionService = sessionService;
         this.tokenService = tokenService;
         this.cookieService = cookieService;
+        this.fileService = fileService;
     }
 
     /**
@@ -72,5 +75,12 @@ public class ServiceManager {
      */
     public CookieService getCookieService() {
         return cookieService;
+    }
+
+    /**
+     * File Service
+     */
+    public FileService getFileService() {
+        return fileService;
     }
 }

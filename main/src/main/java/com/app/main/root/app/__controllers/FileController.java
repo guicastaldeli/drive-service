@@ -1,7 +1,7 @@
 package com.app.main.root.app.__controllers;
 import com.app.main.root.app._crypto.message_encoder.SecureMessageService;
 import com.app.main.root.app._data.FileUploader;
-import com.app.main.root.app._service.FileService;
+import com.app.main.root.app._service.ServiceManager;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.context.annotation.Lazy;
@@ -12,10 +12,10 @@ import java.util.*;
 @RequestMapping("/api/files")
 public class FileController {
     private final SecureMessageService secureMessageService;
-    private final FileService fileService;
+    private final ServiceManager serviceManager;
 
-    public FileController(@Lazy FileService fileService, SecureMessageService secureMessageService) {
-        this.fileService = fileService;
+    public FileController(@Lazy ServiceManager serviceManager, SecureMessageService secureMessageService) {
+        this.serviceManager = serviceManager;
         this.secureMessageService = secureMessageService;
     }
 
@@ -29,11 +29,12 @@ public class FileController {
         @RequestParam(value = "parentFolderId", defaultValue = "root") String parentFolderId
     ) {
         try {
-            FileUploader res = fileService.getFileUploader().upload(
-                userId, 
-                file, 
-                parentFolderId
-            );
+            FileUploader res = serviceManager.getFileService()
+                .getFileUploader().upload(
+                    userId, 
+                    file, 
+                    parentFolderId
+                );
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -60,7 +61,7 @@ public class FileController {
     @GetMapping("/download/{fileId}")
     public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @RequestParam String userId) {
         try {
-            byte[] fileContent = fileService.getFileDownloader().download(fileId, userId);
+            byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(fileId, userId);
             return ResponseEntity.ok()
                 .header("Content-Type", "application/octet-stream")
                 .header("Content-Disposition", "attachment; filename=\"" + fileId + "\"")
@@ -76,7 +77,7 @@ public class FileController {
     @DeleteMapping("/delete/{fileId}/{userId}")
     public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
         try {
-            boolean deleted = fileService.deleteFile(fileId, userId);
+            boolean deleted = serviceManager.getFileService().deleteFile(fileId, userId);
             return ResponseEntity.ok(Map.of(
                 "success", deleted,
                 "message", deleted ? "file deleted!" : "file not found"
@@ -95,7 +96,7 @@ public class FileController {
     @GetMapping("/info")
     public ResponseEntity<?> getFileInfo(@PathVariable String fileId, @PathVariable String userId) {
         try {
-            String database = fileService.findFileDatabase(fileId, userId);
+            String database = serviceManager.getFileService().findFileDatabase(fileId, userId);
             if(database != null) {
                 return ResponseEntity.ok(Map.of(
                     "fileId", fileId,
@@ -123,12 +124,13 @@ public class FileController {
         @RequestParam(defaultValue = "20") int pageSize
     ) {
         try {
-            Map<String, Object> res = fileService.listFiles(
-                userId, 
-                parentFolderId, 
-                page, 
-                pageSize
-            );
+            Map<String, Object> res = serviceManager.getFileService()
+                .listFiles(
+                    userId, 
+                    parentFolderId, 
+                    page, 
+                    pageSize
+                );
             int totalFiles = res.size();
             int totalPages = (int) Math.ceil((double) totalFiles / pageSize);
 
@@ -156,7 +158,7 @@ public class FileController {
     @GetMapping("/storage/{userId}")
     public ResponseEntity<?> getStorageUsage(@PathVariable String userId) {
         try {
-            Map<String, Object> usage = fileService.getStorageUsage(userId);
+            Map<String, Object> usage = serviceManager.getFileService().getStorageUsage(userId);
             return ResponseEntity.ok(Map.of(
                 "success", true,
                 "data", usage
@@ -214,4 +216,60 @@ public class FileController {
             ));
         }
     }
+
+    /**
+     * Count Pages
+     */
+    @GetMapping("/count-pages/{userId}/{folderId}")
+    public ResponseEntity<?> countPages(
+        @RequestParam String userId,
+        @RequestParam(defaultValue = "root") String folderId,
+        @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        try {
+            int totalFiles = serviceManager.getFileService().countTotalFiles(userId, folderId);
+            int totalPages = (int) Math.ceil((double) totalFiles / pageSize);
+            int currentPage = 0;
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "current", currentPage,
+                "total", totalPages,
+                "hasMore", totalPages > currentPage,
+                "pageSize", pageSize
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * Get Cache Key
+     */
+    @GetMapping("/cache-key/{userId}/{folderId}/{page}")
+    public ResponseEntity<?> getCacheKey(
+        @RequestParam String userId,
+        @RequestParam(defaultValue = "root") String folderId,
+        @RequestParam(defaultValue = "0") int page
+    ) {
+        try {
+            String cacheKey = serviceManager.getFileService().getCacheKey(userId, folderId, page);
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "cacheKey", cacheKey,
+                "userId", userId,
+                "folderId", folderId,
+                "page", page
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "error", err.getMessage()
+            ));
+        }
+    }
+
 }

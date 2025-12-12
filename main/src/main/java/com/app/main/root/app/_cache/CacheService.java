@@ -2,6 +2,7 @@ package com.app.main.root.app._cache;
 import jakarta.annotation.PreDestroy;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import com.app.main.root.app._service.ServiceManager;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -11,6 +12,7 @@ import java.util.*;
 
 @Service
 public class CacheService {
+    private final ServiceManager serviceManager;
     private final Map<String, UserFileCache> cache = new ConcurrentHashMap<>();
     private ScheduledExecutorService cleanupExecutor = Executors.newScheduledThreadPool(1);
 
@@ -23,7 +25,9 @@ public class CacheService {
     @Value("${app.fileCache.evictionTimeMinutes:60}")
     private int evictionTimeMinutes;
 
-    public CacheService() {
+    public CacheService(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+
         cleanupExecutor.scheduleAtFixedRate(
             this::cleanupExpired,
             30,
@@ -53,7 +57,7 @@ public class CacheService {
         userCache.writeLock().lock();
 
         try {
-            String cacheKey = folderId + "_page_" + page;
+            String cacheKey = serviceManager.getFileService().getCacheKey(userId, folderId, page);
             userCache.cachedPages.put(cacheKey, files);
             userCache.lastAccessTime = System.currentTimeMillis();
         } finally {
@@ -74,7 +78,7 @@ public class CacheService {
         userCache.readLock().lock();
 
         try {
-            String cacheKey = folderId + "_page_" + page;
+            String cacheKey = serviceManager.getFileService().getCacheKey(userId, folderId, page);
             userCache.lastAccessTime = System.currentTimeMillis();
             return userCache.cachedPages.get(cacheKey); 
         } finally {
@@ -102,7 +106,7 @@ public class CacheService {
         try {
             List<Integer> missingPages = new ArrayList<>();
             for(int page = startPage; page <= endPage; page++) {
-                String cacheKey = folderId + "_page_" + page;
+                String cacheKey = serviceManager.getFileService().getCacheKey(userId, folderId, page);
                 if(!userCache.loadedPages.contains(cacheKey)) {
                     missingPages.add(page);
                 }

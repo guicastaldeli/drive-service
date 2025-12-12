@@ -239,8 +239,12 @@ public class FileService {
         ));
         return res;
     }
+
+    public String getCacheKey(String userId, String folderId, int page) {
+        return folderId + "_page_" + page;
+    }
     
-    private int countTotalFiles(String userId, String folderId) {
+    public int countTotalFiles(String userId, String folderId) {
         JdbcTemplate metadataTemplate = jdbcTemplates.get(METADATA_DB);
         if(metadataTemplate == null) return 0;
 

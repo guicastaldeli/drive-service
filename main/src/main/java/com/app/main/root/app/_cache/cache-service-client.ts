@@ -62,7 +62,7 @@ export class CacheServiceClient {
                 fileOrder: []
             });
         }
-        this.selectCache(cacheKey);
+        this.selectedCache(cacheKey);
     }
 
     /**
@@ -204,14 +204,14 @@ export class CacheServiceClient {
         });
 
         data.fileOrder = data.fileOrder.filter(id => id && id !== '');
-        data.loadedPages.add(pageKey);
+        data.loadedPages.add(cacheKey);
         data.lastAccessTime = time;
         data.lastUpdated = time;
         data.hasMore = page.hasMore || false;
         data.totalFiles = page.total || Math.max(data.totalFiles, data.fileOrder.length);
         data.isFullyLoaded = !data.hasMore;
 
-        this.selectCache(cacheKey);
+        this.selectedCache(cacheKey);
     }
 
     /**
@@ -251,7 +251,7 @@ export class CacheServiceClient {
             .filter(k => k.startsWith(`${userId}`));
         userKeys.forEach(key => {
             this.cache.delete(key);
-            this.accessQueue = this.accessQueue(k => k !== key);
+            this.accessQueue = this.accessQueue.filter(k => k !== key);
             this.evictionListeners.forEach(l => l(key));
         });
         console.log(`Cache invalidated for user ${userId}`);
@@ -307,16 +307,21 @@ export class CacheServiceClient {
     /**
      * Get Total Files
      */
-    public getTotalFiles(userId: string, folder: string): number {
+    public getTotalFiles(userId: string, folderId: string): number {
         const data = this.cache.get(this.getCacheKey(userId, folderId));
         return data ? data.totalFiles : 0;
     }
 
     private getCacheKey(userId: string, folderId: string, page?: number): string {
-        """"'get from server'"""";
+        try {
+            if(!this.apiClientController) throw new Error('API client not initialized');
+
+            const fileService = await this.apiClientController.getFileService();
+            const res = await fileService.getCacheKey(userId, folderId)
+        }
     }
 
-    private selectCache(cacheKey: string): void {
+    private selectedCache(cacheKey: string): void {
         this.accessQueue = this.accessQueue.filter(k => k !== cacheKey);
         this.accessQueue.push(cacheKey);
     }
@@ -348,6 +353,9 @@ export class CacheServiceClient {
                     }
                 }
             }
+        } catch(err) {
+            console.error(err);
+            throw err;
         }
     }
     
