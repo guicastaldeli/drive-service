@@ -169,7 +169,7 @@ export class Main extends Component<any, State> {
                         userId: userInfo.userId
                     }, async () => {
                         try {
-                            await this.cacheService.initCache(userInfo.userId);
+                            await this.cacheService.initCache(userInfo.userId, "root");
                             await this.cachePreloader.startPreloading(userInfo.userId);
                             const authService = await this.apiClientController.getAuthService();
                             const validation = await authService.validateSession();
@@ -255,7 +255,7 @@ export class Main extends Component<any, State> {
                         userId: authData.userId
                     }, async () => {
                         try {
-                            await this.cacheService.initCache(authData.userId);
+                            await this.cacheService.initCache(authData.userId, "root");
                             await this.cachePreloader.startPreloading(authData.userId);
                             
                             if (this.dashboardInstance) {

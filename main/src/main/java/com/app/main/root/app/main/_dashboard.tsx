@@ -5,6 +5,7 @@ import { ApiClientController } from "./_api-client/api-client-controller";
 import { SessionManager } from "./_session/session-manager";
 import { Main } from "./_main";
 import { FileUploader } from "./_file/file-uploader";
+import { FileItem } from "./_file/file-item";
 
 interface Props {
     main: Main;
@@ -103,7 +104,11 @@ export class Dashboard extends Component<Props, State> {
                                         />
                                     </div>
                                     <div id="file-list">
-                                        file list
+                                        <FileItem
+                                            apiClientController={this.apiClientController}
+                                            userId={this.userId}
+                                            parentFolderId="root" 
+                                        />
                                     </div>
                                 </div>
                             )}
