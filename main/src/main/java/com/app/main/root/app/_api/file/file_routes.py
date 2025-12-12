@@ -104,21 +104,17 @@ class FileRoutes:
         async def listFiles(
             userId: str = Query(...),
             parentFolderId: str = Query("root"),
-            page: int = Query(1, ge=1),
-            pageSize: int = Query(20, ge=1, le=20)
+            page: int = Query(0, ge=0),
+            pageSize: int = Query(20, ge=1, le=100)
         ):
             try:
-                files = await self.fileService.listFiles(
+                res = await self.fileService.listFiles(
                     userId=userId,
                     parentFolderId=parentFolderId,
                     page=page,
                     pageSize=pageSize
                 )
-                
-                return {
-                    "success": True,
-                    "data": files
-                }
+                return res
             except Exception as err:
                 raise HTTPException(status_code=500, detail=f"Failed to list files: {str(err)}")
     
@@ -169,3 +165,41 @@ class FileRoutes:
                 }
             except Exception as err:
                 raise HTTPException(status_code=500, detail=f"Search failed: {str(err)}")
+            
+        ## Count Files
+        @self.router.get("/count")
+        async def countFiles(
+            userId: str = Query(...),
+            folderId: str = Query("root")
+        ):
+            try:
+                res = await self.fileService.countFiles(userId, folderId)
+                return res
+            except Exception as err:
+                raise HTTPException(status_code=500, detail=f"Failed to count files: {str(err)}")
+        
+        ## Count Pages
+        @self.router.get("/count-pages")
+        async def countPages(
+            userId: str = Query(...),
+            folderId: str = Query("root"),
+            pageSize: int = Query(20, ge=1, le=100)
+        ):
+            try:
+                res = await self.fileService.countPages(userId, folderId, pageSize)
+                return res
+            except Exception as err:
+                raise HTTPException(status_code=500, detail=f"Failed to count pages: {str(err)}")
+        
+        ## Get Cache Key
+        @self.router.get("/cache-key")
+        async def getCacheKey(
+            userId: str = Query(...),
+            folderId: str = Query("root"),
+            page: int = Query(0, ge=0)
+        ):
+            try:
+                res = await self.fileService.getCacheKey(userId, folderId, page)
+                return res
+            except Exception as err:
+                raise HTTPException(status_code=500, detail=f"Failed to generate cache key: {str(err)}")
