@@ -73,7 +73,7 @@ public class FileController {
     /**
      * Delete File
      */
-    @DeleteMapping("/delete")
+    @DeleteMapping("/delete/{fileId}/{userId}")
     public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
         try {
             boolean deleted = fileService.deleteFile(fileId, userId);
@@ -107,6 +107,44 @@ public class FileController {
             }
         } catch(Exception err) {
             return ResponseEntity.status(500).body(Map.of(
+                "error", err.getMessage()
+            ));
+        }
+    }
+
+    /**
+     * List FIles
+     */
+    @GetMapping("/list/{userId}")
+    public ResponseEntity<?> listFiles(
+        @RequestParam String userId,
+        @RequestParam(defaultValue = "root") String parentFolderId,
+        @RequestParam(defaultValue = "1") int page,
+        @RequestParam(defaultValue = "20") int pageSize
+    ) {
+        try {
+            List<Map<String, Object>> res = fileService.listFiles(
+                userId, 
+                parentFolderId, 
+                page, 
+                pageSize
+            );
+            int totalFiles = res.size();
+            int totalPages = (int) Math.ceil((double) totalFiles / pageSize);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "data", res,
+                "pagination", Map.of(
+                    "page", page,
+                    "pageSize", pageSize,
+                    "total", totalFiles,
+                    "totalPages", totalPages
+                )
+            ));
+        } catch(Exception err) {
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
                 "error", err.getMessage()
             ));
         }

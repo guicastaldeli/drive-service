@@ -105,7 +105,7 @@ class FileRoutes:
             userId: str = Query(...),
             parentFolderId: str = Query("root"),
             page: int = Query(1, ge=1),
-            pageSize: int = Query(20, ge=1, le=100)
+            pageSize: int = Query(20, ge=1, le=20)
         ):
             try:
                 files = await self.fileService.listFiles(
@@ -123,6 +123,7 @@ class FileRoutes:
                 raise HTTPException(status_code=500, detail=f"Failed to list files: {str(err)}")
     
         ## Delete
+        @self.router.get("/delete/{fileId}/{userId}")
         async def deleteFile(fileId: str = Query(...), userId: str = Query(...)):
             try:
                 res = await self.fileService.deleteFile(fileId, userId)
