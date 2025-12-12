@@ -49,19 +49,19 @@ export class CachePreloaderService {
      */
     private async preloadRecentFolders(userId: string): Promise<void> {
         try {
-            this.schedulePreload(userId, "root");
+            await this.schedulePreload(userId, "root");
         } catch(err) {
             console.error('Failed to get recent folders:', err);
         }
     }
 
-    private schedulePreload(userId: string, folderId: string): void {
+    private async schedulePreload(userId: string, folderId: string): Promise<void> {
+        const isFolderCached = await this.cacheService.isFolderCached(userId, folderId);
+
         const queueItem = { userId, folderId };
         const key = `${userId}_${folderId}`;
 
-        if(this.cacheService.isFolderCached(userId, folderId) ||
-            this.preloadedFolders.has(key)
-        ) {
+        if(isFolderCached || this.preloadedFolders.has(key)) {
             return;    
         }
         this.preloadQueue.push(queueItem);
@@ -90,7 +90,8 @@ export class CachePreloaderService {
     ** Preload Chat
     */
     private async preloadFolder(userId: string, folderId: string): Promise<void> {
-        if(this.cacheService.isFolderCached(userId, folderId)) return;
+        const isFolderCached = await this.cacheService.isFolderCached(userId, folderId);
+        if(isFolderCached) return;
         try {
             const fileService = await this.apiClientController.getFileService();
             const res = await fileService.listFiles(userId, folderId);
