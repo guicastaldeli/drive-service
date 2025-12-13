@@ -33,7 +33,7 @@ public class FileDownloader {
         String metadataDb = FileService.METADATA_DB;
         
         try {
-            List<Map<String, Object>> res = jdbcTemplates
+            List<Map<String, Object>> metadataTemplate = jdbcTemplates
                 .get(metadataDb)
                 .queryForList(
                     query,
@@ -41,8 +41,8 @@ public class FileDownloader {
                     userId
                 );
 
-            if(!res.isEmpty()) {
-                Map<String, Object> metadata = res.get(0);
+            if(!metadataTemplate.isEmpty()) {
+                Map<String, Object> metadata = metadataTemplate.get(0);
                 String originalFilename = (String) metadata.get("original_filename");
                 String mimeType = (String) metadata.get("mime_type");
                 String dbType = (String) metadata.get("database_name");
