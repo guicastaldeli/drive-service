@@ -142,24 +142,32 @@ public class FileUploader {
     /**
      * Get File Type
      */
-    public String getFileType(String type) {
-        if(type.startsWith("image/")) return "image";
-        if(type.startsWith("video/")) return "video";
-        if(type.startsWith("audio/")) return "audio";
-        if(type.startsWith("text/")) return "document";
-        if(
-            type.contains("pdf") ||
-            type.contains("document")
-        ) {
-            return "document";
+    public String getFileType(String mimeType) {
+        if (mimeType == null) {
+            return "other";
         }
-        if(
-            type.contains("zip") || 
-            type.contains("rar")
-        ) {
+
+        String lowerMime = mimeType.toLowerCase();
+        if (lowerMime.startsWith("image/")) {
+            return "image";
+        } else if (lowerMime.startsWith("video/")) {
+            return "video";
+        } else if (lowerMime.startsWith("audio/")) {
+            return "audio";
+        } else if (lowerMime.startsWith("text/")) {
             return "document";
+        } else if (lowerMime.contains("pdf") || 
+                lowerMime.contains("document") || 
+                lowerMime.contains("msword") ||
+                lowerMime.contains("officedocument")) {
+            return "document";
+        } else if (lowerMime.contains("zip") || 
+                lowerMime.contains("rar") || 
+                lowerMime.contains("compressed")) {
+            return "document";
+        } else {
+            return "other";
         }
-        return "other";
     }
 
     /**

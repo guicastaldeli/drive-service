@@ -52,16 +52,17 @@ export class FileServiceClient {
             const res = await fetch(`${this.url}/api/files/delete/${userId}/${fileId}`, {
                 method: 'DELETE',
                 headers: {
-                    'Content-Type': 'application-json',
-                    'userId': userId
+                    'Content-Type': 'application/json',
                 }
             });
             if(!res.ok) {
+                const errorText = await res.text();
+                console.error('Delete failed with status:', res.status, 'Response:', errorText);
                 throw new Error(`Failed to delete file: ${res.statusText}`);
             }
             return await res.json();
         } catch(err) {
-            console.error(err);
+            console.error('Error deleting file:', err);
             throw err;
         }
     }

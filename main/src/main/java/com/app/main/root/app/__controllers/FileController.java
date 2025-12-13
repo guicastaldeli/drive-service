@@ -86,12 +86,13 @@ public class FileController {
     @DeleteMapping("/delete/{userId}/{fileId}")
     public ResponseEntity<?> deleteFile(@PathVariable String userId, @PathVariable String fileId) {
         try {
-            boolean deleted = serviceManager.getFileService().deleteFile(fileId, userId);
+            boolean deleted = serviceManager.getFileService().deleteFile(userId, fileId);
             return ResponseEntity.ok(Map.of(
                 "success", deleted,
                 "message", deleted ? "file deleted!" : "file not found"
             ));
         } catch(Exception err) {
+            err.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "error", err.getMessage()
@@ -130,7 +131,7 @@ public class FileController {
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String parentFolderId,
         @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int pageSize
+        @RequestParam(defaultValue = "5") int pageSize
     ) {
         try {
             if(userId == null || userId.isEmpty()) {
@@ -258,7 +259,7 @@ public class FileController {
     public ResponseEntity<?> countPages(
         @RequestParam String userId,
         @RequestParam(defaultValue = "root") String folderId,
-        @RequestParam(defaultValue = "20") int pageSize
+        @RequestParam(defaultValue = "5") int pageSize
     ) {
         try {
             int totalFiles = serviceManager.getFileService().countTotalFiles(userId, folderId);

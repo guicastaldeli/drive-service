@@ -150,23 +150,38 @@ public class FileService {
         if(metadataTemplate == null) throw new RuntimeException("files_metadata database not available");
 
         String getInfoQuery = CommandQueryManager.GET_FILE_INFO.get();
-        Map<String, Object> info = metadataTemplate.queryForMap(
-            getInfoQuery,
-            fileId,
-            userId
-        );
-        String deleteQuery = CommandQueryManager.DELETE_FILE.get();
-        int rowsAffected = metadataTemplate.update(
-            deleteQuery,
-            fileId,
-            userId
-        );
+        try {
+            List<Map<String, Object>> infoList = metadataTemplate.queryForList(
+                getInfoQuery,
+                fileId,
+                userId
+            );
+            if(infoList.isEmpty()) {
+                System.out.println("DEBUG: File not found - fileId: " + fileId + ", userId: " + userId);
+                return false;
+            }
+            Map<String, Object> info = infoList.get(0);
+            
+            String deleteQuery = CommandQueryManager.DELETE_FILE.get();
+            int rowsAffected = metadataTemplate.update(
+                deleteQuery,
+                fileId,
+                userId
+            );
+            
+            String parentFolderId = (String) info.get("parent_folder_id");
+            boolean res = rowsAffected > 0;
+            if(res) {
+                cacheService.invalidateFolderCache(userId, parentFolderId);
+                System.out.println("DEBUG: Cache invalidated for folder: " + parentFolderId);
+            }
 
-        String parentFolderId = (String) info.get("parent_folder_id");
-        boolean res = rowsAffected > 0;
-        if(res) cacheService.invalidateFolderCache(userId, parentFolderId);
-
-        return res;
+            return res;
+        } catch (Exception err) {
+            System.err.println("Error deleting file: " + err.getMessage());
+            err.printStackTrace();
+            return false;
+        }
     }
 
     /**
