@@ -191,7 +191,7 @@ public class FileController {
         @RequestParam String query,
         @RequestParam(required = false) String fileType,
         @RequestParam(defaultValue = "0") int page,
-        @RequestParam(defaultValue = "20") int pageSize
+        @RequestParam(defaultValue = "5") int pageSize
     ) {
         try {
             /*

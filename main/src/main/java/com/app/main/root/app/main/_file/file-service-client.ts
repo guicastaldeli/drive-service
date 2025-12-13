@@ -175,11 +175,11 @@ export class FileServiceClient {
             const data = await res.json();
             return {
                 success: data.success,
-                current: data.current || 0,
-                total: data.total || 0,
-                hasMore: data.hasMore || false,
-                pageSize: data.pageSize || 20,
-                totalFiles: data.totalFiles || 0
+                current: data.current,
+                total: data.total,
+                hasMore: data.hasMore,
+                pageSize: data.pageSize,
+                totalFiles: data.totalFiles
             }; 
         } catch(err) {
             console.error(err);

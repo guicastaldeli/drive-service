@@ -75,9 +75,12 @@ public class FileService {
 
         String query = CommandQueryManager.GET_ALL_FILES.get();
         int offset = page * pageSize;
-        System.out.println("DEBUG: Listing files for user: " + userId + ", folder: " + parentFolderId);
-        System.out.println("DEBUG: Query: " + query);
-        System.out.println("DEBUG: Params: userId=" + userId + ", parentFolderId=" + parentFolderId);
+        System.out.println("DEBUG FileService.listFiles():");
+        System.out.println("  userId: " + userId);
+        System.out.println("  parentFolderId: " + parentFolderId);
+        System.out.println("  page: " + page);
+        System.out.println("  pageSize: " + pageSize);
+        System.out.println("  offset: " + (page * pageSize));
         
         List<Map<String, Object>> files = metadataTemplate.queryForList(
             query,

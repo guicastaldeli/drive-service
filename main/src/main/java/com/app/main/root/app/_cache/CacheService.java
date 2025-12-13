@@ -16,7 +16,7 @@ public class CacheService {
     private final Map<String, UserFileCache> cache = new ConcurrentHashMap<>();
     private ScheduledExecutorService cleanupExecutor = Executors.newScheduledThreadPool(1);
 
-    @Value("${app.fileCache.pageSize:20}")
+    @Value("${app.fileCache.pageSize:5}")
     private int pageSize;
 
     @Value("${app.fileCache.evictionTimeMinutes:60}")

@@ -115,7 +115,7 @@ class FileService:
                     'userId': userId,
                     'parentFolderId': parentFolderId,
                     'page': page,
-                    'pageSize': 20
+                    'pageSize': 5
                 }
                 
                 res = await client.get(f"{self.url}/api/files/list", params=params)
@@ -176,7 +176,7 @@ class FileService:
                     'query': query,
                     'fileType': fileType,
                     'page': page,
-                    'pageSize': 20
+                    'pageSize': 5
                 }
                 params = {
                     k: v for k, v in params.items()
@@ -228,7 +228,7 @@ class FileService:
                 params = {
                     'userId': userId,
                     'folderId': folderId,
-                    'pageSize': 20
+                    'pageSize': 5
                 }
                 
                 res = await client.get(f"{self.url}/api/files/count-pages", params=params)

@@ -26,7 +26,7 @@ export class CacheServiceClient {
     private pendingRequests: Map<string, Promise<any>> = new Map();
     private evictionListeners: ((cacheKey: string) => void)[] = [];
     private config: CacheConfig = {
-        pageSize: 20,
+        pageSize: 5,
         maxPages: 100,
         preloadPages: 2,
         cleanupThreshold: 0.8
