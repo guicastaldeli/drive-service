@@ -71,18 +71,14 @@ export class FileServiceClient {
      */
     public async listFiles(userId: string, parentFolderId: string): Promise<any> {
         try {
-            console.log("DEBUG: listFiles called with userId:", userId); // ADD THIS
-        console.log("DEBUG: parentFolderId:", parentFolderId); // ADD THIS
-        
-        const params = new URLSearchParams({ userId, parentFolderId });
-        console.log("DEBUG: Params string:", params.toString()); // ADD THIS
-        
-        const res = await fetch(`${this.url}/api/files/list?${params}`, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
+            const params = new URLSearchParams({ userId, parentFolderId });
+
+            const res = await fetch(`${this.url}/api/files/list?${params}`, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
             if(!res.ok) {
                 throw new Error(`Failed to list files: ${res.statusText}`);
             }
