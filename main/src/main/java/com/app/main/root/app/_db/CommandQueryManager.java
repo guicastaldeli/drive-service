@@ -109,10 +109,10 @@ public enum CommandQueryManager {
         """
     ),
     GET_FILE_SIZE(
-        "SELECT SUM(file_size) as total FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE"
+        "SELECT SUM(file_size) as total FROM files_metadata WHERE user_id = ?"
     ),
     GET_TOTAL_FILES(
-        "SELECT COUNT(*) FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE"
+        "SELECT COUNT(*) FROM files_metadata WHERE user_id = ?"
     ),
     GET_TOTAL_FILES_FOLDER(
         "SELECT COUNT(*) from files_metadata WHERE user_id = ? AND parent_folder_id = ? AND is_deleted = FALSE"
@@ -130,7 +130,7 @@ public enum CommandQueryManager {
     GET_TYPE_FILES(
         """
             SELECT file_type, SUM(file_size) as type_size, COUNT(*) as type_count
-            FROM files_metadata WHERE user_id = ? AND is_deleted = FALSE
+            FROM files_metadata WHERE user_id = ?
             GROUP BY file_type     
         """
     ),

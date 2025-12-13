@@ -46,6 +46,17 @@ public class FileUploader {
             String fileType = getFileType(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
 
+            System.out.println("DEBUG: Uploading file:");
+            System.out.println("  fileId: " + fileId);
+            System.out.println("  userId: " + userId);
+            System.out.println("  originalFileName: " + originalFileName);
+            System.out.println("  fileSize: " + fileSize);
+            System.out.println("  mimeType: " + mimeType);
+            System.out.println("  fileType: " + fileType);
+            System.out.println("  targetDb: " + targetDb);
+            System.out.println("  parentFolderId: " + parentFolderId);
+            System.out.println("  uploadedAt: " + uploadedAt);
+            
             JdbcTemplate metadataTemplate = jdbcTemplates.get("files_metadata");
                 if (metadataTemplate == null) {
                 System.err.println("ERROR: No files_metadata database configured");
@@ -62,7 +73,8 @@ public class FileUploader {
                 userId,
                 originalFileName,
                 fileSize,
-                fileType,
+                mimeType,
+                fileType, 
                 targetDb,
                 parentFolderId,
                 uploadedAt
