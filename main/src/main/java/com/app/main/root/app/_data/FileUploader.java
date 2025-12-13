@@ -41,6 +41,7 @@ public class FileUploader {
             String originalFileName = file.getOriginalFilename();
             String mimeType = file.getContentType();
             long fileSize = file.getSize();
+            LocalDateTime uploadedAt = LocalDateTime.now();
             
             String fileType = getFileType(mimeType);
             String targetDb = fileService.getDatabaseForMimeType(mimeType);
@@ -63,7 +64,8 @@ public class FileUploader {
                 fileSize,
                 fileType,
                 targetDb,
-                parentFolderId
+                parentFolderId,
+                uploadedAt
             );
     
             byte[] fileBytes = file.getBytes();

@@ -1,11 +1,8 @@
 from file.file_service import FileService
-from fastapi import APIRouter, HTTPException, Request, Response, Cookie, Depends, UploadFile, File, Form, Query
-from fastapi.responses import StreamingResponse, JSONResponse
-from typing import Dict, Any, Optional, List
-import json
-import uuid
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query
+from fastapi.responses import StreamingResponse
+from typing import Optional, List
 from datetime import datetime
-import asyncio
 
 class FileRoutes:
     def __init__(self, fileService: FileService):
@@ -17,9 +14,9 @@ class FileRoutes:
         ## Upload File
         @self.router.post("/upload/{userId}/{parentFolderId}")
         async def uploadFile(
-            file: UploadFile = File(...),
-            userId: str = Form(...),
-            parentFolderId: str = Form("root")
+            userId: str,
+            parentFolderId: str = "root",
+            file: UploadFile = File(...)
         ):
             try:
                 if(file.filename == ''):
@@ -44,9 +41,9 @@ class FileRoutes:
         
         @self.router.post("/upload-multiple/{userId}/{parentFolderId}")
         async def uploadMultipleFiles(
-            files: List[UploadFile] = File(...),
-            userId: str = Form(...),
-            parentFolderId: str = Form("root")
+            userId: str,
+            parentFolderId: str = "root",
+            files: List[UploadFile] = File(...)
         ):
             try:
                 res = []
@@ -85,7 +82,7 @@ class FileRoutes:
             
         ## Download File
         @self.router.get("/download/{userId}/{fileId}")
-        async def downloadFile(fileId: str = Query(...), userId: str = Query(...)):
+        async def downloadFile(userId: str, fileId: str):
             try:
                 fileData = await self.fileService.downloadFile(fileId, userId)
                 return StreamingResponse(
@@ -117,8 +114,8 @@ class FileRoutes:
                 raise HTTPException(status_code=500, detail=f"Failed to list files: {str(err)}")
     
         ## Delete
-        @self.router.get("/delete/{fileId}/{userId}")
-        async def deleteFile(fileId: str = Query(...), userId: str = Query(...)):
+        @self.router.delete("/delete/{fileId}/{userId}")
+        async def deleteFile(fileId: str, userId: str):
             try:
                 res = await self.fileService.deleteFile(fileId, userId)
                 return {

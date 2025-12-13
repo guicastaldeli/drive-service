@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import { SessionManager } from "../_session/session-manager";
 import { ApiClientController } from "../_api-client/api-client-controller";
+import { CacheServiceClient } from "@/app/_cache/cache-service-client";
 
 interface Props {
     apiClientController: ApiClientController;
@@ -53,6 +54,11 @@ export class FileUploader extends Component<Props, State> {
             );
             if(res.success) {
                 console.log('FILE UPLOADED!');
+                const cacheService = CacheServiceClient.getInstance();
+                await cacheService.invalidateFolderCache(sessionData.userId, "root");
+                if(this.props.onUploadSuccess) {
+                    this.props.onUploadSuccess(res);
+                }
             } else {
                 console.log(`Upload failed: ${res.error}`);
             }

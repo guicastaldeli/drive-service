@@ -74,13 +74,23 @@ public class FileService {
         if(metadataTemplate == null) throw new RuntimeException("files_metadata database not available");
 
         String query = CommandQueryManager.GET_ALL_FILES.get();
+        int offset = page * pageSize;
+        System.out.println("DEBUG: Listing files for user: " + userId + ", folder: " + parentFolderId);
+        System.out.println("DEBUG: Query: " + query);
+        System.out.println("DEBUG: Params: userId=" + userId + ", parentFolderId=" + parentFolderId);
+        
         List<Map<String, Object>> files = metadataTemplate.queryForList(
             query,
             userId,
             parentFolderId,
             pageSize,
-            (page - 1) * pageSize
+            offset
         );
+        
+        System.out.println("DEBUG: Found " + files.size() + " files");
+        for(Map<String, Object> file : files) {
+            System.out.println("DEBUG: File: " + file);
+        }
         cacheService.cacheFilesPage(
             userId, 
             parentFolderId, 

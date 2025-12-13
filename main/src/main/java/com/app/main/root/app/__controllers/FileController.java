@@ -25,8 +25,8 @@ public class FileController {
     @PostMapping("/upload/{userId}/{parentFolderId}")
     public ResponseEntity<?> uploadFile(
         @RequestParam("file") MultipartFile file,
-        @RequestParam("userId") String userId,
-        @RequestParam(value = "parentFolderId", defaultValue = "root") String parentFolderId
+        @PathVariable String userId,
+        @PathVariable String parentFolderId
     ) {
         try {
             FileUploader res = serviceManager.getFileService()
@@ -59,7 +59,7 @@ public class FileController {
      * Download
      */
     @GetMapping("/download/{userId}/{fileId}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @RequestParam String userId) {
+    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @PathVariable String userId) {
         try {
             byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(fileId, userId);
             return ResponseEntity.ok()
@@ -75,7 +75,7 @@ public class FileController {
      * Delete File
      */
     @DeleteMapping("/delete/{userId}/{fileId}")
-    public ResponseEntity<?> deleteFile(@RequestParam String fileId, @RequestParam String userId) {
+    public ResponseEntity<?> deleteFile(@PathVariable String fileId, @PathVariable String userId) {
         try {
             boolean deleted = serviceManager.getFileService().deleteFile(fileId, userId);
             return ResponseEntity.ok(Map.of(
@@ -124,6 +124,13 @@ public class FileController {
         @RequestParam(defaultValue = "20") int pageSize
     ) {
         try {
+            if(userId == null || userId.isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "User Id is required!"
+                ));
+            }
+
             Map<String, Object> res = serviceManager.getFileService()
                 .listFiles(
                     userId, 
@@ -131,20 +138,14 @@ public class FileController {
                     page, 
                     pageSize
                 );
-            int totalFiles = res.size();
-            int totalPages = (int) Math.ceil((double) totalFiles / pageSize);
-
+            List<Map<String, Object>> files = (List<Map<String, Object>>) res.get("files");
             return ResponseEntity.ok(Map.of(
                 "success", true,
-                "data", res,
-                "pagination", Map.of(
-                    "page", page,
-                    "pageSize", pageSize,
-                    "total", totalFiles,
-                    "totalPages", totalPages
-                )
+                "data", files != null ? files : new ArrayList<>(),
+                "pagination", res.get("pagination")
             ));
         } catch(Exception err) {
+            err.printStackTrace();
             return ResponseEntity.status(500).body(Map.of(
                 "success", false,
                 "error", err.getMessage()

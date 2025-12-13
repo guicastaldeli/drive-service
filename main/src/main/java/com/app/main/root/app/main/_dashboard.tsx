@@ -21,6 +21,7 @@ interface State {
 
 export class Dashboard extends Component<Props, State> {
     private apiClientController: ApiClientController;
+    private fileItemRef = React.createRef<FileItem>();
     private main: Main;
     private socketId!: string;
     private userId!: string;
@@ -75,7 +76,20 @@ export class Dashboard extends Component<Props, State> {
         this.setState({ currentSession: session });
     }
 
+    private handleUploadSuccess = (res: any) => {
+        console.log('Upload success!', res);
+        if(this.fileItemRef.current) {
+            this.fileItemRef.current.refreshFiles();
+        }
+    }
+
     render() {
+        const sessionData = SessionManager.getUserInfo();
+        const userId = sessionData?.userId;
+        if (!userId) {
+            return <div>Loading user data...</div>;
+        }
+
         if(this.state.isLoading) {
             return <div>Loading dashboard...</div>;
         }
@@ -95,9 +109,7 @@ export class Dashboard extends Component<Props, State> {
                                         <button id="logout-actn" onClick={() => this.main.handleLogout(sessionContext)}>Logout</button>
                                         <FileUploader
                                             apiClientController={this.apiClientController}
-                                            onUploadSuccess={(res) => {
-                                                console.log('Upload success!', res);
-                                            }}
+                                            onUploadSuccess={this.handleUploadSuccess}
                                             onUploadError={(err) => {
                                                 console.error('Upload failed', err);
                                             }}
@@ -106,7 +118,7 @@ export class Dashboard extends Component<Props, State> {
                                     <div id="file-list">
                                         <FileItem
                                             apiClientController={this.apiClientController}
-                                            userId={this.userId}
+                                            userId={userId}
                                             parentFolderId="root" 
                                         />
                                     </div>

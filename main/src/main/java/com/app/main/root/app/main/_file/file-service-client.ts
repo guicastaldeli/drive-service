@@ -16,8 +16,6 @@ export class FileServiceClient {
         try {
             const formData = new FormData();
             formData.append('file', file);
-            formData.append('userId', userId);
-            formData.append('parentFolderId', parentFolderId);
 
             const res = await fetch(`${this.url}/api/files/upload/${userId}/${parentFolderId}`, {
                 method: 'POST',
@@ -73,14 +71,18 @@ export class FileServiceClient {
      */
     public async listFiles(userId: string, parentFolderId: string): Promise<any> {
         try {
-            const params = new URLSearchParams({ userId, parentFolderId });
-
-            const res = await fetch(`${this.url}/files/list?${params}`, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
+            console.log("DEBUG: listFiles called with userId:", userId); // ADD THIS
+        console.log("DEBUG: parentFolderId:", parentFolderId); // ADD THIS
+        
+        const params = new URLSearchParams({ userId, parentFolderId });
+        console.log("DEBUG: Params string:", params.toString()); // ADD THIS
+        
+        const res = await fetch(`${this.url}/api/files/list?${params}`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
             if(!res.ok) {
                 throw new Error(`Failed to list files: ${res.statusText}`);
             }
@@ -105,6 +107,7 @@ export class FileServiceClient {
             if(!res.ok) {
                 throw new Error(`Failed to get storage usage: ${res.statusText}`);
             }
+            return await res.json();
         } catch(err) {
             console.error(err);
             throw err;

@@ -96,9 +96,13 @@ export class FileItem extends Component<Props, State> {
                 this.props.userId,
                 this.props.parentFolderId || 'root',
             );
-
             if(res.success) {
-                const files = this.sortFiles(res.data);
+                const filesData = 
+                    Array.isArray(res.data) ?
+                    res.data :
+                    (res.data && res.data.files ? res.data.files : []);
+                const files = this.sortFiles(filesData);
+
                 this.setState({
                     files,
                     isLoading: false,
@@ -248,6 +252,10 @@ export class FileItem extends Component<Props, State> {
             const sortedFiles = this.sortFiles(this.state.files);
             this.setState({ files: sortedFiles });
         });
+    }
+
+    public async refreshFiles(): Promise<void> {
+        await this.loadFiles();
     }
 
     render() {
