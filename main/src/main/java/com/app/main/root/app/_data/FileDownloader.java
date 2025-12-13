@@ -59,13 +59,12 @@ public class FileDownloader {
                     byte[] content = (byte[]) contentRes.get(0).get("content");
                     System.out.println("Download successful, size: " + content.length + " bytes");
                     
-                    Map<String, Object> result = new HashMap<>();
-                    result.put("content", content);
-                    result.put("filename", originalFilename);
-                    result.put("mimeType", mimeType);
-                    result.put("fileSize", content.length);
-                    
-                    return result;
+                    Map<String, Object> res = new HashMap<>();
+                    res.put("content", content);
+                    res.put("filename", originalFilename);
+                    res.put("mimeType", mimeType);
+                    res.put("fileSize", content.length);
+                    return res;
                 } else {
                     throw new RuntimeException("File content not found in " + dbType);
                 }
