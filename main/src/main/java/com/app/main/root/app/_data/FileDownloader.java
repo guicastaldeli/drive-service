@@ -27,11 +27,9 @@ public class FileDownloader {
     /**
      * Download File
      */
-    public byte[] download(String userId, String fileId) {
-        String query = CommandQueryManager.DOWNLOAD_FILE.get();
-        
-        System.out.println("DOWNLOADING fileId: " + fileId + ", userId: " + userId);
-
+    public Map<String, Object> download(String userId, String fileId) {
+        String query = CommandQueryManager.GET_FILE_INFO.get();
+        System.out.println("DOWNLOADING WITH METADATA fileId: " + fileId + ", userId: " + userId);
         String metadataDb = FileService.METADATA_DB;
         
         try {
@@ -45,15 +43,12 @@ public class FileDownloader {
 
             if(!res.isEmpty()) {
                 Map<String, Object> metadata = res.get(0);
+                String originalFilename = (String) metadata.get("original_filename");
                 String mimeType = (String) metadata.get("mime_type");
                 String dbType = (String) metadata.get("database_name");
-                
                 if(dbType == null || dbType.isEmpty()) {
                     dbType = fileService.getDatabaseForMimeType(mimeType);
-                    System.out.println("database_name was null, using mimeType: " + mimeType + " -> " + dbType);
                 }
-                
-                System.out.println("Content database: " + dbType);
                 
                 String contentQuery = getContent(dbType);
                 List<Map<String, Object>> contentRes = jdbcTemplates
@@ -63,7 +58,14 @@ public class FileDownloader {
                 if(!contentRes.isEmpty()) {
                     byte[] content = (byte[]) contentRes.get(0).get("content");
                     System.out.println("Download successful, size: " + content.length + " bytes");
-                    return content;
+                    
+                    Map<String, Object> result = new HashMap<>();
+                    result.put("content", content);
+                    result.put("filename", originalFilename);
+                    result.put("mimeType", mimeType);
+                    result.put("fileSize", content.length);
+                    
+                    return result;
                 } else {
                     throw new RuntimeException("File content not found in " + dbType);
                 }

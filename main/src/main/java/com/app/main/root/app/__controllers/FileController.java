@@ -7,6 +7,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
+
+import java.net.URLEncoder;
 import java.util.*;
 
 @RestController
@@ -70,11 +72,32 @@ public class FileController {
     @GetMapping("/download/{userId}/{fileId}")
     public ResponseEntity<byte[]> downloadFile(@PathVariable String userId, @PathVariable String fileId) {
         try {
-            byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(userId, fileId);
+            Map<String, Object> data = serviceManager.getFileService()
+                .getFileDownloader()
+                .download(userId, fileId);
+
+            byte[] content = (byte[]) data.get("content");
+            String filename = (String) data.get("filename");
+            String mimeType = (String) data.get("mimeType");
+            String filenameData = filename != null && !filename.isEmpty()
+                ? filename
+                : fileId;
+
+            String contentDisposition = "attachment; filename=\"" + filenameData + "\"";
+            String regex = ".*[^\\x00-\\x7F].*";
+            if(filenameData.matches(regex)) {
+                contentDisposition = 
+                    "attachment; filename=\"" + 
+                    filenameData + "\"; " +            
+                    "filename*=UTF-8''" + 
+                    URLEncoder.encode(filenameData, "UTF-8").replace("+", "%20");
+            }
             return ResponseEntity.ok()
-                .header("Content-Type", "application/octet-stream")
-                .header("Content-Disposition", "attachment; filename=\"" + fileId + "\"")
-                .body(fileContent);
+                .header("Content-Type", mimeType)
+                .header("Content-Disposition", contentDisposition)
+                .header("Content-Length", String.valueOf(content.length))
+                .header("Access-Control-Expose-Headers", "Content-Disposition, Content-Length")
+                .body(content);
         } catch(Exception err) {
             return ResponseEntity.notFound().build();
         }
