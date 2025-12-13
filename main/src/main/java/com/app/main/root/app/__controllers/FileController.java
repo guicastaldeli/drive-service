@@ -68,9 +68,9 @@ public class FileController {
      * Download
      */
     @GetMapping("/download/{userId}/{fileId}")
-    public ResponseEntity<byte[]> downloadFile(@PathVariable String fileId, @PathVariable String userId) {
+    public ResponseEntity<byte[]> downloadFile(@PathVariable String userId, @PathVariable String fileId) {
         try {
-            byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(fileId, userId);
+            byte[] fileContent = serviceManager.getFileService().getFileDownloader().download(userId, fileId);
             return ResponseEntity.ok()
                 .header("Content-Type", "application/octet-stream")
                 .header("Content-Disposition", "attachment; filename=\"" + fileId + "\"")

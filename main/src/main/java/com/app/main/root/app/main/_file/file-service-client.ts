@@ -34,10 +34,34 @@ export class FileServiceClient {
     /**
      * Download File
      */
-    public async downloadFile(fileId: string, userId: string): Promise<any> {
+    public async downloadFile(userId: string, fileId: string): Promise<any> {
         try {
             const res = await fetch(`${this.url}/api/files/download/${userId}/${fileId}`);
-            return res.json();
+            if(!res.ok) {
+                throw new Error(`Download failed: ${res.statusText}`);
+            }
+
+            const contentDisposition = res.headers.get('content-disposition');
+            let filename = fileId;
+
+            if(contentDisposition) {
+                const regex = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if(regex && regex[1]) {
+                    filename = regex[1].replace(/['"]/g, '');
+                }
+            }
+
+            const blob = await res.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
         } catch(err) {  
             console.error(err);
             throw err;

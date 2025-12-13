@@ -1,5 +1,6 @@
-from fastapi import HTTPException, UploadFile
+from fastapi import HTTPException, UploadFile, Response
 from typing import Dict, Any, Optional, List
+from fastapi.responses import StreamingResponse
 import httpx
 import json
 import uuid
@@ -78,29 +79,39 @@ class FileService:
             raise HTTPException(status_code=500, detail=str(err))
         
     ## Download File
-    async def downloadFile(self, fileId: str, userId: str) -> Dict[str, Any]:
+    async def downloadFile(self, userId: str, fileId: str):
         try:
-            async with httpx.AsyncClient() as client:
-                res = await client.get(f"{self.url}/api/files/download/{userId}/{fileId}")
-                if(res.status_code == 200):
-                    contentDisposition = res.headers.get('content-disposition', '')
-                    if 'filename=' or 'fileName=' in contentDisposition:
-                        fileName = contentDisposition.split('fileName=' or 'filename=')[1].strip('"')
-                    else:
-                        fileName = f"file_{fileId}" 
+            async with httpx.AsyncClient(timeout=30.0) as client:
+                url = f"{self.url}/api/files/download/{userId}/{fileId}"
+                print(f"Forwarding download request to: {url}")
+                
+                async with client.stream('GET', url) as response:
+                    if response.status_code != 200:
+                        error_text = await response.aread()
+                        raise HTTPException(
+                            status_code=response.status_code,
+                            detail=f"Backend error: {error_text.decode() if error_text else 'Unknown error'}"
+                        )
+                    headers = dict(response.headers)
                     
-                    return {
-                        'content': res.content,
-                        'fileName': fileName,
-                        'contentType': res.headers.get('content-type', 'application/octet-stream')
-                    }
-                else:
-                    raise HTTPException(
-                        status_code=res.status_code,
-                        detail=f"Failed to download file: {res.text}"
-                    )
+                    return StreamingResponse(
+                        response.aiter_bytes(),
+                        media_type=headers.get('content-type', 'application/octet-stream'),
+                        headers={
+                            'Content-Disposition': headers.get(
+                                'content-disposition', 
+                                f'attachment; filename="{fileId}"'
+                            ),
+                            'Content-Length': headers.get('content-length', ''),
+                            'Access-Control-Expose-Headers': 'Content-Disposition, Content-Length'
+                        }
+                    ) 
         except httpx.RequestError as err:
+            print(f"HTTP request error: {str(err)}")
             raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
+        except Exception as err:
+            print(f"Download error: {str(err)}")
+            raise HTTPException(status_code=500, detail=f"Download failed: {str(err)}")
         
     ## List Files
     async def listFiles(

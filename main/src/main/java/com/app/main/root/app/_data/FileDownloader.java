@@ -3,7 +3,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
-import java.util.Map;
+
 import java.util.*;
 
 public class FileDownloader {  
@@ -27,12 +27,16 @@ public class FileDownloader {
     /**
      * Download File
      */
-    public byte[] download(String fileId, String userId) {
+    public byte[] download(String userId, String fileId) {
         String query = CommandQueryManager.DOWNLOAD_FILE.get();
+        
+        System.out.println("DOWNLOADING fileId: " + fileId + ", userId: " + userId);
 
-        for(String dbName : jdbcTemplates.keySet()) {
+        String metadataDb = FileService.METADATA_DB;
+        
+        try {
             List<Map<String, Object>> res = jdbcTemplates
-                .get(dbName)
+                .get(metadataDb)
                 .queryForList(
                     query,
                     fileId,
@@ -42,23 +46,34 @@ public class FileDownloader {
             if(!res.isEmpty()) {
                 Map<String, Object> metadata = res.get(0);
                 String mimeType = (String) metadata.get("mime_type");
-                String dbType = fileService.getDatabaseForMimeType(mimeType);
-
+                String dbType = (String) metadata.get("database_name");
+                
+                if(dbType == null || dbType.isEmpty()) {
+                    dbType = fileService.getDatabaseForMimeType(mimeType);
+                    System.out.println("database_name was null, using mimeType: " + mimeType + " -> " + dbType);
+                }
+                
+                System.out.println("Content database: " + dbType);
+                
                 String contentQuery = getContent(dbType);
                 List<Map<String, Object>> contentRes = jdbcTemplates
                     .get(dbType)
-                    .queryForList(
-                        contentQuery, 
-                        fileId
-                    );
+                    .queryForList(contentQuery, fileId);
 
                 if(!contentRes.isEmpty()) {
-                    return (byte[]) contentRes.get(0).get("content");
+                    byte[] content = (byte[]) contentRes.get(0).get("content");
+                    System.out.println("Download successful, size: " + content.length + " bytes");
+                    return content;
+                } else {
+                    throw new RuntimeException("File content not found in " + dbType);
                 }
+            } else {
+                throw new RuntimeException("File not found for fileId: " + fileId + ", userId: " + userId);
             }
+        } catch(Exception e) {
+            System.err.println("Download error: " + e.getMessage());
+            throw new RuntimeException("Download failed: " + e.getMessage());
         }
-
-        throw new RuntimeException("File not found!");
     }
 
     /**

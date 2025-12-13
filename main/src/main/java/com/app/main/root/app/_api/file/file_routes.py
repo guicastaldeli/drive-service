@@ -1,8 +1,9 @@
 from file.file_service import FileService
-from fastapi import APIRouter, HTTPException, UploadFile, File, Query
-from fastapi.responses import StreamingResponse
+from fastapi import APIRouter, HTTPException, UploadFile, File, Query, Response, Request
+from fastapi.responses import StreamingResponse, JSONResponse
 from typing import Optional, List
 from datetime import datetime
+import httpx
 
 class FileRoutes:
     def __init__(self, fileService: FileService):
@@ -82,19 +83,52 @@ class FileRoutes:
             
         ## Download File
         @self.router.get("/download/{userId}/{fileId}")
-        async def downloadFile(userId: str, fileId: str):
+        async def downloadFile(
+            userId: str, 
+            fileId: str,
+            request: Request,
+            response: Response
+        ):
             try:
-                fileData = await self.fileService.downloadFile(fileId, userId)
-                return StreamingResponse(
-                    iter([fileData['content']]),
-                    media_type=fileData['content-type'],
-                    headers={
-                        "Content-Disposition": f"attachment; filename={fileData['filename' or 'fileName']}",
-                        "Access-Control-Expose-Headers": "Content-Disposition"
-                    }
-                )
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    url = f"{self.fileService.url}/api/files/download/{userId}/{fileId}"
+                    headers = {}
+                    if ("cookie" in request.headers):
+                        headers["cookie"] = request.headers["cookie"]
+                    
+                    serverRes = await client.get(url, headers=headers, follow_redirects=True)
+                    
+                    if serverRes.status_code != 200:
+                        return JSONResponse(
+                            content={"error": "Download failed", "details": serverRes.text},
+                            status_code=serverRes.status_code
+                        )
+                    
+                    content_type = serverRes.headers.get("content-type", "application/octet-stream")
+                    content_disposition = serverRes.headers.get(
+                        "content-disposition", 
+                        f'attachment; filename="{fileId}"'
+                    )
+                    
+                    response.headers["Content-Type"] = content_type
+                    response.headers["Content-Disposition"] = content_disposition
+                    response.headers["Content-Length"] = serverRes.headers.get("content-length", "")
+                    response.headers["Access-Control-Expose-Headers"] = "Content-Disposition, Content-Length"
+                    return Response(
+                        content=serverRes.content,
+                        media_type=content_type,
+                        headers={
+                            "Content-Disposition": content_disposition,
+                            "Content-Length": serverRes.headers.get("content-length", ""),
+                            "Access-Control-Expose-Headers": "Content-Disposition, Content-Length"
+                        }
+                    )
             except Exception as err:
-                raise HTTPException(status_code=500, detail=f"Download failed: {str(err)}")
+                print(f"Download error: {str(err)}")
+                return JSONResponse(
+                    content={"error": "Download failed", "details": str(err)},
+                    status_code=500
+                )
             
         ## File List
         @self.router.get("/list")

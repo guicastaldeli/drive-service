@@ -24,7 +24,7 @@ public class FileService {
     private FileUploader fileUploader;
     private FileDownloader fileDownloader;
 
-    private static final String METADATA_DB = "files_metadata";
+    public static final String METADATA_DB = "files_metadata";
     public static final String IMAGE_DB = "image_data";
     public static final String VIDEO_DB = "video_data";
     public static final String AUDIO_DB = "audio_data";

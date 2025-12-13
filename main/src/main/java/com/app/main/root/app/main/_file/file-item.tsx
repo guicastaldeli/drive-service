@@ -558,9 +558,11 @@ export class FileItem extends Component<Props, State> {
                             <div className="file-item-actions">
                                 <button 
                                     className="action-btn download-btn"
-                                    onClick={(e) => {
+                                    onClick={async (e) => {
                                         e.stopPropagation();
-                                        console.log('Download', file.fileId);
+                                        const fileService = await this.apiClientController.getFileService();
+                                        console.log('Downloading...', file.fileId);
+                                        await fileService.downloadFile(this.props.userId, file.fileId);
                                     }}
                                     title="Download"
                                 >
