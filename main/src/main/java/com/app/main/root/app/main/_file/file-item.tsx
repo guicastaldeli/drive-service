@@ -1,4 +1,4 @@
-import { Component } from "react";
+import React, { Component } from "react";
 import { ApiClientController } from "../_api-client/api-client-controller";
 
 type FileType =
@@ -48,28 +48,34 @@ interface State {
     error: string | null;
     currentPage: number;
     totalFiles: number;
+    pageSize: number;
     selectedFiles: Set<string>
     viewMode: 'grid' | 'list';
     sortBy: SortType;
     sortOrder: 'asc' | 'desc';
 }
 
-export function mapToItem(apiFile: any): Item {
+export function mapToItem(file: any): Item {
     return {
-        fileId: apiFile.file_id,
-        originalFileName: apiFile.original_filename,
-        fileSize: apiFile.file_size,
-        mimeType: apiFile.mime_type,
-        fileType: apiFile.file_type,
-        parentFolderId: apiFile.parent_folder_id,
-        uploadedAt: apiFile.uploaded_at,
-        lastModified: apiFile.last_modified,
-        isDeleted: apiFile.is_deleted
+        fileId: file.file_id,
+        originalFileName: file.original_filename,
+        fileSize: file.file_size,
+        mimeType: file.mime_type,
+        fileType: file.file_type,
+        parentFolderId: file.parent_folder_id,
+        uploadedAt: file.uploaded_at,
+        lastModified: file.last_modified,
+        isDeleted: file.is_deleted
     };
 }
 
 export class FileItem extends Component<Props, State> {
     private apiClientController: ApiClientController;
+    private observer: IntersectionObserver | null = null;
+    private sentinelRef = React.createRef<HTMLDivElement>();
+    private containerRef = React.createRef<HTMLDivElement>();
+    private hasMore = true;
+    private isLoadingMore = false;
     
     constructor(props: Props) {
         super(props);
@@ -79,24 +85,81 @@ export class FileItem extends Component<Props, State> {
             error: null,
             currentPage: 0,
             totalFiles: 0,
+            pageSize: 5,
             selectedFiles: new Set(),
             viewMode: 'grid',
             sortBy: 'date',
             sortOrder: 'desc'
         }
         this.apiClientController = this.props.apiClientController;
+        
+        this.handleFileSelect = this.handleFileSelect.bind(this);
+        this.handleFileDelete = this.handleFileDelete.bind(this);
+        this.handleFileCheckbox = this.handleFileCheckbox.bind(this);
+        this.handleSelectAll = this.handleSelectAll.bind(this);
+        this.handleScroll = this.handleScroll.bind(this);
+        this.changeSort = this.changeSort.bind(this);
     }
 
     async componentDidMount() {
         await this.loadFiles();
+        this.setupIntersectionObserver();
     }
 
     async componentDidUpdate(prevProps: Props): Promise<void> {
         if(prevProps.parentFolderId !== this.props.parentFolderId ||
             prevProps.userId !== this.props.userId
         ) {
-            await this.loadFiles();
+            await this.resetAndLoad();
         }
+    }
+
+    componentWillUnmount() {
+        if(this.observer) {
+            this.observer.disconnect();
+        }
+    }
+
+    private setupIntersectionObserver() {
+        if(typeof IntersectionObserver === 'undefined') return;
+
+        this.observer = new IntersectionObserver(
+            (entries) => {
+                const sentinel = entries[0];
+                if(
+                    sentinel.isIntersecting && 
+                    !this.isLoadingMore && 
+                    this.hasMore &&
+                    this.state.files.length > 0
+                ) {
+                    this.loadMoreFiles();
+                }
+            },
+            {
+                root: this.containerRef.current,
+                rootMargin: '100px',
+                threshold: 1.0
+            }
+        );
+
+        if(this.sentinelRef.current) {
+            this.observer.observe(this.sentinelRef.current);
+        }
+    }
+
+    /**
+     * Reset and Load
+     */
+    private async resetAndLoad() {
+        this.hasMore = true;
+        this.isLoadingMore = false;
+        this.setState({
+            files: [],
+            currentPage: 0,
+            totalFiles: 0
+        }, () => {
+            this.loadFiles();
+        });
     }
 
     /**
@@ -104,30 +167,16 @@ export class FileItem extends Component<Props, State> {
      */
     private async loadFiles() {
         this.setState({ isLoading: true, error: null });
+
         try {
             const fileService = await this.apiClientController.getFileService();
             const res = await fileService.listFiles(
                 this.props.userId,
-                this.props.parentFolderId || 'root',
+                this.props.parentFolderId || 'root'
             );
-            if(res.success) {
-                const filesData = 
-                    Array.isArray(res.data) ?
-                    res.data :
-                    (res.data && res.data.files ? res.data.files : []);
-
-                const data = filesData.map(mapToItem);
-                const files = this.sortFiles(data);
-
-
-                this.setState({
-                    files,
-                    isLoading: false,
-                    totalFiles: res.total || files.length
-                });
-            } else {
-                throw new Error(res.error || 'Failed to load files!');
-            } 
+            
+            const page = 0;
+            await this.handleFileResponse(res, page);
         } catch(err: any) {
             this.setState({
                 error: err.message,
@@ -137,6 +186,82 @@ export class FileItem extends Component<Props, State> {
         }
     }
 
+    /**
+     * Load More Files
+     */
+    private async loadMoreFiles() {
+        if(this.isLoadingMore || !this.hasMore) return;
+        this.isLoadingMore = true;
+        
+        const nextPage = this.state.currentPage + 1;
+        console.log('Loading more files, nextPage:', nextPage);
+
+        try {
+            const fileService = await this.apiClientController.getFileService();
+            const res = await fileService.listFiles(
+                this.props.userId,
+                this.props.parentFolderId || 'root',
+                nextPage
+            );
+            
+            await this.handleFileResponse(res, nextPage);
+        } catch(err: any) {
+            console.error('Error loading more files', err);
+        } finally {
+            this.isLoadingMore = false;
+        }
+    }
+
+    /**
+     * Handle File Response
+     */
+    private async handleFileResponse(res: any, requestedPage: number) {
+        if(res.success) {
+            const filesData = 
+                Array.isArray(res.data) ?
+                res.data :
+                (res.data && res.data.files ? res.data.files : []);
+
+            const newFiles = filesData.map(mapToItem);
+                
+            const existingIds = new Set(this.state.files.map(f => f.fileId));
+            const uniqueNewFiles = newFiles.filter((file: any) => !existingIds.has(file.fileId));
+            if(uniqueNewFiles.length === 0) {
+                this.hasMore = false;
+                this.isLoadingMore = false;
+                return;
+            }
+                
+            const allFiles = [...this.state.files, ...uniqueNewFiles];
+            const sortedFiles = this.sortFiles(allFiles);
+            const pagination = res.data?.pagination || res.pagination;
+                
+            const totalFiles = pagination?.total || 0;
+            const loadedFilesCount = sortedFiles.length;
+            this.hasMore = pagination?.hasMore !== false && loadedFilesCount < totalFiles;
+
+            this.setState({
+                files: sortedFiles,
+                isLoading: false,
+                currentPage: requestedPage,
+                totalFiles: totalFiles,
+                error: null
+            }, () => {
+                setTimeout(() => {
+                    if(this.sentinelRef.current && this.observer) {
+                        this.observer.disconnect();
+                        this.observer.observe(this.sentinelRef.current);
+                    }
+                }, 100);
+            });
+        } else {
+            throw new Error(res.error || 'Failed to load files!');
+        }
+    }
+
+    /**
+     * Sort Files
+     */
     private sortFiles(files: Item[]): Item[] {
         return [...files].sort((a, b) => {
             let comparison = 0;
@@ -162,9 +287,7 @@ export class FileItem extends Component<Props, State> {
     }
 
     /**
-     * 
-     * Format
-     * 
+     * Format File Size
      */
     private formatFileSize(bytes: number): string {
         if(bytes === 0) return '0 Bytes';
@@ -174,6 +297,9 @@ export class FileItem extends Component<Props, State> {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
+    /**
+     * Format Date
+     */
     private formatDate(dateStr: string): string {
         const date = new Date(dateStr);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
@@ -182,6 +308,9 @@ export class FileItem extends Component<Props, State> {
         });
     }
 
+    /**
+     * Get File Icon
+     */
     private getFileIcon(fileType: string, mimeType: string): string {
         switch(fileType) {
             case 'image':
@@ -234,7 +363,7 @@ export class FileItem extends Component<Props, State> {
     /**
      * Handle Checkbox
      */
-    private handleFileCheckbox = (fileId: string, checked: boolean) => {
+    private handleFileCheckbox(fileId: string, checked: boolean) {
         const newSelected = new Set(this.state.selectedFiles);
         if(checked) {
             newSelected.add(fileId);
@@ -247,7 +376,7 @@ export class FileItem extends Component<Props, State> {
     /**
      * Handle Select All
      */
-    private handleSelectAll = () => {
+    private handleSelectAll() {
         const allFilesIds = this.state.files.map(f => f.fileId);
         const newSelected = new Set<string>();
         
@@ -257,6 +386,24 @@ export class FileItem extends Component<Props, State> {
         this.setState({ selectedFiles: newSelected });
     }
 
+    /**
+     * Handle Scroll (Fallback)
+     */
+    private handleScroll(e: React.UIEvent<HTMLDivElement>) {
+        if(typeof IntersectionObserver !== 'undefined') return;
+        
+        const container = e.currentTarget;
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const scrollBottom = scrollHeight - scrollTop - clientHeight;
+        
+        if(scrollBottom < 100 && !this.isLoadingMore && this.hasMore) {
+            this.loadMoreFiles();
+        }
+    }
+
+    /**
+     * Change Sort
+     */
     private changeSort(sortBy: SortType) {
         const newSortOrder = 
             this.state.sortBy === sortBy && 
@@ -271,8 +418,11 @@ export class FileItem extends Component<Props, State> {
         });
     }
 
+    /**
+     * Refresh Files
+     */
     public async refreshFiles(): Promise<void> {
-        await this.loadFiles();
+        await this.resetAndLoad();
     }
 
     render() {
@@ -284,7 +434,7 @@ export class FileItem extends Component<Props, State> {
             selectedFiles
         } = this.state;
 
-        if(isLoading) {
+        if(isLoading && files.length === 0) {
            return (
                 <div className="file-list-loading">
                     <div className="spinner"></div>
@@ -292,7 +442,8 @@ export class FileItem extends Component<Props, State> {
                 </div>
             );
         }
-        if(error) {
+        
+        if(error && files.length === 0) {
             return (
                 <div className="file-list-error">
                     <p>Error: {error}</p>
@@ -300,7 +451,8 @@ export class FileItem extends Component<Props, State> {
                 </div>
             );
         }
-        if(files.length === 0) {
+
+        if(files.length === 0 && !isLoading) {
             return (
                 <div className="file-list-empty">
                     <div className="empty-icon">EMPTY</div>
@@ -311,7 +463,12 @@ export class FileItem extends Component<Props, State> {
         }
 
         return (
-            <div className="file-list-container">
+            <div 
+                className="file-list-container"
+                ref={this.containerRef}
+                onScroll={this.handleScroll}
+                style={{ height: '100%', overflow: 'auto' }}
+            >
                 {/* Toolbar */}
                 <div className="file-list-toolbar">
                     <div className="toolbar-left">
@@ -344,7 +501,7 @@ export class FileItem extends Component<Props, State> {
                             <span>Sort by:</span>
                             <select 
                                 value={this.state.sortBy}
-                                onChange={(e) => this.changeSort(e.target.value as any)}
+                                onChange={(e) => this.changeSort(e.target.value as SortType)}
                             >
                                 <option value="name">Name</option>
                                 <option value="date">Date</option>
@@ -419,8 +576,33 @@ export class FileItem extends Component<Props, State> {
                             </div>
                         </div>
                     ))}
+                    
+                    {/* Loading Sentinel */}
+                    <div 
+                        ref={this.sentinelRef}
+                        style={{ 
+                            height: '1px',
+                            visibility: 'hidden',
+                            marginTop: '10px'
+                        }}
+                    />
+                    
+                    {/* Loading More Indicator */}
+                    {this.isLoadingMore && (
+                        <div className="loading-more">
+                            <div className="spinner small"></div>
+                            <p>Loading more files...</p>
+                        </div>
+                    )}
+                    
+                    {/* End of List */}
+                    {!this.hasMore && files.length > 0 && (
+                        <div className="end-of-list">
+                            <p>No more files to load</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
     }
- }
+}

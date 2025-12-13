@@ -70,9 +70,17 @@ export class FileServiceClient {
     /**
      * List Files
      */
-    public async listFiles(userId: string, parentFolderId: string): Promise<any> {
+    public async listFiles(
+        userId: string, 
+        parentFolderId: string,
+        page: number = 0
+    ): Promise<any> {
         try {
-            const params = new URLSearchParams({ userId, parentFolderId });
+            const params = new URLSearchParams({ 
+                userId, 
+                parentFolderId,
+                page: page.toString() 
+            });
 
             const res = await fetch(`${this.url}/api/files/list?${params}`, {
                 method: 'GET',

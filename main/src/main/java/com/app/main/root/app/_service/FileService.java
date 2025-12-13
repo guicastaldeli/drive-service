@@ -295,6 +295,6 @@ public class FileService {
         int pageSize
     ) {
         int totalFiles = countTotalFiles(userId, folderId);
-        return (currentPage * pageSize) < totalFiles;
+        return ((currentPage + 1) * pageSize) < totalFiles;
     }
 }
