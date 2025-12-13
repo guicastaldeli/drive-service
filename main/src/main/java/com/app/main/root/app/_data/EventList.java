@@ -1,12 +1,9 @@
 package com.app.main.root.app._data;
 import com.app.main.root.app._service.ServiceManager;
 import com.app.main.root.app.EventTracker;
-import com.app.main.root.app._crypto.message_encoder.SecureMessageService;
 import com.app.main.root.app.EventLog.EventDirection;
 import com.app.main.root.app._server.ConnectionTracker;
 import com.app.main.root.app._server.ConnectionInfo;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import java.util.*;
@@ -18,7 +15,6 @@ public class EventList {
     private final ConnectionTracker connectionTracker;
     private final SocketMethods socketMethods;
     private final SimpMessagingTemplate messagingTemplate;
-    @Autowired @Lazy private SecureMessageService secureMessageService;
 
     public EventList(
         ServiceManager serviceManager,
@@ -142,51 +138,21 @@ public class EventList {
             "/queue/username",
             false
         ));
-        /* Get Decrypted Messages */
-        configs.put("get-decrypted-messages", new EventConfig(
+        /* Get Decrypted Files */
+        configs.put("get-decrypted-files", new EventConfig(
             (sessionId, payload, headerAccessor) -> {
                 try {
-                    Map<String, Object> data = (Map<String, Object>) payload;
-                    List<Map<String, Object>> encryptedMessages = (List<Map<String, Object>>) data.get("messages");
-                    String chatId = (String) data.get("chatId");
-                    List<Map<String, Object>> decryptedMessages = new ArrayList<>();
-                    
-                    for (Map<String, Object> encryptedMessage : encryptedMessages) {
-                        Map<String, Object> decryptedMessage = new HashMap<>(encryptedMessage);
-                        
-                        if (encryptedMessage.containsKey("contentBytes")) {
-                            Object contentBytesObj = encryptedMessage.get("contentBytes");
-                            byte[] contentBytes;
-                            
-                            if (contentBytesObj instanceof String) {
-                                String base64Content = (String) contentBytesObj;
-                                contentBytes = Base64.getDecoder().decode(base64Content);
-                            } else if (contentBytesObj instanceof byte[]) {
-                                contentBytes = (byte[]) contentBytesObj;
-                            } else {
-                                throw new IllegalArgumentException("err");
-                            }
-                            
-                            String decryptedContent = secureMessageService.decryptMessage(chatId, contentBytes);
-                            decryptedMessage.put("content", decryptedContent);
-                        }
-                        
-                        decryptedMessages.add(decryptedMessage);
-                    }
-                    
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("messages", decryptedMessages);
-                    return response;
+                    return null;
                 } catch(Exception err) {
                     err.printStackTrace();
                     Map<String, Object> errRes = new HashMap<>();
-                    errRes.put("error", "LOAD_DECRYPTED_MESSAGES_FAILED");
+                    errRes.put("error", "LOAD_DECRYPTED_FILES_FAILED");
                     errRes.put("message", err.getMessage());
-                    socketMethods.send(sessionId, "/queue/decrypted-messages-err", errRes);
+                    socketMethods.send(sessionId, "/queue/decrypted-files-err", errRes);
                     return Collections.emptyMap();
                 }
             },
-            "/queue/decrypted-messages-scss",
+            "/queue/decrypted-files-scss",
             false
         ));
 

@@ -3,7 +3,6 @@ import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._db.DbManager;
 import org.springframework.stereotype.Service;
 import com.app.main.root.app._cache.CacheService;
-import com.app.main.root.app._crypto.message_encoder.MessageEncoderWrapper;
 import com.app.main.root.app._data.FileDownloader;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._data.MimeToDb;
@@ -15,7 +14,6 @@ import java.util.*;
 
 @Service
 public class FileService {
-    private final MessageEncoderWrapper messageEncoderWrapper;
     private final Map<String, JdbcTemplate> jdbcTemplates;
     private final DbManager dbManager;
     private final ServiceManager serviceManager;
@@ -33,16 +31,13 @@ public class FileService {
     public FileService(
         Map<String, JdbcTemplate> jdbcTemplates,
         @Lazy ServiceManager serviceManager,
-        @Lazy DbManager dbManager,
-        MessageEncoderWrapper messageEncoderWrapper
+        @Lazy DbManager dbManager
     ) {
         this.jdbcTemplates = jdbcTemplates;
         this.serviceManager = serviceManager;
         this.dbManager = dbManager;
-        
         this.fileUploader = new FileUploader(this, jdbcTemplates);
         this.fileDownloader = new FileDownloader(this, jdbcTemplates);
-        this.messageEncoderWrapper = messageEncoderWrapper;
     }
 
     /**

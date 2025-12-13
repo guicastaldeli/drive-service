@@ -1,6 +1,5 @@
 package com.app.main.root.app.__controllers;
 import com.app.main.root.app._cache.CacheService;
-import com.app.main.root.app._crypto.message_encoder.SecureMessageService;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._service.ServiceManager;
 import org.springframework.web.bind.annotation.*;
@@ -14,18 +13,12 @@ import java.util.*;
 @RestController
 @RequestMapping("/api/files")
 public class FileController {
-    private final SecureMessageService secureMessageService;
     private final ServiceManager serviceManager;
     private final CacheService cacheService;
 
-    public FileController(
-        @Lazy ServiceManager serviceManager,
-        @Lazy CacheService cacheService,
-        SecureMessageService secureMessageService
-    ) {
+    public FileController(@Lazy ServiceManager serviceManager, @Lazy CacheService cacheService) {
         this.serviceManager = serviceManager;
         this.cacheService = cacheService;
-        this.secureMessageService = secureMessageService;
     }
 
     /**
