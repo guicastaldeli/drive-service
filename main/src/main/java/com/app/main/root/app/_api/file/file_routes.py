@@ -114,10 +114,10 @@ class FileRoutes:
                 raise HTTPException(status_code=500, detail=f"Failed to list files: {str(err)}")
     
         ## Delete
-        @self.router.delete("/delete/{fileId}/{userId}")
-        async def deleteFile(fileId: str, userId: str):
+        @self.router.delete("/delete/{userId}/{fileId}")
+        async def deleteFile(userId: str, fileId: str):
             try:
-                res = await self.fileService.deleteFile(fileId, userId)
+                res = await self.fileService.deleteFile(userId, fileId)
                 return {
                     "success": True,
                     "message": "File deleted successfully",

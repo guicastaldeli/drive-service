@@ -130,7 +130,7 @@ class FileService:
             raise HTTPException(status_code=503, detail=f"Service unavailable: {str(err)}")
         
     ## Delete File
-    async def deleteFile(self, fileId: str, userId: str) -> Dict[str, Any]:
+    async def deleteFile(self, userId: str, fileId: str) -> Dict[str, Any]:
         try:
             async with httpx.AsyncClient() as client:
                 res = await client.delete(f"{self.url}/api/files/delete/{userId}/{fileId}")

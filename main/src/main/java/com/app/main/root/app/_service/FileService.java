@@ -145,7 +145,7 @@ public class FileService {
     /**
      * Delete File
      */
-    public boolean deleteFile(String fileId, String userId) {
+    public boolean deleteFile(String userId, String fileId) {
         JdbcTemplate metadataTemplate = jdbcTemplates.get(METADATA_DB);
         if(metadataTemplate == null) throw new RuntimeException("files_metadata database not available");
 

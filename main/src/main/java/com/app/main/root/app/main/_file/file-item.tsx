@@ -27,7 +27,7 @@ export interface Item {
 
 export interface Response {
     success: boolean;
-    data: Item[];
+    data: any[];
     total?: number;
     page?: number;
     pageSize?: number;
@@ -52,6 +52,20 @@ interface State {
     viewMode: 'grid' | 'list';
     sortBy: SortType;
     sortOrder: 'asc' | 'desc';
+}
+
+export function mapToItem(apiFile: any): Item {
+    return {
+        fileId: apiFile.file_id,
+        originalFileName: apiFile.original_filename,
+        fileSize: apiFile.file_size,
+        mimeType: apiFile.mime_type,
+        fileType: apiFile.file_type,
+        parentFolderId: apiFile.parent_folder_id,
+        uploadedAt: apiFile.uploaded_at,
+        lastModified: apiFile.last_modified,
+        isDeleted: apiFile.is_deleted
+    };
 }
 
 export class FileItem extends Component<Props, State> {
@@ -89,7 +103,7 @@ export class FileItem extends Component<Props, State> {
      * Load Files
      */
     private async loadFiles() {
-        this.setState({ isLoading: false, error: null });
+        this.setState({ isLoading: true, error: null });
         try {
             const fileService = await this.apiClientController.getFileService();
             const res = await fileService.listFiles(
@@ -101,7 +115,10 @@ export class FileItem extends Component<Props, State> {
                     Array.isArray(res.data) ?
                     res.data :
                     (res.data && res.data.files ? res.data.files : []);
-                const files = this.sortFiles(filesData);
+
+                const data = filesData.map(mapToItem);
+                const files = this.sortFiles(data);
+
 
                 this.setState({
                     files,

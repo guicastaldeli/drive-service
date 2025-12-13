@@ -1,4 +1,5 @@
 package com.app.main.root.app.__controllers;
+import com.app.main.root.app._cache.CacheService;
 import com.app.main.root.app._crypto.message_encoder.SecureMessageService;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._service.ServiceManager;
@@ -13,9 +14,15 @@ import java.util.*;
 public class FileController {
     private final SecureMessageService secureMessageService;
     private final ServiceManager serviceManager;
+    private final CacheService cacheService;
 
-    public FileController(@Lazy ServiceManager serviceManager, SecureMessageService secureMessageService) {
+    public FileController(
+        @Lazy ServiceManager serviceManager,
+        @Lazy CacheService cacheService,
+        SecureMessageService secureMessageService
+    ) {
         this.serviceManager = serviceManager;
+        this.cacheService = cacheService;
         this.secureMessageService = secureMessageService;
     }
 
@@ -35,6 +42,8 @@ public class FileController {
                     file, 
                     parentFolderId
                 );
+            cacheService.invalidateFolderCache(userId, parentFolderId);
+            System.out.println("DEBUG: Cache invalidated for user: " + userId + ", folder: " + parentFolderId);
 
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -75,7 +84,7 @@ public class FileController {
      * Delete File
      */
     @DeleteMapping("/delete/{userId}/{fileId}")
-    public ResponseEntity<?> deleteFile(@PathVariable String fileId, @PathVariable String userId) {
+    public ResponseEntity<?> deleteFile(@PathVariable String userId, @PathVariable String fileId) {
         try {
             boolean deleted = serviceManager.getFileService().deleteFile(fileId, userId);
             return ResponseEntity.ok(Map.of(

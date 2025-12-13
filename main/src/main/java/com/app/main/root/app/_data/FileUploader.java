@@ -157,7 +157,7 @@ public class FileUploader {
             type.contains("zip") || 
             type.contains("rar")
         ) {
-            return "archive";
+            return "document";
         }
         return "other";
     }
