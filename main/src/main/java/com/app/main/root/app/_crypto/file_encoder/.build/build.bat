@@ -24,69 +24,27 @@ if exist "%VS_PATH%\vcvars64.bat" (
 echo.
 echo Cleaning previous builds...
 del *.obj 2>nul
-del passwordencoder.dll 2>nul
+del fileencoder.dll 2>nul
 
 echo.
 echo Compiling with CL.EXE...
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\file_encoder.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_encoder.cpp
+    echo ERROR: Failed to compile file_encoder.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder_jni.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\file_encoder_jni.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_encoder_jni.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\pepper_manager\pepper_manager.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile pepper_manager.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\salt_generator\salt_generator.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile salt_generator.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\hash_generator\hash_generator.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile hash_generator.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\base64_manager.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile base64_manager.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\crypto_generator.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile crypto_generator.cpp
-    pause
-    exit /b 1
-)
-
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_validator\password_validator.cpp
-if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_validator.cpp
+    echo ERROR: Failed to compile file_encoder_jni.c
     pause
     exit /b 1
 )
 
 echo.
 echo Linking DLL with link.exe...
-link /nologo /DLL /OUT:passwordencoder.dll password_encoder.obj password_encoder_jni.obj pepper_manager.obj salt_generator.obj hash_generator.obj base64_manager.obj crypto_generator.obj password_validator.obj /LIBPATH:"%OPENSSL_LIB%" libssl.lib libcrypto.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
+link /nologo /DLL /OUT:fileencoder.dll file_encoder.obj file_encoder_jni.obj /LIBPATH:"%OPENSSL_LIB%" libssl.lib libcrypto.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
     echo ERROR: Linking failed
@@ -112,7 +70,7 @@ if exist "%OPENSSL_LIB%\..\bin\libssl-3-x64.dll" (
 
 echo.
 echo Final verification...
-if exist passwordencoder.dll (
+if exist fileencoder.dll (
     echo BUILD SUCCESSFUL!
     echo.
     echo Created files:
