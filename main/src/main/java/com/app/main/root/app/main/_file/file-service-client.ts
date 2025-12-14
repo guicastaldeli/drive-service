@@ -34,37 +34,57 @@ export class FileServiceClient {
     /**
      * Download File
      */
-    public async downloadFile(userId: string, fileId: string): Promise<any> {
+    async downloadFile(userId: string, fileId: string): Promise<{ 
+        data?: any, 
+        success: any, 
+        error?: any 
+    }> {
         try {
-            const res = await fetch(`${this.url}/api/files/download/${userId}/${fileId}`);
-            if(!res.ok) {
-                throw new Error(`Download failed: ${res.statusText}`);
-            }
-
-            const contentDisposition = res.headers.get('content-disposition');
-            let filename = fileId;
-
-            if(contentDisposition) {
-                const regex = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if(regex && regex[1]) {
-                    filename = regex[1].replace(/['"]/g, '');
+            const response = await fetch(
+                `${this.url}/api/files/download/${userId}/${fileId}`,
+                {
+                    method: 'GET',
+                    headers: {
+                        'Accept': 'application/json, application/octet-stream, */*',
+                    },
+                    credentials: 'include'
                 }
+            );
+            if(!response.ok) {
+                throw new Error(`Download failed!: ${response.statusText}`);
             }
 
-            const blob = await res.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-        } catch(err) {  
-            console.error(err);
-            throw err;
+            const contentType = response.headers.get('content-type');
+            if(contentType && contentType.includes('application/json')) {
+                const data = await response.json();
+                return {
+                    success: true,
+                    data: data
+                };
+            } else {
+                const arrayBuffer = await response.arrayBuffer();
+                const contentDisposition = response.headers.get('content-disposition');
+                let filename = fileId;
+                if(contentDisposition) {
+                    const match = contentDisposition.match(/filename="?(.+?)"?$/);
+                    if(match) filename = match[1];
+                }
+                
+                return {
+                    success: true,
+                    data: {
+                        content: new Uint8Array(arrayBuffer),
+                        filename: filename,
+                        mimeType: contentType || 'application/octet-stream'
+                    }
+                };
+            }
+        } catch (error: any) {
+            console.error('Download error:', error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
@@ -240,7 +260,7 @@ export class FileServiceClient {
                     'Content-Type': 'application/json'
                 }
             });
-            if (!res.ok) {
+            if(!res.ok) {
                 throw new Error(`Failed to get cache key: ${res.statusText}`);
             }
             return await res.json();

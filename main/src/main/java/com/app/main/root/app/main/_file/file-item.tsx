@@ -1,5 +1,6 @@
 import React, { Component } from "react";
 import { ApiClientController } from "../_api-client/api-client-controller";
+import { Preview } from "./preview";
 
 type FileType =
     'image' |
@@ -53,6 +54,10 @@ interface State {
     viewMode: 'grid' | 'list';
     sortBy: SortType;
     sortOrder: 'asc' | 'desc';
+    previewFile: Item | null;
+    previewContent: string | null;
+    previewLoading: boolean;
+    previewError: string | null;  
 }
 
 export function mapToItem(file: any): Item {
@@ -89,7 +94,11 @@ export class FileItem extends Component<Props, State> {
             selectedFiles: new Set(),
             viewMode: 'grid',
             sortBy: 'date',
-            sortOrder: 'desc'
+            sortOrder: 'desc',
+            previewFile: null,
+            previewContent: null,
+            previewLoading: false,
+            previewError: null
         }
         this.apiClientController = this.props.apiClientController;
         
@@ -99,6 +108,8 @@ export class FileItem extends Component<Props, State> {
         this.handleSelectAll = this.handleSelectAll.bind(this);
         this.handleScroll = this.handleScroll.bind(this);
         this.changeSort = this.changeSort.bind(this);
+        this.handlePreviewFile = this.handlePreviewFile.bind(this);
+        this.closePreview = this.closePreview.bind(this);
     }
 
     async componentDidMount() {
@@ -286,9 +297,6 @@ export class FileItem extends Component<Props, State> {
         });
     }
 
-    /**
-     * Format File Size
-     */
     private formatFileSize(bytes: number): string {
         if(bytes === 0) return '0 Bytes';
         const k = 1024;
@@ -297,9 +305,6 @@ export class FileItem extends Component<Props, State> {
         return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
     }
 
-    /**
-     * Format Date
-     */
     private formatDate(dateStr: string): string {
         const date = new Date(dateStr);
         return date.toLocaleDateString() + ' ' + date.toLocaleTimeString([], {
@@ -308,9 +313,6 @@ export class FileItem extends Component<Props, State> {
         });
     }
 
-    /**
-     * Get File Icon
-     */
     private getFileIcon(fileType: string, mimeType: string): string {
         switch(fileType) {
             case 'image':
@@ -387,7 +389,7 @@ export class FileItem extends Component<Props, State> {
     }
 
     /**
-     * Handle Scroll (Fallback)
+     * Handle Scroll
      */
     private handleScroll(e: React.UIEvent<HTMLDivElement>) {
         if(typeof IntersectionObserver !== 'undefined') return;
@@ -425,17 +427,133 @@ export class FileItem extends Component<Props, State> {
         await this.resetAndLoad();
     }
 
+    /**
+     * Handle File Preview
+     */
+    private async handlePreviewFile(file: Item): Promise<void> {
+        this.setState({
+            previewFile: file,
+            previewLoading: true,
+            previewError: null,
+            previewContent: null
+        });
+
+        try {
+            const fileService = await this.apiClientController.getFileService();
+            const res = await fileService.downloadFile(this.props.userId, file.fileId);
+            
+            if(res.success && res.data) {
+                if(res.data.content) {
+                    if(typeof res.data.content === 'string') {
+                        this.setState({
+                            previewContent: res.data.content,
+                            previewLoading: false
+                        });
+                    } else if(
+                        res.data.content instanceof ArrayBuffer || 
+                        res.data.content instanceof Uint8Array
+                    ) {
+                        let uint8Array: Uint8Array;
+                        if(res.data.content instanceof ArrayBuffer) {
+                            uint8Array = new Uint8Array(res.data.content);
+                        } else {
+                            uint8Array = res.data.content;
+                        }
+                        
+                        const binaryString = uint8Array.reduce(
+                            (data, byte) => data + 
+                            String.fromCharCode(byte),
+                            ''
+                        );
+                        const base64Content = btoa(binaryString);
+                        
+                        this.setState({
+                            previewContent: base64Content,
+                            previewLoading: false
+                        });
+                    } else if(res.data.content instanceof Blob) {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64data = reader.result as string;
+                            const base64Content = base64data.split(',')[1] || base64data;
+                            this.setState({
+                                previewContent: base64Content,
+                                previewLoading: false
+                            });
+                        };
+                        reader.readAsDataURL(res.data.content);
+                    } else {
+                        this.setState({
+                            previewContent: String(res.data.content),
+                            previewLoading: false
+                        });
+                    }
+                } else {
+                    if(res.data instanceof ArrayBuffer || 
+                        res.data instanceof Uint8Array) {
+                        
+                        let uint8Array: Uint8Array;
+                        if(res.data instanceof ArrayBuffer) {
+                            uint8Array = new Uint8Array(res.data);
+                        } else {
+                            uint8Array = res.data;
+                        }
+                        
+                        const binaryString = uint8Array.reduce(
+                            (data, byte) => data + String.fromCharCode(byte),
+                            ''
+                        );
+                        const base64Content = btoa(binaryString);
+                        
+                        this.setState({
+                            previewContent: base64Content,
+                            previewLoading: false
+                        });
+                    } else {
+                        this.setState({
+                            previewContent: String(res.data),
+                            previewLoading: false
+                        });
+                    }
+                }
+            } else {
+                throw new Error(res.error || 'Failed to download file');
+            }
+        } catch (err: any) {
+            console.error('Error previewing file:', err);
+            this.setState({
+                previewError: err.message || 'Failed to load file for preview',
+                previewLoading: false
+            });
+        }
+    }
+
+    /**
+     * Close Preview
+     */
+    private closePreview(): void {
+        this.setState({
+            previewFile: null,
+            previewContent: null,
+            previewError: null
+        });
+    }
+
     render() {
         const { 
             isLoading,
             error,
             files,
             viewMode,
-            selectedFiles
+            selectedFiles,
+            previewFile,
+            previewContent,
+            previewLoading,
+            previewError
         } = this.state;
 
         if(isLoading && files.length === 0) {
-           return (
+        return (
                 <div className="file-list-loading">
                     <div className="spinner"></div>
                     <p>Loading files...</p>
@@ -528,7 +646,6 @@ export class FileItem extends Component<Props, State> {
                         <div 
                             key={file.fileId}
                             className={`file-item ${selectedFiles.has(file.fileId) ? 'selected' : ''}`}
-                            onClick={() => this.handleFileSelect(file)}
                         >
                             <div className="file-item-checkbox">
                                 <input 
@@ -547,7 +664,16 @@ export class FileItem extends Component<Props, State> {
                             </div>
                             
                             <div className="file-item-info">
-                                <div className="file-name">{file.originalFileName}</div>
+                                <div 
+                                    className="file-name clickable"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        this.handlePreviewFile(file);
+                                    }}
+                                    title="Click to preview"
+                                >
+                                    {file.originalFileName}
+                                </div>
                                 <div className="file-details">
                                     <span className="file-size">{this.formatFileSize(file.fileSize)}</span>
                                     <span className="file-date">{this.formatDate(file.uploadedAt)}</span>
@@ -604,6 +730,25 @@ export class FileItem extends Component<Props, State> {
                         </div>
                     )}
                 </div>
+
+                {/* Preview */}
+                {previewFile && (
+                    <Preview
+                        file={previewFile}
+                        content={previewContent}
+                        isLoading={previewLoading}
+                        error={previewError}
+                        onClose={this.closePreview}
+                        onDownload={async (file) => {
+                            try {
+                                const fileService = await this.apiClientController.getFileService();
+                                await fileService.downloadFile(this.props.userId, file.fileId);
+                            } catch (err) {
+                                console.error('Error downloading file:', err);
+                            }
+                        }}
+                    />
+                )}
             </div>
         );
     }
