@@ -1,12 +1,13 @@
 package com.app.main.root.app._service;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._db.DbManager;
-import org.springframework.stereotype.Service;
 import com.app.main.root.app._cache.CacheService;
+import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
+import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._data.FileDownloader;
 import com.app.main.root.app._data.FileUploader;
 import com.app.main.root.app._data.MimeToDb;
-
+import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -18,6 +19,8 @@ public class FileService {
     private final DbManager dbManager;
     private final ServiceManager serviceManager;
     @Lazy @Autowired private CacheService cacheService;
+    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
+    @Autowired @Lazy private KeyManagerService keyManagerService;
 
     private FileUploader fileUploader;
     private FileDownloader fileDownloader;
@@ -149,6 +152,8 @@ public class FileService {
 
         String getInfoQuery = CommandQueryManager.GET_FILE_INFO.get();
         try {
+            keyManagerService.deleteKey(fileId, userId);
+            
             List<Map<String, Object>> infoList = metadataTemplate.queryForList(
                 getInfoQuery,
                 fileId,

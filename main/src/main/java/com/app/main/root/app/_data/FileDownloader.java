@@ -1,14 +1,18 @@
 package com.app.main.root.app._data;
-import org.springframework.jdbc.core.JdbcTemplate;
-
+import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
+import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
-
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.*;
 
 public class FileDownloader {  
     private final FileService fileService;
     private final Map<String, JdbcTemplate> jdbcTemplates;
+    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
+    @Autowired @Lazy private KeyManagerService keyManagerService;
 
     private String downloadUrl;
 
@@ -57,13 +61,19 @@ public class FileDownloader {
 
                 if(!contentRes.isEmpty()) {
                     byte[] content = (byte[]) contentRes.get(0).get("content");
-                    System.out.println("Download successful, size: " + content.length + " bytes");
+                    byte[] encryptionKey = keyManagerService.retrieveKey(fileId, userId);
+                    if(encryptionKey == null) throw new RuntimeException("Failed to retrieve encryption key for file: " + fileId);
+
+                    fileEncoderWrapper.initEncoder(encryptionKey, FileEncoderWrapper.EncryptionAlgorithm.AES_256_GCM);
+                    byte[] decryptedContent = fileEncoderWrapper.decrypt(content);
+
+                    System.out.println("Download successful, size: " + decryptedContent.length + " bytes");
                     
                     Map<String, Object> res = new HashMap<>();
-                    res.put("content", content);
+                    res.put("content", decryptedContent);
                     res.put("filename", originalFilename);
                     res.put("mimeType", mimeType);
-                    res.put("fileSize", content.length);
+                    res.put("fileSize", decryptedContent.length);
                     return res;
                 } else {
                     throw new RuntimeException("File content not found in " + dbType);

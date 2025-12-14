@@ -1,17 +1,23 @@
 package com.app.main.root.app._data;
+import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
+import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
+import com.app.main.root.app._db.CommandQueryManager;
+import com.app.main.root.app._service.FileService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.web.multipart.MultipartFile;
-import com.app.main.root.app._db.CommandQueryManager;
-import com.app.main.root.app._service.FileService;
 
 public class FileUploader {
     private final FileService fileService;
     private final Map<String, JdbcTemplate> jdbcTemplates;
+    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
+    @Autowired @Lazy private KeyManagerService keyManagerService;
 
     private String fileId;
     private String fileName;
@@ -67,6 +73,12 @@ public class FileUploader {
                 System.err.println("ERROR: No database configured for type: " + targetDb);
                 throw new SQLException("No database configured for type: " + targetDb);
             }
+
+            byte[] encryptionKey = FileEncoderWrapper.generateKey(32);
+            fileEncoderWrapper.initEncoder(encryptionKey, FileEncoderWrapper.EncryptionAlgorithm.AES_256_GCM);
+            byte[] fileBytes = file.getBytes();
+            byte[] encryptedContent = fileEncoderWrapper.encrypt(fileBytes);
+
             metadataTemplate.update(
                 query,
                 fileId,
@@ -79,14 +91,13 @@ public class FileUploader {
                 parentFolderId,
                 uploadedAt
             );
-    
-            byte[] fileBytes = file.getBytes();
             insertFileContent(
                 targetDb, 
                 fileId, 
-                fileBytes, 
+                encryptedContent, 
                 mimeType
             );
+            keyManagerService.storeKey(fileId, userId, encryptionKey);
             
             /*
             generateThumbnail(targetDb, fileId, fileBytes, mimeType);
