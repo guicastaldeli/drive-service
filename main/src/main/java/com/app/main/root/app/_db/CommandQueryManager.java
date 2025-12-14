@@ -192,6 +192,26 @@ public enum CommandQueryManager {
     ),
     GET_DOCUMENT(
         "SELECT content FROM document_data WHERE file_id = ?"
+    ),
+
+    /*
+    * ~~~ KEY SERVICE ~~~ 
+    */
+    STORE_KEY(
+        """
+            INSERT INTO file_encryption_keys (file_id, file_id_hash, user_id, encrypted_key, created_at)
+            VALUES (?, ?, ?, ?, NOW())
+            ON DUPLICATE KEY UPDATE encrypted_key = ?, updated_at = NOW()
+        """
+    ),
+    RETRIEVE_KEY(
+        "SELECT encrypted_key FROM file_encryption_keys WHERE file_id = ? AND user_id = ?"
+    ),
+    DELETE_KEY(
+        "DELETE FROM file_encryption_keys WHERE file_id = ? AND user_id = ?"
+    ),
+    KEY_EXISTS(
+        "SELECT COUNT(*) as count FROM file_encryption_keys WHERE file_id = ? AND user_id = ?"
     );
 
     /* Main */
