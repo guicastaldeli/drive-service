@@ -42,9 +42,23 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\cipher\cipher.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile cipher.c
+    pause
+    exit /b 1
+)
+
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\iv\iv.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile iv.c
+    pause
+    exit /b 1
+)
+
 echo.
 echo Linking DLL with link.exe...
-link /nologo /DLL /OUT:fileencoder.dll file_encoder.obj file_encoder_jni.obj /LIBPATH:"%OPENSSL_LIB%" libssl.lib libcrypto.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
+link /nologo /DLL /OUT:fileencoder.dll file_encoder.obj file_encoder_jni.obj cipher.obj iv.obj /LIBPATH:"%OPENSSL_LIB%" libssl.lib libcrypto.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
     echo ERROR: Linking failed

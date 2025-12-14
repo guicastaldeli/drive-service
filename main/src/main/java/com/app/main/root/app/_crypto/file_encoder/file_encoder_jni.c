@@ -1,16 +1,9 @@
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
-#include <string>
-#include <iostream>
-#include <exception>
 #include "file_encoder.h"
 
 #define JNI_CLASS_NAME "com/app/main/root/app/_crypto/file_encoder/FileEncoderWrapper"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 static int getByteArray(
     JNIEnv *env, 
@@ -36,7 +29,7 @@ static int getByteArray(
     memcpy(*buffer, elements, len);
     (*env)->ReleaseByteArrayElements(env, jArray, elements, 0);
     
-    length = len;
+    *length = (size_t)len;
     return ENCODER_SUCCESS;
 }
 
@@ -65,7 +58,7 @@ static jbyteArray createByteArray(
     return arr;
 }
 
-__declspec(dllexport) JNIEXPORT jlong JNICALL 
+JNIEXPORT jlong JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init(
     JNIEnv *env, 
     jobject obj, 
@@ -73,7 +66,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init(
     jint algorithm
 ) {    
     uint8_t *keyData = NULL;
-    size_t* keyLen = 0;
+    size_t keyLen = 0;
     
     int result = getByteArray(env, keyArray, &keyData, &keyLen);
     if(result != ENCODER_SUCCESS) {
@@ -97,7 +90,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init(
     return (jlong)(intptr_t)ctx;
 }
 
-__declspec(dllexport) JNIEXPORT void JNICALL 
+JNIEXPORT void JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_cleanup(
     JNIEnv *env, 
     jobject obj, 
@@ -110,7 +103,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_cleanup(
     }
 }
 
-__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+JNIEXPORT jbyteArray JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptData(
     JNIEnv *env, 
     jobject obj, 
@@ -123,21 +116,21 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptData
     }
     
     uint8_t *inputData = NULL;
-    size_t* inputLen = 0;
+    size_t inputLen = 0;
     
     int result = getByteArray(env, inputArray, &inputData, &inputLen);
     if(result != ENCODER_SUCCESS) {
         return NULL;
     }
     
-    size_t* maxOutputLen = getEncryptedSize(inputLen, ctx->algo);
+    size_t maxOutputLen = getEncryptedSize(inputLen, ctx->algo);
     uint8_t *outputData = (uint8_t*)malloc(maxOutputLen);
     if(!outputData) {
         free(inputData);
         return NULL;
     }
     
-    size_t* outputLen = 0;
+    size_t outputLen = 0;
     result = encryptData(ctx, inputData, inputLen, outputData, &outputLen);
     free(inputData);
     
@@ -152,7 +145,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptData
     return resultArray;
 }
 
-__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+JNIEXPORT jbyteArray JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData(
     JNIEnv *env, 
     jobject obj, 
@@ -165,7 +158,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData
     }
     
     uint8_t *inputData = NULL;
-    size_t* inputLen = 0;
+    size_t inputLen = 0;
     
     int result = getByteArray(env, inputArray, &inputData, &inputLen);
     if(result != ENCODER_SUCCESS) {
@@ -178,7 +171,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData
         return NULL;
     }
     
-    size_t* outputLen = 0;
+    size_t outputLen = 0;
     result = decryptData(ctx, inputData, inputLen, outputData, &outputLen);
     free(inputData);
     
@@ -193,7 +186,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData
     return resultArray;
 }
 
-__declspec(dllexport) JNIEXPORT jboolean JNICALL 
+JNIEXPORT jboolean JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptFile(
     JNIEnv *env, 
     jobject obj, 
@@ -223,7 +216,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptFile
     return (result == ENCODER_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-__declspec(dllexport) JNIEXPORT jboolean JNICALL 
+JNIEXPORT jboolean JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptFile(
     JNIEnv *env, 
     jobject obj, 
@@ -253,7 +246,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptFile
     return (result == ENCODER_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+JNIEXPORT jbyteArray JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_generateIV(
     JNIEnv *env, 
     jobject obj, 
@@ -271,7 +264,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_generateIV(
     return createByteArray(env, ctx->iv, ctx->ivLength);
 }
 
-__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+JNIEXPORT jbyteArray JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey(
     JNIEnv *env, 
     jobject obj, 
@@ -285,7 +278,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey(
     }
     
     uint8_t *saltData = NULL;
-    size_t* saltLen = 0;
+    size_t saltLen = 0;
     
     int result = getByteArray(env, saltArray, &saltData, &saltLen);
     if(result != ENCODER_SUCCESS) {
@@ -316,7 +309,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey(
     return resultArray;
 }
 
-__declspec(dllexport) JNIEXPORT jint JNICALL 
+JNIEXPORT jint JNICALL 
 Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize(
     JNIEnv *env, 
     jobject obj, 
@@ -340,7 +333,7 @@ static JNINativeMethod methods[] = {
     { "getEncryptedSize", "(II)I", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize }
 };
 
-__declspec(dllexport) JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env = NULL;
     
     if((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_8) != JNI_OK) {
@@ -362,7 +355,3 @@ __declspec(dllexport) JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserv
     
     return JNI_VERSION_1_8;
 }
-
-#ifdef __cplusplus
-}
-#endif

@@ -109,7 +109,7 @@ int encryptData(
  */
 int decryptData(
     EncoderContext* ctx,
-    const uint8_t input,
+    const uint8_t* input,
     size_t inputLength,
     uint8_t* output,
     size_t* outputLength
@@ -139,7 +139,7 @@ int decryptData(
         ctx->tagLength,
         ctx->tag
     ) != 1) {
-        EVP_CIPHER_CTX_Free(decryptCtx);
+        EVP_CIPHER_CTX_free(decryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
 
@@ -214,8 +214,17 @@ int encryptFile(
     }
 
     const size_t CHUNK_SIZE = 4096;
-    uint8_t buffer[CHUNK_SIZE];
-    uint8_t encryptedBuffer[CHUNK_SIZE + 32];
+    uint8_t* buffer = (uint8_t*)malloc(CHUNK_SIZE);
+    uint8_t* encryptedBuffer = (uint8_t*)malloc(CHUNK_SIZE + 32);
+    
+    if(!buffer || !encryptedBuffer) {
+        if(buffer) free(buffer);
+        if(encryptedBuffer) free(encryptedBuffer);
+        fclose(inputFile);
+        fclose(outputFile);
+        return ENCODER_ERROR_MEMORY;
+    }
+    
     size_t totalEncrypted = 0;
 
     while(!feof(inputFile)) {
@@ -230,6 +239,8 @@ int encryptFile(
                 &encryptedLen
             );
             if(res != ENCODER_SUCCESS) {
+                free(buffer);
+                free(encryptedBuffer);
                 fclose(inputFile);
                 fclose(outputFile);
                 return res;
@@ -240,6 +251,8 @@ int encryptFile(
                 encryptedLen,
                 outputFile
             ) != encryptedLen) {
+                free(buffer);
+                free(encryptedBuffer);
                 fclose(inputFile);
                 fclose(outputFile);
                 return ENCODER_ERROR_IO;
@@ -247,6 +260,9 @@ int encryptFile(
             totalEncrypted += encryptedLen;
         }
     }
+
+    free(buffer);
+    free(encryptedBuffer);
 
     header.encryptedSize = totalEncrypted;
     fseek(outputFile, 0, SEEK_SET);
@@ -262,7 +278,7 @@ int encryptFile(
 }
 
 /**
- * Decript File
+ * Decrypt File
  */
 int decryptFile(
     const char* inputPath,
@@ -294,11 +310,20 @@ int decryptFile(
     memcpy(ctx->tag, header.tag, ctx->tagLength);
 
     const size_t CHUNK_SIZE = 4096 + 32;
-    uint8_t buffer[CHUNK_SIZE];
-    uint8_t decryptedBuffer[CHUNK_SIZE];
-    size_t totalDecrypted = 0;
+    uint8_t* buffer = (uint8_t*)malloc(CHUNK_SIZE);
+    uint8_t* decryptedBuffer = (uint8_t*)malloc(CHUNK_SIZE);
+    
+    if(!buffer || !decryptedBuffer) {
+        if(buffer) free(buffer);
+        if(decryptedBuffer) free(decryptedBuffer);
+        fclose(inputFile);
+        fclose(outputFile);
+        return ENCODER_ERROR_MEMORY;
+    }
 
+    size_t totalDecrypted = 0;
     size_t remaining = header.encryptedSize;
+    
     while(remaining > 0) {
         size_t toRead = remaining < CHUNK_SIZE ? remaining : CHUNK_SIZE;
         size_t bytesRead = fread(buffer, 1, toRead, inputFile);
@@ -312,11 +337,15 @@ int decryptFile(
                 &decryptLen
             );
             if(res != ENCODER_SUCCESS) {
+                free(buffer);
+                free(decryptedBuffer);
                 fclose(inputFile);
                 fclose(outputFile);
                 return res;
             }
-            if(write(decryptedBuffer, 1, decryptLen, outputFile) != decryptLen) {
+            if(fwrite(decryptedBuffer, 1, decryptLen, outputFile) != decryptLen) {
+                free(buffer);
+                free(decryptedBuffer);
                 fclose(inputFile);
                 fclose(outputFile);
                 return ENCODER_ERROR_IO;
@@ -328,6 +357,9 @@ int decryptFile(
             break;
         }
     }
+
+    free(buffer);
+    free(decryptedBuffer);
 
     if(totalDecrypted != header.fileSize) {
         fclose(inputFile);

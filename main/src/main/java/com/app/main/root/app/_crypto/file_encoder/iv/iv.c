@@ -3,7 +3,7 @@
 /**
  * Get Size
  */
-static size_t getIVSize(EncryptionAlgo algo) {
+size_t getIVSize(EncryptionAlgo algo) {
     switch(algo) {
         case ALGO_AES_256_GCM:
             return 12;
