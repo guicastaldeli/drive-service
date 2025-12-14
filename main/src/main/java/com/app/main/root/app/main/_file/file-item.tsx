@@ -159,6 +159,62 @@ export class FileItem extends Component<Props, State> {
     }
 
     /**
+     * Handle Download
+     */
+    private async handleDownloadFile(file: Item): Promise<void> {
+        try {
+            const fileService = await this.apiClientController.getFileService();
+            const res = await fileService.downloadFile(this.props.userId, file.fileId);
+            
+            if(res.success && res.data) {
+                if(res.data.content && res.data.filename) {
+                    const blob = new Blob([res.data.content], {
+                        type: res.data.mimeType || 'application/octet-stream'
+                    });
+                    this.createDownloadEl(blob, res.data.filename);
+                } else if(res.data instanceof Blob) {
+                    this.createDownloadEl(res.data, file.originalFileName);
+                } else if(
+                    res.data instanceof ArrayBuffer || 
+                    res.data instanceof Uint8Array
+                ) {
+                    const blob = new Blob([new Uint8Array(res.data)], {
+                        type: file.mimeType || 'application/octet-stream'
+                    });
+                    this.createDownloadEl(blob, file.originalFileName);
+                } else if(typeof res.data === 'string') {
+                    const blob = new Blob([res.data], {
+                        type: file.mimeType || 'text/plain'
+                    });
+                    this.createDownloadEl(blob, file.originalFileName);
+                } else {
+                    console.error('Unsupported download response format:', res.data);
+                }
+            } else {
+                throw new Error(res.error || 'Download failed');
+            }
+        } catch (err: any) {
+            console.error('Error downloading file:', err);
+        }
+    }
+
+    private createDownloadEl(blob: Blob, filename: string): void {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.style.display = 'none';
+        
+        document.body.appendChild(a);
+        a.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }, 100);
+    }
+
+    /**
      * Reset and Load
      */
     private async resetAndLoad() {
@@ -686,9 +742,8 @@ export class FileItem extends Component<Props, State> {
                                     className="action-btn download-btn"
                                     onClick={async (e) => {
                                         e.stopPropagation();
-                                        const fileService = await this.apiClientController.getFileService();
                                         console.log('Downloading...', file.fileId);
-                                        await fileService.downloadFile(this.props.userId, file.fileId);
+                                        await this.handleDownloadFile(file);
                                     }}
                                     title="Download"
                                 >

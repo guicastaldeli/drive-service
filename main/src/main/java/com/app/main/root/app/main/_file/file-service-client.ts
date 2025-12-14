@@ -40,7 +40,7 @@ export class FileServiceClient {
         error?: any 
     }> {
         try {
-            const response = await fetch(
+            const res = await fetch(
                 `${this.url}/api/files/download/${userId}/${fileId}`,
                 {
                     method: 'GET',
@@ -50,20 +50,20 @@ export class FileServiceClient {
                     credentials: 'include'
                 }
             );
-            if(!response.ok) {
-                throw new Error(`Download failed!: ${response.statusText}`);
+            if(!res.ok) {
+                throw new Error(`Download failed!: ${res.statusText}`);
             }
 
-            const contentType = response.headers.get('content-type');
+            const contentType = res.headers.get('content-type');
             if(contentType && contentType.includes('application/json')) {
-                const data = await response.json();
+                const data = await res.json();
                 return {
                     success: true,
                     data: data
                 };
             } else {
-                const arrayBuffer = await response.arrayBuffer();
-                const contentDisposition = response.headers.get('content-disposition');
+                const arrayBuffer = await res.arrayBuffer();
+                const contentDisposition = res.headers.get('content-disposition');
                 let filename = fileId;
                 if(contentDisposition) {
                     const match = contentDisposition.match(/filename="?(.+?)"?$/);
@@ -101,7 +101,7 @@ export class FileServiceClient {
             });
             if(!res.ok) {
                 const errorText = await res.text();
-                console.error('Delete failed with status:', res.status, 'Response:', errorText);
+                console.error('Delete failed with status:', res.status, 'res:', errorText);
                 throw new Error(`Failed to delete file: ${res.statusText}`);
             }
             return await res.json();
