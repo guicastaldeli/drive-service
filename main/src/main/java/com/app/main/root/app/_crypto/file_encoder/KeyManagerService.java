@@ -133,17 +133,17 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.RETRIEVE_KEY.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
-            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
+            JdbcTemplate template = jdbcTemplates.get("file_encryption_keys");
+            if(template == null) throw new RuntimeException("file_encryption_keys database not configured");
 
-            List<Map<String, Object>> result = metadataDb.queryForList(query, fileId, userId);
-            if(result.isEmpty()) {
-                System.err.println("No encryption key found for fileId: " + fileId + ", userId: " + userId);
-                return null;
-            }
-
-            String encryptedKey = (String) result.get(0).get("encrypted_key");
-            return decryptKey(encryptedKey);
+            byte[] key = template.queryForObject(
+                query,
+                byte[].class,
+                fileId,
+                userId
+            );
+            System.out.println("Key retrieved successfully... length: " + (key != null ? key.length : "null"));
+            return key;
         } catch (Exception err) {
             System.err.println("Error retrieving encryption key: " + err.getMessage());
             throw new RuntimeException("Failed to retrieve encryption key", err);
@@ -157,10 +157,10 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.DELETE_KEY.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
-            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
+            JdbcTemplate template = jdbcTemplates.get("file_encryption_keys");
+            if(template == null) throw new RuntimeException("file_encryption_keys database not configured");
 
-            metadataDb.update(query, fileId, userId);
+            template.update(query, fileId, userId);
             System.out.println("Key deleted for fileId: " + fileId);
         } catch (Exception e) {
             System.err.println("Error deleting encryption key: " + e.getMessage());
@@ -172,10 +172,10 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.KEY_EXISTS.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
-            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
+            JdbcTemplate template = jdbcTemplates.get("file_encryption_keys");
+            if(template == null) throw new RuntimeException("file_encryption_keys database not configured");
 
-            List<Map<String, Object>> result = metadataDb.queryForList(query, fileId, userId);
+            List<Map<String, Object>> result = template.queryForList(query, fileId, userId);
             Integer count = ((Number) result.get(0).get("count")).intValue();
             return count > 0;
         } catch (Exception err) {

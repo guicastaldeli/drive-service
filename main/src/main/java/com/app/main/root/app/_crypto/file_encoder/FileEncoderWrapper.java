@@ -85,6 +85,9 @@ public class FileEncoderWrapper {
     private long nativePtr = 0;
     private final Object lock = new Object();
 
+    private native byte[] getIV(long handle);
+    public native void setIV(long handle, byte[] iv);
+
     public FileEncoderWrapper() {
         Runtime.getRuntime().addShutdownHook(new Thread(this::destroy));
     }
@@ -113,6 +116,20 @@ public class FileEncoderWrapper {
         if(key != null) {
             java.util.Arrays.fill(key, (byte)0);
         }
+    }
+
+    public byte[] getIV() {
+        if(nativePtr == 0) {
+            throw new IllegalStateException("Encoder not initialized");
+        }
+        return getIV(nativePtr);
+    }
+
+    public void setIV(byte[] iv) {
+        if(nativePtr == 0) {
+            throw new IllegalStateException("Encoder not initialized");
+        }
+        setIV(nativePtr, iv);
     }
 
     public int getEncryptedSize(int inputSize, EncryptionAlgorithm algorithm) {
@@ -218,5 +235,4 @@ public class FileEncoderWrapper {
             super.finalize();
         }
     }
-
 }

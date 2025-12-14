@@ -45,18 +45,14 @@ public class FileUploader {
         MultipartFile file,
         String parentFolderId
     ) throws SQLException {
-        try {
-            System.out.println("DEBUG: Starting upload...");
-        System.out.println("DEBUG: fileEncoderWrapper = " + fileEncoderWrapper);
-        System.out.println("DEBUG: keyManagerService = " + keyManagerService);
-        
-        // Check for null dependencies
-        if (fileEncoderWrapper == null) {
-            throw new RuntimeException("fileEncoderWrapper is null!");
-        }
-        if (keyManagerService == null) {
-            throw new RuntimeException("keyManagerService is null!");
-        }
+        try {            
+            if(fileEncoderWrapper == null) {
+                throw new RuntimeException("fileEncoderWrapper is null!");
+            }
+            if(keyManagerService == null) {
+                throw new RuntimeException("keyManagerService is null!");
+            }
+
             String query = CommandQueryManager.UPLOAD_FILE.get();
 
             String fileId = generateFileId();
@@ -80,20 +76,26 @@ public class FileUploader {
             System.out.println("  uploadedAt: " + uploadedAt);
             
             JdbcTemplate metadataTemplate = jdbcTemplates.get("files_metadata");
-                if (metadataTemplate == null) {
+                if(metadataTemplate == null) {
                 System.err.println("ERROR: No files_metadata database configured");
                 throw new SQLException("No files_metadata database configured");
             }
             JdbcTemplate jdbcTemplate = jdbcTemplates.get(targetDb);
-            if (jdbcTemplate == null) {
+            if(jdbcTemplate == null) {
                 System.err.println("ERROR: No database configured for type: " + targetDb);
                 throw new SQLException("No database configured for type: " + targetDb);
             }
 
             byte[] encryptionKey = FileEncoderWrapper.generateKey(32);
             fileEncoderWrapper.initEncoder(encryptionKey, FileEncoderWrapper.EncryptionAlgorithm.AES_256_GCM);
+
+            byte[] iv = fileEncoderWrapper.generateIV();
             byte[] fileBytes = file.getBytes();
             byte[] encryptedContent = fileEncoderWrapper.encrypt(fileBytes);
+
+            byte[] ivEncrypted = new byte[iv.length + encryptedContent.length];
+            System.arraycopy(iv, 0, ivEncrypted, 0, iv.length);
+            System.arraycopy(encryptedContent, 0, ivEncrypted, iv.length, encryptedContent.length);
 
             metadataTemplate.update(
                 query,
@@ -110,7 +112,7 @@ public class FileUploader {
             insertFileContent(
                 targetDb, 
                 fileId, 
-                encryptedContent, 
+                ivEncrypted, 
                 mimeType
             );
             keyManagerService.storeKey(fileId, userId, encryptionKey);
@@ -170,25 +172,25 @@ public class FileUploader {
      * Get File Type
      */
     public String getFileType(String mimeType) {
-        if (mimeType == null) {
+        if(mimeType == null) {
             return "other";
         }
 
         String lowerMime = mimeType.toLowerCase();
-        if (lowerMime.startsWith("image/")) {
+        if(lowerMime.startsWith("image/")) {
             return "image";
-        } else if (lowerMime.startsWith("video/")) {
+        } else if(lowerMime.startsWith("video/")) {
             return "video";
-        } else if (lowerMime.startsWith("audio/")) {
+        } else if(lowerMime.startsWith("audio/")) {
             return "audio";
-        } else if (lowerMime.startsWith("text/")) {
+        } else if(lowerMime.startsWith("text/")) {
             return "document";
-        } else if (lowerMime.contains("pdf") || 
+        } else if(lowerMime.contains("pdf") || 
                 lowerMime.contains("document") || 
                 lowerMime.contains("msword") ||
                 lowerMime.contains("officedocument")) {
             return "document";
-        } else if (lowerMime.contains("zip") || 
+        } else if(lowerMime.contains("zip") || 
                 lowerMime.contains("rar") || 
                 lowerMime.contains("compressed")) {
             return "document";

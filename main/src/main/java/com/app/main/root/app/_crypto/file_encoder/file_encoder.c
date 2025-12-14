@@ -66,6 +66,7 @@ int encryptData(
         ctx->key,
         ctx->iv
     ) != 1) {
+        EVP_CIPHER_CTX_free(encryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
 
@@ -82,14 +83,16 @@ int encryptData(
     }
     *outputLength = outLen;
 
+    int finalLen = 0;
     if(EVP_EncryptFinal_ex(
         encryptCtx,
         output + outLen,
-        &outLen
+        &finalLen
     ) != 1) {
+        EVP_CIPHER_CTX_free(encryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
-    *outputLength += outLen;
+    *outputLength += finalLen;
 
     if(EVP_CIPHER_CTX_ctrl(
         encryptCtx,
@@ -97,8 +100,12 @@ int encryptData(
         ctx->tagLength,
         ctx->tag
     ) != 1) {
+        EVP_CIPHER_CTX_free(encryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
+
+    memcpy(output + *outputLength, ctx->tag, ctx->tagLength);
+    *outputLength += ctx->tagLength;
 
     EVP_CIPHER_CTX_free(encryptCtx);
     return ENCODER_SUCCESS;
@@ -117,6 +124,10 @@ int decryptData(
     if(!ctx || !input || !output || !outputLength) {
         return ENCODER_ERROR_INVALID_PARAM;
     }
+
+    size_t ciphertextLength = inputLength - ctx->tagLength;
+    const uint8_t* ciphertext = input;
+    const uint8_t* tag = input + ciphertextLength;
 
     const EVP_CIPHER* cipher = getCipher(ctx->algo);
     EVP_CIPHER_CTX* decryptCtx = EVP_CIPHER_CTX_new();
@@ -137,7 +148,7 @@ int decryptData(
         decryptCtx,
         EVP_CTRL_GCM_SET_TAG,
         ctx->tagLength,
-        ctx->tag
+        (void*)tag
     ) != 1) {
         EVP_CIPHER_CTX_free(decryptCtx);
         return ENCODER_ERROR_CRYPTO;
@@ -148,22 +159,25 @@ int decryptData(
         decryptCtx,
         output,
         &outLen,
-        input,
-        inputLength
+        ciphertext,
+        ciphertextLength
     ) != 1) {
+        EVP_CIPHER_CTX_free(decryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
     *outputLength = outLen;
 
+    int finalLen = 0;
     if(EVP_DecryptFinal_ex(
         decryptCtx,
         output + outLen,
-        &outLen
+        &finalLen
     ) != 1) {
+        EVP_CIPHER_CTX_free(decryptCtx);
         return ENCODER_ERROR_CRYPTO;
     }
 
-    *outputLength += outLen;
+    *outputLength += finalLen;
     EVP_CIPHER_CTX_free(decryptCtx);
     return ENCODER_SUCCESS;
 }

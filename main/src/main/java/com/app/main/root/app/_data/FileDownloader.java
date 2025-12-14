@@ -66,11 +66,17 @@ public class FileDownloader {
 
                 if(!contentRes.isEmpty()) {
                     byte[] content = (byte[]) contentRes.get(0).get("content");
+
+                    int ivLength = 12;
+                    byte[] iv = Arrays.copyOfRange(content, 0, ivLength);
+                    byte[] encryptedContent = Arrays.copyOfRange(content, ivLength, content.length);
+
                     byte[] encryptionKey = keyManagerService.retrieveKey(fileId, userId);
                     if(encryptionKey == null) throw new RuntimeException("Failed to retrieve encryption key for file: " + fileId);
 
                     fileEncoderWrapper.initEncoder(encryptionKey, FileEncoderWrapper.EncryptionAlgorithm.AES_256_GCM);
-                    byte[] decryptedContent = fileEncoderWrapper.decrypt(content);
+                    fileEncoderWrapper.setIV(iv);
+                    byte[] decryptedContent = fileEncoderWrapper.decrypt(encryptedContent);
 
                     System.out.println("Download successful, size: " + decryptedContent.length + " bytes");
                     

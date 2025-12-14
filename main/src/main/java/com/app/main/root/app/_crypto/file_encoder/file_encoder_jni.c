@@ -165,7 +165,7 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData
         return NULL;
     }
     
-    uint8_t *outputData = (uint8_t*)malloc(inputLen);
+    uint8_t *outputData = (uint8_t*)malloc(inputLen - ctx->tagLength);
     if(!outputData) {
         free(inputData);
         return NULL;
@@ -321,6 +321,51 @@ Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncrypte
         (EncryptionAlgo)algorithm);
 }
 
+JNIEXPORT jbyteArray JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getIV(
+    JNIEnv *env, 
+    jobject obj, 
+    jlong handle
+) {
+    EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
+    if(!ctx || !ctx->iv) {
+        return NULL;
+    }
+    
+    return createByteArray(env, ctx->iv, ctx->ivLength);
+}
+
+JNIEXPORT void JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_setIV(
+    JNIEnv *env, 
+    jobject obj, 
+    jlong handle, 
+    jbyteArray ivArray
+) {
+    EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
+    if(!ctx) {
+        return;
+    }
+    
+    uint8_t *ivData = NULL;
+    size_t ivLen = 0;
+    
+    int result = getByteArray(env, ivArray, &ivData, &ivLen);
+    if(result != ENCODER_SUCCESS) {
+        if(ivData) free(ivData);
+        return;
+    }
+    
+    size_t expectedIVLen = getIVSize(ctx->algo);
+    if(ivLen != expectedIVLen) {
+        free(ivData);
+        return;
+    }
+    
+    memcpy(ctx->iv, ivData, expectedIVLen);
+    free(ivData);
+}
+
 static JNINativeMethod methods[] = {
     { "init", "([BI)J", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init },
     { "cleanup", "(J)V", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_cleanup },
@@ -330,7 +375,9 @@ static JNINativeMethod methods[] = {
     { "decryptFile", "(JLjava/lang/String;Ljava/lang/String;)Z", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptFile },
     { "generateIV", "(J)[B", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_generateIV },
     { "deriveKey", "(Ljava/lang/String;[BI)[B", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey },
-    { "getEncryptedSize", "(II)I", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize }
+    { "getEncryptedSize", "(II)I", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize },
+    { "getIV", "(J)[B", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getIV },
+    { "setIV", "(J[B)V", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_setIV }
 };
 
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
