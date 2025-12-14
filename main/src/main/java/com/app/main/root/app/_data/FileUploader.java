@@ -3,8 +3,6 @@ import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -16,8 +14,8 @@ import java.util.UUID;
 public class FileUploader {
     private final FileService fileService;
     private final Map<String, JdbcTemplate> jdbcTemplates;
-    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
-    @Autowired @Lazy private KeyManagerService keyManagerService;
+    private final FileEncoderWrapper fileEncoderWrapper;
+    private final KeyManagerService keyManagerService;
 
     private String fileId;
     private String fileName;
@@ -27,9 +25,16 @@ public class FileUploader {
     private String database;
     private LocalDateTime uploadedAt;
 
-    public FileUploader(FileService fileService, Map<String, JdbcTemplate> jdbcTemplates) {
+    public FileUploader(
+        FileService fileService, 
+        Map<String, JdbcTemplate> jdbcTemplates,
+        FileEncoderWrapper fileEncoderWrapper,
+        KeyManagerService keyManagerService
+    ) {
         this.fileService = fileService;
         this.jdbcTemplates = jdbcTemplates;
+        this.fileEncoderWrapper = fileEncoderWrapper;
+        this.keyManagerService = keyManagerService;
     } 
 
     /**
@@ -41,6 +46,17 @@ public class FileUploader {
         String parentFolderId
     ) throws SQLException {
         try {
+            System.out.println("DEBUG: Starting upload...");
+        System.out.println("DEBUG: fileEncoderWrapper = " + fileEncoderWrapper);
+        System.out.println("DEBUG: keyManagerService = " + keyManagerService);
+        
+        // Check for null dependencies
+        if (fileEncoderWrapper == null) {
+            throw new RuntimeException("fileEncoderWrapper is null!");
+        }
+        if (keyManagerService == null) {
+            throw new RuntimeException("keyManagerService is null!");
+        }
             String query = CommandQueryManager.UPLOAD_FILE.get();
 
             String fileId = generateFileId();

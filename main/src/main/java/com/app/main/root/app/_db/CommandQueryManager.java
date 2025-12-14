@@ -198,11 +198,7 @@ public enum CommandQueryManager {
     * ~~~ KEY SERVICE ~~~ 
     */
     STORE_KEY(
-        """
-            INSERT INTO file_encryption_keys (file_id, file_id_hash, user_id, encrypted_key, created_at)
-            VALUES (?, ?, ?, ?, NOW())
-            ON DUPLICATE KEY UPDATE encrypted_key = ?, updated_at = NOW()
-        """
+        "INSERT INTO file_encryption_keys (file_id, file_id_hash, user_id, encrypted_key) VALUES (?, ?, ?, ?)"
     ),
     RETRIEVE_KEY(
         "SELECT encrypted_key FROM file_encryption_keys WHERE file_id = ? AND user_id = ?"

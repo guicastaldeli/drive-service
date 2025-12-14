@@ -3,22 +3,27 @@ import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.*;
 
 public class FileDownloader {  
     private final FileService fileService;
     private final Map<String, JdbcTemplate> jdbcTemplates;
-    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
-    @Autowired @Lazy private KeyManagerService keyManagerService;
+    private final FileEncoderWrapper fileEncoderWrapper;
+    private final KeyManagerService keyManagerService;
 
     private String downloadUrl;
 
-    public FileDownloader(FileService fileService, Map<String, JdbcTemplate> jdbcTemplates) {
+    public FileDownloader(
+        FileService fileService, 
+        Map<String, JdbcTemplate> jdbcTemplates,
+        FileEncoderWrapper fileEncoderWrapper,
+        KeyManagerService keyManagerService
+    ) {
         this.fileService = fileService;
         this.jdbcTemplates = jdbcTemplates;
+        this.fileEncoderWrapper = fileEncoderWrapper;
+        this.keyManagerService = keyManagerService;
     }
 
     public void setDownloadUrl(String url) {

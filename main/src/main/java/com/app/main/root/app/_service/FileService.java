@@ -19,8 +19,8 @@ public class FileService {
     private final DbManager dbManager;
     private final ServiceManager serviceManager;
     @Lazy @Autowired private CacheService cacheService;
-    @Autowired @Lazy private FileEncoderWrapper fileEncoderWrapper;
-    @Autowired @Lazy private KeyManagerService keyManagerService;
+    private FileEncoderWrapper fileEncoderWrapper;
+    private KeyManagerService keyManagerService;
 
     private FileUploader fileUploader;
     private FileDownloader fileDownloader;
@@ -39,8 +39,20 @@ public class FileService {
         this.jdbcTemplates = jdbcTemplates;
         this.serviceManager = serviceManager;
         this.dbManager = dbManager;
-        this.fileUploader = new FileUploader(this, jdbcTemplates);
-        this.fileDownloader = new FileDownloader(this, jdbcTemplates);
+        this.fileEncoderWrapper = new FileEncoderWrapper();
+        this.keyManagerService = new KeyManagerService(jdbcTemplates);
+        this.fileUploader = new FileUploader(
+            this, 
+            jdbcTemplates, 
+            fileEncoderWrapper, 
+            keyManagerService
+        );
+        this.fileDownloader = new FileDownloader(
+            this, 
+            jdbcTemplates, 
+            fileEncoderWrapper, 
+            keyManagerService
+        );
     }
 
     /**

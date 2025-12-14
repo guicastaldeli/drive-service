@@ -10,6 +10,8 @@ import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+
+import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 
 @Service
@@ -79,25 +81,49 @@ public class KeyManagerService {
      */
     public void storeKey(String fileId, String userId, byte[] encryptionKey) {
         try {
-            String encryptedKey = encryptKey(encryptionKey);
-            String hashedFileId = hashString(fileId);
+            JdbcTemplate keyTemplate = jdbcTemplates.get("file_encryption_keys");
+            if (keyTemplate == null) {
+                throw new RuntimeException("file_encryption_keys database not available");
+            }
             
+            String fileIdHash = generateHash(fileId);
             String query = CommandQueryManager.STORE_KEY.get();
-            JdbcTemplate metadataDb = jdbcTemplates.get("files_metadata");
-            if(metadataDb == null) throw new RuntimeException("Files metadata err");
-            metadataDb.update(
-                query,
-                fileId,
-                hashedFileId,
-                userId,
-                encryptedKey,
-                encryptedKey
-            );
-            System.out.println("Key stored for fileId: " + fileId);
-        } catch (Exception err) {
-            System.err.println("Error storing encryption key: " + err.getMessage());
-            throw new RuntimeException("Failed to store encryption key", err);
+            
+            try {
+                int rowsAffected = keyTemplate.update(query, 
+                    fileId, 
+                    fileIdHash, 
+                    userId, 
+                    encryptionKey
+                );
+                System.out.println("Key stored successfully. Rows affected: " + rowsAffected);
+            } catch (Exception e) {
+                System.err.println("Error store key" + e.getMessage());
+                e.printStackTrace();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("Failed to store encryption key: " + e.getMessage(), e);
         }
+    }
+
+    private String generateHash(String input) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("SHA-256");
+            byte[] hash = md.digest(input.getBytes(StandardCharsets.UTF_8));
+            return bytesToHex(hash);
+        } catch (Exception e) {
+            System.err.println("Error generating hash: " + e.getMessage());
+            return input;
+        }
+    }
+    
+    private String bytesToHex(byte[] bytes) {
+        StringBuilder result = new StringBuilder();
+        for (byte b : bytes) {
+            result.append(String.format("%02x", b));
+        }
+        return result.toString();
     }
 
     /**
@@ -107,8 +133,8 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.RETRIEVE_KEY.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("files_metadata");
-            if(metadataDb == null) throw new RuntimeException("files_metadata database not configured");
+            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
+            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
 
             List<Map<String, Object>> result = metadataDb.queryForList(query, fileId, userId);
             if(result.isEmpty()) {
@@ -131,8 +157,8 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.DELETE_KEY.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("files_metadata");
-            if(metadataDb == null) throw new RuntimeException("files_metadata database not configured");
+            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
+            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
 
             metadataDb.update(query, fileId, userId);
             System.out.println("Key deleted for fileId: " + fileId);
@@ -146,8 +172,8 @@ public class KeyManagerService {
         try {
             String query = CommandQueryManager.KEY_EXISTS.get();
 
-            JdbcTemplate metadataDb = jdbcTemplates.get("files_metadata");
-            if(metadataDb == null) throw new RuntimeException("files_metadata database not configured");
+            JdbcTemplate metadataDb = jdbcTemplates.get("file_encryption_keys");
+            if(metadataDb == null) throw new RuntimeException("file_encryption_keys database not configured");
 
             List<Map<String, Object>> result = metadataDb.queryForList(query, fileId, userId);
             Integer count = ((Number) result.get(0).get("count")).intValue();
