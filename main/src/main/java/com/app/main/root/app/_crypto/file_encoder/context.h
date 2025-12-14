@@ -26,12 +26,11 @@ typedef struct {
     uint64_t fileSize;
     uint64_t encryptedSize;
     uint32_t algo;
-    uint32_t version;
     uint64_t timestamp;
     uint8_t iv[64];
     uint8_t tag[16];
     uint8_t reserved[32];
-} FileMetadata;
+} FileHeader;
 
 #define ENCODER_SUCCESS 0
 #define ENCODER_ERROR_INVALID_PARAM -1
