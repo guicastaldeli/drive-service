@@ -47,6 +47,7 @@ size_t getEncryptedSize(size_t inputLength, EncryptionAlgo algo);
 size_t getOverhead(EncryptionAlgo algo);
 int deriveKey(
     const char* password,
+    const uint8_t* salt,
     size_t saltLength,
     uint8_t* key,
     size_t keyLength

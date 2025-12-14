@@ -1,44 +1,51 @@
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>
+#include <string>
+#include <iostream>
+#include <exception>
 #include "file_encoder.h"
 
 #define JNI_CLASS_NAME "com/app/main/root/app/_crypto/file_encoder/FileEncoderWrapper"
 
-static int byteArray(
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+static int getByteArray(
     JNIEnv *env, 
-    jbyteArray arr,
-    uint8_t **buff, 
+    jbyteArray jArray,
+    uint8_t **buffer, 
     size_t *length
 ) {
-    if(!arr) {
+    if(!jArray) {
         return ENCODER_ERROR_INVALID_PARAM;
     }
     
-    jsize len = (*env)->GetArrayLength(env, arr);
+    jsize len = (*env)->GetArrayLength(env, jArray);
     if(len <= 0) {
         return ENCODER_ERROR_INVALID_PARAM;
     }
     
-    *buff = (uint8_t*)malloc(len);
-    if(!*buff) {
+    *buffer = (uint8_t*)malloc(len);
+    if(!*buffer) {
         return ENCODER_ERROR_MEMORY;
     }
     
-    jbyte *elements = (*env)->GetByteArrayElements(env, arr, NULL);
-    memcpy(*buff, elements, len);
-    (*env)->ReleaseByteArrayElements(env, arr, elements, 0);
+    jbyte *elements = (*env)->GetByteArrayElements(env, jArray, NULL);
+    memcpy(*buffer, elements, len);
+    (*env)->ReleaseByteArrayElements(env, jArray, elements, 0);
     
-    *length = len;
+    length = len;
     return ENCODER_SUCCESS;
 }
 
-static jbyteArray buffer(
+static jbyteArray createByteArray(
     JNIEnv *env, 
-    const uint8_t *buff,
+    const uint8_t *buffer,
     size_t length
 ) {
-    if(!buff || length == 0) {
+    if(!buffer || length == 0) {
         return NULL;
     }
     
@@ -52,34 +59,35 @@ static jbyteArray buffer(
         arr, 
         0, 
         (jsize)length,
-        (const jbyte*)buff
+        (const jbyte*)buffer
     );
     
     return arr;
 }
 
-JNIEXPORT jlong JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init(
+__declspec(dllexport) JNIEXPORT jlong JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_init(
     JNIEnv *env, 
     jobject obj, 
-    jbyteArray key, 
+    jbyteArray keyArray,
     jint algorithm
 ) {    
-    uint8_t *key = NULL;
-    size_t keyLen = 0;
+    uint8_t *keyData = NULL;
+    size_t* keyLen = 0;
     
-    int result = byteArray(env, key, &key, &keyLen);
+    int result = getByteArray(env, keyArray, &keyData, &keyLen);
     if(result != ENCODER_SUCCESS) {
         return 0;
     }
     
     EncoderContext *ctx = (EncoderContext*)malloc(sizeof(EncoderContext));
     if(!ctx) {
-        free(key);
+        free(keyData);
         return 0;
     }
     
-    result = init(ctx, key, keyLen, (EncryptionAlgo)algorithm);
-    free(key);
+    result = init(ctx, keyData, keyLen, (EncryptionAlgo)algorithm);
+    free(keyData);
     
     if(result != ENCODER_SUCCESS) {
         free(ctx);
@@ -89,12 +97,12 @@ JNIEXPORT jlong JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEn
     return (jlong)(intptr_t)ctx;
 }
 
-JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_cleanup(
+__declspec(dllexport) JNIEXPORT void JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_cleanup(
     JNIEnv *env, 
     jobject obj, 
     jlong handle
 ) {
-    
     EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
     if(ctx) {
         cleanup(ctx);
@@ -102,146 +110,151 @@ JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEnc
     }
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptData(
+__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptData(
     JNIEnv *env, 
     jobject obj, 
     jlong handle, 
-    jbyteArray input
+    jbyteArray inputArray
 ) {
     EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
     if(!ctx) {
         return NULL;
     }
     
-    uint8_t *input = NULL;
-    size_t inputLen = 0;
+    uint8_t *inputData = NULL;
+    size_t* inputLen = 0;
     
-    int result = byteArray(env, input, &input, &inputLen);
+    int result = getByteArray(env, inputArray, &inputData, &inputLen);
     if(result != ENCODER_SUCCESS) {
         return NULL;
     }
     
-    size_t maxOutputLen = getEncryptedSize(inputLen, ctx->algo);
-    uint8_t *output = (uint8_t*)malloc(maxOutputLen);
-    if(!output) {
-        free(input);
+    size_t* maxOutputLen = getEncryptedSize(inputLen, ctx->algo);
+    uint8_t *outputData = (uint8_t*)malloc(maxOutputLen);
+    if(!outputData) {
+        free(inputData);
         return NULL;
     }
     
-    size_t outputLen = 0;
-    result = encryptData(ctx, input, inputLen, output, &outputLen);
-    free(input);
+    size_t* outputLen = 0;
+    result = encryptData(ctx, inputData, inputLen, outputData, &outputLen);
+    free(inputData);
     
     if(result != ENCODER_SUCCESS) {
-        free(output);
+        free(outputData);
         return NULL;
     }
     
-    jbyteArray output = buffer(env, output, outputLen);
-    free(output);
+    jbyteArray resultArray = createByteArray(env, outputData, outputLen);
+    free(outputData);
     
-    return output;
+    return resultArray;
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData(
+__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptData(
     JNIEnv *env, 
     jobject obj, 
     jlong handle, 
-    jbyteArray input
+    jbyteArray inputArray
 ) {    
     EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
     if(!ctx) {
         return NULL;
     }
     
-    uint8_t *input = NULL;
-    size_t inputLen = 0;
+    uint8_t *inputData = NULL;
+    size_t* inputLen = 0;
     
-    int result = byteArray(env, input, &input, &inputLen);
+    int result = getByteArray(env, inputArray, &inputData, &inputLen);
     if(result != ENCODER_SUCCESS) {
         return NULL;
     }
     
-    uint8_t *output = (uint8_t*)malloc(inputLen);
-    if(!output) {
-        free(input);
+    uint8_t *outputData = (uint8_t*)malloc(inputLen);
+    if(!outputData) {
+        free(inputData);
         return NULL;
     }
     
-    size_t outputLen = 0;
-    result = decryptData(ctx, input, inputLen, output, &outputLen);
-    free(input);
+    size_t* outputLen = 0;
+    result = decryptData(ctx, inputData, inputLen, outputData, &outputLen);
+    free(inputData);
     
     if(result != ENCODER_SUCCESS) {
-        free(output);
+        free(outputData);
         return NULL;
     }
     
-    jbyteArray output = buffer(env, output, outputLen);
-    free(output);
+    jbyteArray resultArray = createByteArray(env, outputData, outputLen);
+    free(outputData);
     
-    return output;
+    return resultArray;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptFile(
+__declspec(dllexport) JNIEXPORT jboolean JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_encryptFile(
     JNIEnv *env, 
     jobject obj, 
     jlong handle, 
-    jstring inputPath,
-    jstring outputPath
+    jstring inputPathStr,
+    jstring outputPathStr
 ) {    
     EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
     if(!ctx) {
         return JNI_FALSE;
     }
     
-    const char *inputPath = (*env)->GetStringUTFChars(env, inputPath, NULL);
-    const char *outputPath = (*env)->GetStringUTFChars(env, outputPath, NULL);
+    const char *inputPath = (*env)->GetStringUTFChars(env, inputPathStr, NULL);
+    const char *outputPath = (*env)->GetStringUTFChars(env, outputPathStr, NULL);
     
     if(!inputPath || !outputPath) {
-        if(inputPath) (*env)->ReleaseStringUTFChars(env, inputPath, inputPath);
-        if(outputPath) (*env)->ReleaseStringUTFChars(env, outputPath, outputPath);
+        if(inputPath) (*env)->ReleaseStringUTFChars(env, inputPathStr, inputPath);
+        if(outputPath) (*env)->ReleaseStringUTFChars(env, outputPathStr, outputPath);
         return JNI_FALSE;
     }
     
     int result = encryptFile(inputPath, outputPath, ctx);
     
-    (*env)->ReleaseStringUTFChars(env, inputPath, inputPath);
-    (*env)->ReleaseStringUTFChars(env, outputPath, outputPath);
+    (*env)->ReleaseStringUTFChars(env, inputPathStr, inputPath);
+    (*env)->ReleaseStringUTFChars(env, outputPathStr, outputPath);
     
     return (result == ENCODER_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptFile(
+__declspec(dllexport) JNIEXPORT jboolean JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_decryptFile(
     JNIEnv *env, 
     jobject obj, 
     jlong handle, 
-    jstring inputPath,
-    jstring outputPath
+    jstring inputPathStr,
+    jstring outputPathStr
 ) {    
     EncoderContext *ctx = (EncoderContext*)(intptr_t)handle;
     if(!ctx) {
         return JNI_FALSE;
     }
     
-    const char *inputPath = (*env)->GetStringUTFChars(env, inputPath, NULL);
-    const char *outputPath = (*env)->GetStringUTFChars(env, outputPath, NULL);
+    const char *inputPath = (*env)->GetStringUTFChars(env, inputPathStr, NULL);
+    const char *outputPath = (*env)->GetStringUTFChars(env, outputPathStr, NULL);
     
     if(!inputPath || !outputPath) {
-        if(inputPath) (*env)->ReleaseStringUTFChars(env, inputPath, inputPath);
-        if(outputPath) (*env)->ReleaseStringUTFChars(env, outputPath, outputPath);
+        if(inputPath) (*env)->ReleaseStringUTFChars(env, inputPathStr, inputPath);
+        if(outputPath) (*env)->ReleaseStringUTFChars(env, outputPathStr, outputPath);
         return JNI_FALSE;
     }
     
     int result = decryptFile(inputPath, outputPath, ctx);
     
-    (*env)->ReleaseStringUTFChars(env, inputPath, inputPath);
-    (*env)->ReleaseStringUTFChars(env, outputPath, outputPath);
+    (*env)->ReleaseStringUTFChars(env, inputPathStr, inputPath);
+    (*env)->ReleaseStringUTFChars(env, outputPathStr, outputPath);
     
     return (result == ENCODER_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_generateIV(
+__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_generateIV(
     JNIEnv *env, 
     jobject obj, 
     jlong handle
@@ -255,54 +268,56 @@ JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_F
         return NULL;
     }
     
-    return buffer(env, ctx->iv, ctx->ivLength);
+    return createByteArray(env, ctx->iv, ctx->ivLength);
 }
 
-JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey(
+__declspec(dllexport) JNIEXPORT jbyteArray JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_deriveKey(
     JNIEnv *env, 
     jobject obj, 
-    jstring password, 
-    jbyteArray salt,
+    jstring passwordStr,
+    jbyteArray saltArray,
     jint keyLength
 ) {
-    const char *password = (*env)->GetStringUTFChars(env, password, NULL);
+    const char *password = (*env)->GetStringUTFChars(env, passwordStr, NULL);
     if(!password) {
         return NULL;
     }
     
-    uint8_t *salt = NULL;
-    size_t saltLen = 0;
+    uint8_t *saltData = NULL;
+    size_t* saltLen = 0;
     
-    int result = byteArray(env, salt, &salt, &saltLen);
+    int result = getByteArray(env, saltArray, &saltData, &saltLen);
     if(result != ENCODER_SUCCESS) {
-        (*env)->ReleaseStringUTFChars(env, password, password);
+        (*env)->ReleaseStringUTFChars(env, passwordStr, password);
         return NULL;
     }
     
-    uint8_t *key = (uint8_t*)malloc(keyLength);
-    if(!key) {
-        (*env)->ReleaseStringUTFChars(env, password, password);
-        free(salt);
+    uint8_t *keyData = (uint8_t*)malloc(keyLength);
+    if(!keyData) {
+        (*env)->ReleaseStringUTFChars(env, passwordStr, password);
+        free(saltData);
         return NULL;
     }
     
-    result = deriveKey(password, saltLen, key, keyLength);
+    result = deriveKey(password, saltData, saltLen, keyData, keyLength);
     
-    (*env)->ReleaseStringUTFChars(env, password, password);
-    free(salt);
+    (*env)->ReleaseStringUTFChars(env, passwordStr, password);
+    free(saltData);
     
     if(result != ENCODER_SUCCESS) {
-        free(key);
+        free(keyData);
         return NULL;
     }
     
-    jbyteArray key = buffer(env, key, keyLength);
-    free(key);
+    jbyteArray resultArray = createByteArray(env, keyData, keyLength);
+    free(keyData);
     
-    return key;
+    return resultArray;
 }
 
-JNIEXPORT jint JNICALL Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize(
+__declspec(dllexport) JNIEXPORT jint JNICALL 
+Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize(
     JNIEnv *env, 
     jobject obj, 
     jint input_size, 
@@ -325,7 +340,7 @@ static JNINativeMethod methods[] = {
     { "getEncryptedSize", "(II)I", (void*)Java_com_app_main_root_app__1crypto_file_1encoder_FileEncoderWrapper_getEncryptedSize }
 };
 
-JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
+__declspec(dllexport) JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     JNIEnv *env = NULL;
     
     if((*vm)->GetEnv(vm, (void**)&env, JNI_VERSION_1_8) != JNI_OK) {
@@ -347,3 +362,7 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     
     return JNI_VERSION_1_8;
 }
+
+#ifdef __cplusplus
+}
+#endif
