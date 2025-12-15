@@ -3,6 +3,8 @@ import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
+import com.app.main.root.app.file_compressor.WrapperFileCompressor;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import java.util.*;
 
@@ -78,13 +80,26 @@ public class FileDownloader {
                     fileEncoderWrapper.setIV(iv);
                     byte[] decryptedContent = fileEncoderWrapper.decrypt(encryptedContent);
 
-                    System.out.println("Download successful, size: " + decryptedContent.length + " bytes");
+                    boolean isCompressed = false;
+                    try {
+                        byte[] decompressed = WrapperFileCompressor.decompressData(decryptedContent, 0);
+                        if(decompressed.length > decryptedContent.length / 2) {
+                            decryptedContent = decompressed;
+                            isCompressed = true;
+                           System.out.println("File was compressed, decompressed from " + decryptedContent.length + " to " + decompressed.length);
+                        }
+                    } catch(Exception e) {
+                        System.out.println("File is not compressed, using original data");
+                    }
+
+                    System.out.println("Download successful, size: " + decryptedContent.length + " bytes, compressed: " + isCompressed);
                     
                     Map<String, Object> res = new HashMap<>();
                     res.put("content", decryptedContent);
                     res.put("filename", originalFilename);
                     res.put("mimeType", mimeType);
                     res.put("fileSize", decryptedContent.length);
+                    res.put("wasCompressed", isCompressed);
                     return res;
                 } else {
                     throw new RuntimeException("File content not found in " + dbType);

@@ -3,6 +3,8 @@ import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
+import com.app.main.root.app.file_compressor.WrapperFileCompressor;
+
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
@@ -24,6 +26,7 @@ public class FileUploader {
     private String fileType;
     private String database;
     private LocalDateTime uploadedAt;
+    private boolean compressed;
 
     public FileUploader(
         FileService fileService, 
@@ -86,11 +89,37 @@ public class FileUploader {
                 throw new SQLException("No database configured for type: " + targetDb);
             }
 
+            byte[] fileBytes = file.getBytes();
+            boolean shouldCompress = fileService.shouldCompress(fileSize, mimeType);
+            if(shouldCompress) {
+                try {
+                    byte[] compressedData = WrapperFileCompressor.compressData(fileBytes);
+                    long compressedSize = compressedData.length;
+                    double ratio = (double) compressedSize / fileSize;
+
+                    System.out.println("DEBUG: Compression attempt:");
+                    System.out.println("  Original size: " + fileSize);
+                    System.out.println("  Compressed size: " + compressedSize);
+                    System.out.println("  Ratio: " + (ratio * 100) + "%");
+
+                    if(ratio < 0.95) {
+                        fileBytes = compressedData;
+                        this.compressed = true;
+                        System.out.println("  Using compressed data");
+                    } else {
+                        this.compressed = false;
+                        System.out.println("  Compression failed, using original");
+                    }
+                } catch(Exception e) {
+                    System.err.println("Compression failed: " + e.getMessage());
+                    this.compressed = false;
+                }
+            }
+
             byte[] encryptionKey = FileEncoderWrapper.generateKey(32);
             fileEncoderWrapper.initEncoder(encryptionKey, FileEncoderWrapper.EncryptionAlgorithm.AES_256_GCM);
 
             byte[] iv = fileEncoderWrapper.generateIV();
-            byte[] fileBytes = file.getBytes();
             byte[] encryptedContent = fileEncoderWrapper.encrypt(fileBytes);
 
             byte[] ivEncrypted = new byte[iv.length + encryptedContent.length];

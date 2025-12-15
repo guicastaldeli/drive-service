@@ -1,6 +1,7 @@
 package com.app.main.root.app._service;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._db.DbManager;
+import com.app.main.root.app.file_compressor.WrapperFileCompressor;
 import com.app.main.root.app._cache.CacheService;
 import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
@@ -18,9 +19,10 @@ public class FileService {
     private final Map<String, JdbcTemplate> jdbcTemplates;
     private final DbManager dbManager;
     private final ServiceManager serviceManager;
-    @Lazy @Autowired private CacheService cacheService;
     private FileEncoderWrapper fileEncoderWrapper;
     private KeyManagerService keyManagerService;
+    private WrapperFileCompressor fileCompressor;
+    @Lazy @Autowired private CacheService cacheService;
 
     private FileUploader fileUploader;
     private FileDownloader fileDownloader;
@@ -30,6 +32,9 @@ public class FileService {
     public static final String VIDEO_DB = "video_data";
     public static final String AUDIO_DB = "audio_data";
     public static final String DOCUMENT_DB = "document_data";
+
+    private static final long COMPRSSSION_MIN_SIZE = 1024 * 100;
+    private static final long COMPRESSION_MAX_SIZE = 1024 * 1024 * 500;
 
     public FileService(
         Map<String, JdbcTemplate> jdbcTemplates,
@@ -308,5 +313,31 @@ public class FileService {
     ) {
         int totalFiles = countTotalFiles(userId, folderId);
         return ((currentPage + 1) * pageSize) < totalFiles;
+    }
+
+    public WrapperFileCompressor getFileCompressor() {
+        return fileCompressor;
+    }
+
+    /**
+     * Should Compress
+     */
+    public boolean shouldCompress(long fileSize, String mimeType) {
+        if(fileSize < COMPRSSSION_MIN_SIZE || fileSize > COMPRESSION_MAX_SIZE) {
+            return false;
+        }
+
+        String lowerMime = mimeType.toLowerCase();
+        if(lowerMime.contains("zip") || 
+           lowerMime.contains("rar") ||
+           lowerMime.contains("gzip") ||
+           lowerMime.contains("jpeg") ||
+           lowerMime.contains("png") ||
+           lowerMime.contains("mp4") ||
+           lowerMime.contains("mp3")) {
+            return false;
+        }
+        
+        return true;
     }
 }
