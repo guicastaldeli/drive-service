@@ -15,9 +15,7 @@ static const char* const DOMAIN_LIST[] = {
     "grr.la"
 };
 
-static const size_t DOMAIN_COUNT = sizeof(DOMAIN_LIST) / sizeof(DOMAIN_LIST[0]);
-
 const DisposableEmailDomains DISPOSABLE_EMAIL_DOMAINS = {
     .domains = DOMAIN_LIST,
-    .count = DOMAIN_COUNT
+    .count = 10
 };

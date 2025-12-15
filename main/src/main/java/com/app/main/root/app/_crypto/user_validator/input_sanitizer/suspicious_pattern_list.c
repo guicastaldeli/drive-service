@@ -1,27 +1,25 @@
 #include "suspicious_pattern_list.h"
 
 static const char* const PATTERN_LIST[] = {
-    "<script", 
-    "javascript:", 
-    "onload=", 
-    "onerror=", 
+    "<script",
+    "javascript:",
+    "onerror=",
     "onclick=",
-    "eval(", 
-    "exec(", 
-    "union select", 
-    "drop table", 
-    "insert into",
-    "1=1", 
-    "or 1=1",
-    "--", 
-    "/*", 
-    "*/", 
-    "waitfor delay"
+    "onload=",
+    "DROP TABLE",
+    "INSERT INTO",
+    "DELETE FROM",
+    "SELECT * FROM",
+    "UNION SELECT",
+    "OR 1=1",
+    "../",
+    "..\\",
+    "%2e%2e",
+    "eval(",
+    "exec("
 };
-
-static const size_t PATTERN_COUNT = sizeof(PATTERN_LIST) / sizeof(PATTERN_LIST[0]);
 
 const SuspiciousPatternList SUSPICIOUS_PATTERN_LIST = {
     .patterns = PATTERN_LIST,
-    .count = PATTERN_COUNT
+    .count = 16
 };
