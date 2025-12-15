@@ -1,13 +1,10 @@
-#ifndef INPUT_SANITIZER_H
-#define INPUT_SANITIZER_H
+#pragma once
+#include <stdbool.h>
 
-#include <string>
+typedef struct {
+    char* (*sanitizeInput)(const char* input);
+    bool (*containsSuspiciousPatterns)(const char* input);
+    bool (*hasSuspiciousPatterns)(const char* input);
+} InputSanitizer;
 
-class InputSanitizer {
-public:
-    static std::string sanitizeInput(const std::string& input);
-    static bool containsSuspiciousPatterns(const std::string& input);
-    static bool hasSuspiciousPatterns(const std::string& input);
-};
-
-#endif
+extern InputSanitizer input_sanitizer;
