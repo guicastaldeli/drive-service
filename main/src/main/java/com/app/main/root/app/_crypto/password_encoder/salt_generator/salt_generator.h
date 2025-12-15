@@ -1,5 +1,5 @@
 #pragma once
-#include "hash_generator.h"
+#include "../hash_generator/hash_generator.h"
 
 #define SALT_LENGTH 32
 
