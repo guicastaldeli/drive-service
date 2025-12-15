@@ -14,18 +14,18 @@ PepperManager* createPepperManager() {
 
 PepperManager* createPepperManagerWithPath(const char* path) {
     PepperManager* manager = (PepperManager*)malloc(sizeof(PepperManager));
-    if (!manager) return NULL;
+   if(!manager) return NULL;
     
     manager->pepper.size = PEPPER_LENGTH;
     manager->pepper.data = (unsigned char*)malloc(manager->pepper.size);
-    if (!manager->pepper.data) {
+   if(!manager->pepper.data) {
         free(manager);
         return NULL;
     }
     
     size_t pathLen = strlen(path) + 1;
     manager->filePath = (char*)malloc(pathLen);
-    if (!manager->filePath) {
+   if(!manager->filePath) {
         free(manager->pepper.data);
         free(manager);
         return NULL;
@@ -37,12 +37,12 @@ PepperManager* createPepperManagerWithPath(const char* path) {
 }
 
 void destroyPepperManager(PepperManager* manager) {
-    if (manager) {
-        if (manager->pepper.data) {
+   if(manager) {
+       if(manager->pepper.data) {
             memset(manager->pepper.data, 0, manager->pepper.size);
             free(manager->pepper.data);
         }
-        if (manager->filePath) {
+       if(manager->filePath) {
             free(manager->filePath);
         }
         free(manager);
@@ -51,11 +51,11 @@ void destroyPepperManager(PepperManager* manager) {
 
 void loadOrGeneratePepper(PepperManager* manager) {
     FILE* file = fopen(manager->filePath, "rb");
-    if (file) {
+   if(file) {
         size_t bytesRead = fread(manager->pepper.data, 1, manager->pepper.size, file);
         fclose(file);
         
-        if (bytesRead != (size_t)manager->pepper.size) {
+       if(bytesRead != (size_t)manager->pepper.size) {
             fprintf(stderr, "Warning: Pepper file corrupted, generating new one\n");
             generateNewPepper(manager, manager->filePath);
         } else {
@@ -67,13 +67,13 @@ void loadOrGeneratePepper(PepperManager* manager) {
 }
 
 static void generateNewPepper(PepperManager* manager, const char* fileName) {
-    if (RAND_bytes(manager->pepper.data, manager->pepper.size) != 1) {
+   if(RAND_bytes(manager->pepper.data, manager->pepper.size) != 1) {
         fprintf(stderr, "Failed to generate pepper\n");
         return;
     }
     
     FILE* outFile = fopen(fileName, "wb");
-    if (outFile) {
+   if(outFile) {
         fwrite(manager->pepper.data, 1, manager->pepper.size, outFile);
         fclose(outFile);
         printf("Generated and saved new pepper\n");
@@ -86,7 +86,7 @@ ByteArray getPepper(const PepperManager* manager) {
     ByteArray result;
     result.size = manager->pepper.size;
     result.data = (unsigned char*)malloc(result.size);
-    if (result.data) {
+   if(result.data) {
         memcpy(result.data, manager->pepper.data, result.size);
     } else {
         result.size = 0;
@@ -98,7 +98,7 @@ ByteArray applyPepper(const PepperManager* manager, const char* password) {
     ByteArray result;
     result.size = EVP_MAX_MD_SIZE;
     result.data = (unsigned char*)malloc(result.size);
-    if (!result.data) {
+   if(!result.data) {
         result.size = 0;
         return result;
     }
@@ -117,7 +117,7 @@ ByteArray applyPepper(const PepperManager* manager, const char* password) {
     );
     
     unsigned char* resized = (unsigned char*)realloc(result.data, resultLen);
-    if (resized) {
+   if(resized) {
         result.data = resized;
         result.size = resultLen;
     } else {

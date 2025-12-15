@@ -6,12 +6,12 @@ ByteArray generateSalt() {
     ByteArray salt;
     salt.size = SALT_LENGTH;
     salt.data = (unsigned char*)malloc(salt.size);
-    if (!salt.data) {
+    if(!salt.data) {
         salt.size = 0;
         return salt;
     }
     
-    if (RAND_bytes(salt.data, salt.size) != 1) {
+    if(RAND_bytes(salt.data, salt.size) != 1) {
         free(salt.data);
         salt.data = NULL;
         salt.size = 0;

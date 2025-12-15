@@ -13,12 +13,12 @@ ByteArray generateSecureHash(const ByteArray* pepperedPassword, const ByteArray*
     ByteArray key;
     key.size = HASH_KEY_LENGTH / 8;
     key.data = (unsigned char*)malloc(key.size);
-    if (!key.data) {
+    if(!key.data) {
         key.size = 0;
         return key;
     }
     
-    if (PKCS5_PBKDF2_HMAC(
+    if(PKCS5_PBKDF2_HMAC(
         (const char*)pepperedPassword->data,
         (int)pepperedPassword->size,
         salt->data,
@@ -50,13 +50,13 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     
     const size_t MEMORY_SIZE = 8192;
     unsigned char* memoryBuffer = (unsigned char*)malloc(MEMORY_SIZE);
-    if (!memoryBuffer) {
+    if(!memoryBuffer) {
         return result;
     }
     
     size_t blockSize = EVP_MAX_MD_SIZE;
     unsigned char* block = (unsigned char*)malloc(blockSize);
-    if (!block) {
+    if(!block) {
         free(memoryBuffer);
         return result;
     }
@@ -64,7 +64,7 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     unsigned int blockLen = 0;
     
     ctx = EVP_MD_CTX_new();
-    if (!ctx) {
+    if(!ctx) {
         free(memoryBuffer);
         free(block);
         return *input;
@@ -72,7 +72,7 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     
     size_t combinedSize = input->size + salt->size;
     unsigned char* combined = (unsigned char*)malloc(combinedSize);
-    if (!combined) {
+    if(!combined) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
@@ -89,25 +89,25 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     free(combined);
     
     const int ITERATIONS = 1000;
-    for (int i = 0; i < ITERATIONS; i++) {
+    for(int i = 0; i < ITERATIONS; i++) {
         size_t pos = i % MEMORY_SIZE;
         size_t availableSpace = MEMORY_SIZE - pos;
         size_t copyLen = min_size(blockLen, availableSpace);
         memcpy(memoryBuffer + pos, block, copyLen);
         
-        if (EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
+        if(EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
             return *input;
         }
-        if (EVP_DigestUpdate(ctx, block, blockLen) != 1) {
+        if(EVP_DigestUpdate(ctx, block, blockLen) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
             return *input;
         }
-        if (EVP_DigestFinal_ex(ctx, block, &blockLen) != 1) {
+        if(EVP_DigestFinal_ex(ctx, block, &blockLen) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
@@ -117,28 +117,28 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     
     result.size = 64;
     result.data = (unsigned char*)malloc(result.size);
-    if (!result.data) {
+    if(!result.data) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
         return *input;
     }
     
-    if (EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
+    if(EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
         free(result.data);
         return *input;
     }
-    if (EVP_DigestUpdate(ctx, memoryBuffer, MEMORY_SIZE) != 1) {
+    if(EVP_DigestUpdate(ctx, memoryBuffer, MEMORY_SIZE) != 1) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
         free(result.data);
         return *input;
     }
-    if (EVP_DigestFinal_ex(ctx, result.data, &blockLen) != 1) {
+    if(EVP_DigestFinal_ex(ctx, result.data, &blockLen) != 1) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
@@ -159,7 +159,7 @@ ByteArray applyFinalHmac(const ByteArray* input, const ByteArray* salt) {
     ByteArray result;
     result.size = EVP_MAX_MD_SIZE;
     result.data = (unsigned char*)malloc(result.size);
-    if (!result.data) {
+    if(!result.data) {
         result.size = 0;
         return result;
     }
@@ -178,7 +178,7 @@ ByteArray applyFinalHmac(const ByteArray* input, const ByteArray* salt) {
     );
     
     unsigned char* resized = (unsigned char*)realloc(result.data, resultLen);
-    if (resized) {
+    if(resized) {
         result.data = resized;
         result.size = resultLen;
     } else {
@@ -191,16 +191,16 @@ ByteArray applyFinalHmac(const ByteArray* input, const ByteArray* salt) {
 }
 
 bool constantTimeEquals(const ByteArray* a, const ByteArray* b) {
-    if (a->size != b->size) return false;
+    if(a->size != b->size) return false;
     unsigned char result = 0;
-    for (size_t i = 0; i < a->size; i++) {
+    for(size_t i = 0; i < a->size; i++) {
         result |= a->data[i] ^ b->data[i];
     } 
     return result == 0;
 }
 
 void freeByteArray(ByteArray* array) {
-    if (array && array->data) {
+    if(array && array->data) {
         free(array->data);
         array->data = NULL;
         array->size = 0;

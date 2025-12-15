@@ -5,7 +5,7 @@
 #include <time.h>
 
 char* generateSecurePassword(int length) {
-    if (length < 12) length = 12;
+    if(length < 12) length = 12;
     
     const char* upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
     const char* lower = "abcdefghjkmnpqrstuvwxyz";
@@ -18,7 +18,7 @@ char* generateSecurePassword(int length) {
     size_t special_len = strlen(special);
     
     char* allChars = (char*)malloc(upper_len + lower_len + digits_len + special_len + 1);
-    if (!allChars) return NULL;
+    if(!allChars) return NULL;
     
     strcpy(allChars, upper);
     strcat(allChars, lower);
@@ -30,7 +30,7 @@ char* generateSecurePassword(int length) {
     srand((unsigned int)time(NULL));
     
     char* password = (char*)malloc(length + 1);
-    if (!password) {
+    if(!password) {
         free(allChars);
         return NULL;
     }
@@ -40,13 +40,13 @@ char* generateSecurePassword(int length) {
     password[2] = digits[rand() % digits_len];
     password[3] = special[rand() % special_len];
     
-    for (int i = 4; i < length; i++) {
+    for(int i = 4; i < length; i++) {
         password[i] = allChars[rand() % allChars_len];
     }
     
     password[length] = '\0';
     
-    for (int i = 0; i < length; i++) {
+    for(int i = 0; i < length; i++) {
         int j = rand() % length;
         char temp = password[i];
         password[i] = password[j];
