@@ -28,58 +28,58 @@ del passwordencoder.dll 2>nul
 
 echo.
 echo Compiling with CL.EXE...
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_encoder.cpp
+    echo ERROR: Failed to compile password_encoder.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder_jni.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_encoder_jni.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_encoder_jni.cpp
+    echo ERROR: Failed to compile password_encoder_jni.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\pepper_manager\pepper_manager.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\pepper_manager\pepper_manager.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile pepper_manager.cpp
+    echo ERROR: Failed to compile pepper_manager.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\salt_generator\salt_generator.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\salt_generator\salt_generator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile salt_generator.cpp
+    echo ERROR: Failed to compile salt_generator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\hash_generator\hash_generator.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\hash_generator\hash_generator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile hash_generator.cpp
+    echo ERROR: Failed to compile hash_generator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\base64_manager.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\base64_manager.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile base64_manager.cpp
+    echo ERROR: Failed to compile base64_manager.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\crypto_generator.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\utils\crypto_generator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile crypto_generator.cpp
+    echo ERROR: Failed to compile crypto_generator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_validator\password_validator.cpp
+cl /nologo /c /O2 /EHsc /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password_validator\password_validator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_validator.cpp
+    echo ERROR: Failed to compile password_validator.c
     pause
     exit /b 1
 )
