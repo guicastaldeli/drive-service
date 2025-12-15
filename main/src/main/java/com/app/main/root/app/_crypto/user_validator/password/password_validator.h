@@ -7,4 +7,4 @@ typedef struct {
     bool (*meetsLengthRequirements)(const char* password);
 } PasswordValidator;
 
-extern PasswordValidator password_validator;
+extern PasswordValidator passwordValidator;

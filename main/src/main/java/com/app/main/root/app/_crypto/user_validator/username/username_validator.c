@@ -24,22 +24,22 @@ static bool isValidFormat(const char* username) {
 static bool isReserved(const char* username) {
     if(!username) return false;
     
-    char* lower_username = malloc(strlen(username) + 1);
-    if(!lower_username) return false;
+    char* lowerUsername = malloc(strlen(username) + 1);
+    if(!lowerUsername) return false;
     
-    strcpy(lower_username, username);
-    for(size_t i = 0; lower_username[i]; i++) {
-        lower_username[i] = tolower(lower_username[i]);
+    strcpy(lowerUsername, username);
+    for(size_t i = 0; lowerUsername[i]; i++) {
+        lowerUsername[i] = tolower(lowerUsername[i]);
     }
     
     for(size_t i = 0; i < RESERVED_USERNAME_LIST.count; i++) {
-        if(strcmp(lower_username, RESERVED_USERNAME_LIST.usernames[i]) == 0) {
-            free(lower_username);
+        if(strcmp(lowerUsername, RESERVED_USERNAME_LIST.usernames[i]) == 0) {
+            free(lowerUsername);
             return true;
         }
     }
     
-    free(lower_username);
+    free(lowerUsername);
     return false;
 }
 
@@ -47,7 +47,6 @@ static bool hasSuspiciousPatterns(const char* username) {
     if(!username) return false;
     
     size_t len = strlen(username);
-    
     if(len >= 3) {
         for(size_t i = 0; i < len - 2; i++) {
             if(isalpha(username[i]) && isalpha(username[i + 1]) && isalpha(username[i + 2])) {
@@ -93,7 +92,7 @@ static bool validate(const char* username) {
     return !hasSuspiciousPatterns(username);
 }
 
-UsernameValidator username_validator = {
+UsernameValidator usernameValidator = {
     .isValidFormat = isValidFormat,
     .isReserved = isReserved,
     .hasSuspiciousPatterns = hasSuspiciousPatterns,

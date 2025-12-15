@@ -8,4 +8,4 @@ typedef struct {
     bool (*meetsLengthRequirements)(const char* email);
 } EmailValidator;
 
-extern EmailValidator email_validator;
+extern EmailValidator emailValidator;

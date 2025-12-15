@@ -9,22 +9,22 @@
 static bool isCommonPassword(const char* password) {
     if(!password) return false;
     
-    char* lower_password = malloc(strlen(password) + 1);
-    if(!lower_password) return false;
+    char* lowerPassword = malloc(strlen(password) + 1);
+    if(!lowerPassword) return false;
     
-    strcpy(lower_password, password);
-    for (size_t i = 0; lower_password[i]; i++) {
-        lower_password[i] = tolower(lower_password[i]);
+    strcpy(lowerPassword, password);
+    for (size_t i = 0; lowerPassword[i]; i++) {
+        lowerPassword[i] = tolower(lowerPassword[i]);
     }
     
     for (size_t i = 0; i < COMMON_PASSWORD_LIST.count; i++) {
-        if(strcmp(lower_password, COMMON_PASSWORD_LIST.passwords[i]) == 0) {
-            free(lower_password);
+        if(strcmp(lowerPassword, COMMON_PASSWORD_LIST.passwords[i]) == 0) {
+            free(lowerPassword);
             return true;
         }
     }
     
-    free(lower_password);
+    free(lowerPassword);
     return false;
 }
 
@@ -38,7 +38,7 @@ static bool validate(const char* password) {
     return !isCommonPassword(password);
 }
 
-PasswordValidator password_validator = {
+PasswordValidator passwordValidator = {
     .isCommonPassword = isCommonPassword,
     .validate = validate,
     .meetsLengthRequirements = meetsLengthRequirements

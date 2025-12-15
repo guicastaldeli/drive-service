@@ -9,4 +9,4 @@ typedef struct {
     bool (*meetsLengthRequirements)(const char* username);
 } UsernameValidator;
 
-extern UsernameValidator username_validator;
+extern UsernameValidator usernameValidator;

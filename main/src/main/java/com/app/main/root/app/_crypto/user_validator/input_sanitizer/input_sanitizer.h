@@ -7,4 +7,4 @@ typedef struct {
     bool (*hasSuspiciousPatterns)(const char* input);
 } InputSanitizer;
 
-extern InputSanitizer input_sanitizer;
+extern InputSanitizer inputSanitizer;

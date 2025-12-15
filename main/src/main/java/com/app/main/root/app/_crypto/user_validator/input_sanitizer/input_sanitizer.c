@@ -37,22 +37,22 @@ static char* sanitizeInput(const char* input) {
 static bool containsSuspiciousPatterns(const char* input) {
     if(!input) return false;
     
-    char* lower_input = malloc(strlen(input) + 1);
-    if(!lower_input) return false;
+    char* lowerInput = malloc(strlen(input) + 1);
+    if(!lowerInput) return false;
     
-    strcpy(lower_input, input);
-    for(size_t i = 0; lower_input[i]; i++) {
-        lower_input[i] = tolower(lower_input[i]);
+    strcpy(lowerInput, input);
+    for(size_t i = 0; lowerInput[i]; i++) {
+        lowerInput[i] = tolower(lowerInput[i]);
     }
     
     for(size_t i = 0; i < SUSPICIOUS_PATTERN_LIST.count; i++) {
-        if(strstr(lower_input, SUSPICIOUS_PATTERN_LIST.patterns[i]) != NULL) {
-            free(lower_input);
+        if(strstr(lowerInput, SUSPICIOUS_PATTERN_LIST.patterns[i]) != NULL) {
+            free(lowerInput);
             return true;
         }
     }
     
-    free(lower_input);
+    free(lowerInput);
     return false;
 }
 
@@ -93,7 +93,7 @@ static bool hasSuspiciousPatterns(const char* input) {
     return false;
 }
 
-InputSanitizer input_sanitizer = {
+InputSanitizer inputSanitizer = {
     .sanitizeInput = sanitizeInput,
     .containsSuspiciousPatterns = containsSuspiciousPatterns,
     .hasSuspiciousPatterns = hasSuspiciousPatterns

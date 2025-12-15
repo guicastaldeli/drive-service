@@ -9,15 +9,15 @@
 static bool isValidFormat(const char* email) {
     if(!email || strlen(email) == 0) return false;
     
-    const char* at_pos = strchr(email, '@');
-    if(!at_pos) return false;
+    const char* atPos = strchr(email, '@');
+    if(!atPos) return false;
     
-    if(strchr(at_pos + 1, '@') != NULL) return false;
+    if(strchr(atPos + 1, '@') != NULL) return false;
     
-    int local_len = at_pos - email;
+    int local_len = atPos - email;
     if(local_len == 0 || local_len > 64) return false;
     
-    const char* domain = at_pos + 1;
+    const char* domain = atPos + 1;
     if(strlen(domain) < 3) return false;
     
     for(int i = 0; i < local_len; i++) {
@@ -32,11 +32,11 @@ static bool isValidFormat(const char* email) {
 }
 
 static bool isDisposableEmail(const char* email) {
-    const char* at_pos = strchr(email, '@');
-    if(!at_pos) return false;
+    const char* atPos = strchr(email, '@');
+    if(!atPos) return false;
     
     char domain[256];
-    strcpy(domain, at_pos + 1);
+    strcpy(domain, atPos + 1);
     
     for(size_t i = 0; domain[i]; i++) {
         domain[i] = tolower(domain[i]);
@@ -62,7 +62,7 @@ static bool validate(const char* email) {
     return !isDisposableEmail(email);
 }
 
-EmailValidator email_validator = {
+EmailValidator emailValidator = {
     .isValidFormat = isValidFormat,
     .isDisposableEmail = isDisposableEmail,
     .validate = validate,
