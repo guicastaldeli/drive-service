@@ -19,14 +19,15 @@ export class FileServiceClient {
 
             const res = await fetch(`${this.url}/api/files/upload/${userId}/${parentFolderId}`, {
                 method: 'POST',
-                body: formData
+                body: formData,
+                credentials: 'include'
             });
             if(!res.ok) {
                 throw new Error(`Upload failed!: ${res.statusText}`);
             }
             return await res.json();
         } catch(err) {
-            console.log(err);
+            console.error('Upload error:', err);
             throw err;
         }
     }

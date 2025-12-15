@@ -60,12 +60,19 @@ export class FileUploader extends Component<Props, State> {
                     this.props.onUploadSuccess(res);
                 }
             } else {
-                console.log(`Upload failed: ${res.error}`);
+                const error = new Error(`Upload failed: ${res.error}`);
+                if(this.props.onUploadError) {
+                    this.props.onUploadError(error);
+                }
+                throw error;
             }
 
             e.target.value = '';
         } catch(err) {
             console.error('Upload error', err);
+            if(this.props.onUploadError) {
+                this.props.onUploadError(err as Error);
+            }
         }
     }
 
