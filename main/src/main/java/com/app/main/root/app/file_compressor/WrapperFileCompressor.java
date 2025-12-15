@@ -55,4 +55,40 @@ public class WrapperFileCompressor {
             throw new RuntimeException("Failed to load native libraries: " + err.getMessage());
         }
     }
+
+    public static native byte[] compress(byte[] data);
+    public static native byte[] decompress(byte[] data, int compressionType);
+    public static native int compressFile(String inputPath, String outputPath);
+    public static native int decompressFile(String inputPath, String outputPath);
+
+    public static void compressFileWrapped(String inputPath, String outputPath) throws Exception {
+        int result = compressFile(inputPath, outputPath);
+        if (result < 0) {
+            throw new Exception("Compression failed with error code: " + result);
+        }
+    }
+
+    public static void decompressFileWrapped(String inputPath, String outputPath) throws Exception {
+        int result = decompressFile(inputPath, outputPath);
+        if (result < 0) {
+            throw new Exception("Decompression failed with error code: " + result);
+        }
+    }
+
+    public static byte[] compressData(byte[] data) throws Exception {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Data cannot be null or empty");
+        }
+        return compress(data);
+    }
+
+    public static byte[] decompressData(byte[] data, int compressionType) throws Exception {
+        if (data == null || data.length == 0) {
+            throw new IllegalArgumentException("Data cannot be null or empty");
+        }
+        if (compressionType < 0 || compressionType > 4) {
+            throw new IllegalArgumentException("Invalid compression type: " + compressionType);
+        }
+        return decompress(data, compressionType);
+    }
 }

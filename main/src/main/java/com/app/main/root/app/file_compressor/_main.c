@@ -12,7 +12,7 @@ typedef struct {
     uint16_t version;
     uint8_t compType;
     uint8_t reserved;
-    uint32_t originalSize
+    uint32_t originalSize;
 } CompHeader;
 
 /**
@@ -91,10 +91,10 @@ int decompressFile(const char* inputPath, const char* outputPath) {
 
     size_t decompressedSize;
     uint8_t* decompressed = decompress(
-        compress,
+        compressed,
         compressedSize,
         &decompressedSize,
-        header.compType
+        (CompressionType)header.compType
     );
     if (decompressedSize != header.originalSize) {
         printf("Warning: Size mismatch! Expected %u, got %zu\n",
@@ -117,21 +117,4 @@ int decompressFile(const char* inputPath, const char* outputPath) {
     free(compressed);
     free(decompressed);
     return 0;
-}
-
-int main(int argc, char* argv[]) {
-    if(argc != 4) {
-        printf("Hello\n");
-        printf("  %s compress <input> <output>\n", argv[0]);
-        printf("  %s decompress <input> <output>\n", argv[0]);
-        return 1;
-    }
-    if (strcmp(argv[1], "compress") == 0) {
-        return compress_file(argv[2], argv[3]);
-    } else if (strcmp(argv[1], "decompress") == 0) {
-        return decompress_file(argv[2], argv[3]);
-    } else {
-        printf("Unknown command: %s\n", argv[1]);
-        return 1;
-    }
 }
