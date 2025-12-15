@@ -1,9 +1,10 @@
+#include "_main.h"
+#include "comp.h"
 #include <jni.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include "_main.c"
 
 JNIEXPORT jbyteArray JNICALL Java_com_app_main_root_app_file_1compressor_FileCompressor_compress(
     JNIEnv* env,

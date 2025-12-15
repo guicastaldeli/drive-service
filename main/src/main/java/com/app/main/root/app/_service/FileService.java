@@ -44,6 +44,7 @@ public class FileService {
         this.jdbcTemplates = jdbcTemplates;
         this.serviceManager = serviceManager;
         this.dbManager = dbManager;
+        this.fileCompressor = new WrapperFileCompressor();
         this.fileEncoderWrapper = new FileEncoderWrapper();
         this.keyManagerService = new KeyManagerService(jdbcTemplates);
         this.fileUploader = new FileUploader(

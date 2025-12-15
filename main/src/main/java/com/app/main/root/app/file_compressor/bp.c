@@ -1,21 +1,8 @@
+#include "bp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-
-typedef struct {
-    uint16_t pair[2];
-    uint16_t token;
-    int count;
-} BytePair;
-
-typedef struct {
-    BytePair* pairs;
-    int pairCount;
-    int maxPairs;
-    uint8_t* dict;
-    int dictSize;
-} BytePairCompressor;
 
 /**
  * Create
