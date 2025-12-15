@@ -33,7 +33,7 @@ public class FileService {
     public static final String AUDIO_DB = "audio_data";
     public static final String DOCUMENT_DB = "document_data";
 
-    private static final long COMPRSSSION_MIN_SIZE = 1024 * 100;
+    private static final long COMPRESSION_MIN_SIZE = 1024 * 100;
     private static final long COMPRESSION_MAX_SIZE = 1024 * 1024 * 500;
 
     public FileService(
@@ -324,21 +324,48 @@ public class FileService {
      * Should Compress
      */
     public boolean shouldCompress(long fileSize, String mimeType) {
-        if(fileSize < COMPRSSSION_MIN_SIZE || fileSize > COMPRESSION_MAX_SIZE) {
+        if(mimeType != null && mimeType.toLowerCase().contains("video")) {
+            System.out.println("DEBUG: Skipping compression for video file: " + mimeType);
+            return false;
+        }
+        if(fileSize > 100 * 1024 * 1024) {
+            System.out.println("DEBUG: File too large for compression: " + fileSize + " bytes");
+            return false;
+        }
+        if(fileSize < COMPRESSION_MIN_SIZE || fileSize > COMPRESSION_MAX_SIZE) {
             return false;
         }
 
         String lowerMime = mimeType.toLowerCase();
         if(lowerMime.contains("zip") || 
-           lowerMime.contains("rar") ||
-           lowerMime.contains("gzip") ||
-           lowerMime.contains("jpeg") ||
-           lowerMime.contains("png") ||
-           lowerMime.contains("mp4") ||
-           lowerMime.contains("mp3")) {
+            lowerMime.contains("rar") ||
+            lowerMime.contains("gzip") ||
+            lowerMime.contains("png") ||
+            lowerMime.contains("jpg") ||
+            lowerMime.contains("jpeg") ||
+            lowerMime.contains("mp4") ||
+            lowerMime.contains("mp3") ||
+            lowerMime.contains("avi") ||
+            lowerMime.contains("webp") ||
+            lowerMime.contains("wmv") ||
+            lowerMime.contains("flv") ||
+            lowerMime.contains("mkv") ||
+            lowerMime.contains("mpeg") ||
+            lowerMime.contains("quicktime") ||
+            lowerMime.contains("x-msvideo")
+        ) {
+            System.out.println("DEBUG: Skipping compression for already-compressed format: " + mimeType);
             return false;
         }
         
-        return true;
+        return lowerMime.contains("text/") ||
+            lowerMime.contains("json") ||
+            lowerMime.contains("xml") ||
+            lowerMime.contains("csv") ||
+            lowerMime.contains("log") ||
+            lowerMime.contains("plain") ||
+            lowerMime.contains("html") ||
+            lowerMime.contains("css") ||
+            lowerMime.contains("javascript");
     }
 }

@@ -57,8 +57,14 @@ public class FileDownloader {
                 String originalFilename = (String) metadata.get("original_filename");
                 String mimeType = (String) metadata.get("mime_type");
                 String dbType = (String) metadata.get("database_name");
+                Integer compressionType = (Integer) metadata.get("compression_type"); // Get compression type
+                
                 if(dbType == null || dbType.isEmpty()) {
                     dbType = fileService.getDatabaseForMimeType(mimeType);
+                }
+                
+                if(compressionType == null) {
+                    compressionType = 0;
                 }
                 
                 String contentQuery = getContent(dbType);
@@ -81,15 +87,25 @@ public class FileDownloader {
                     byte[] decryptedContent = fileEncoderWrapper.decrypt(encryptedContent);
 
                     boolean isCompressed = false;
-                    try {
-                        byte[] decompressed = WrapperFileCompressor.decompressData(decryptedContent, 0);
-                        if(decompressed.length > decryptedContent.length / 2) {
-                            decryptedContent = decompressed;
-                            isCompressed = true;
-                           System.out.println("File was compressed, decompressed from " + decryptedContent.length + " to " + decompressed.length);
+                    if(compressionType > 0) {
+                        try {
+                            System.out.println("DEBUG: Attempting decompression with type: " + compressionType);
+                            byte[] decompressed = WrapperFileCompressor.decompressData(decryptedContent, compressionType);
+                            
+                            if(decompressed != null && decompressed.length > 0) {
+                                decryptedContent = decompressed;
+                                isCompressed = true;
+                                System.out.println("File decompressed successfully from " + 
+                                    encryptedContent.length + " to " + decompressed.length + " bytes");
+                            } else {
+                                System.out.println("WARNING: Decompression returned null or empty");
+                            }
+                        } catch(Exception e) {
+                            System.out.println("WARNING: Decompression failed, using original: " + e.getMessage());
+                            e.printStackTrace();
                         }
-                    } catch(Exception e) {
-                        System.out.println("File is not compressed, using original data");
+                    } else {
+                        System.out.println("File was not compressed");
                     }
 
                     System.out.println("Download successful, size: " + decryptedContent.length + " bytes, compressed: " + isCompressed);
@@ -109,6 +125,7 @@ public class FileDownloader {
             }
         } catch(Exception e) {
             System.err.println("Download error: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Download failed: " + e.getMessage());
         }
     }

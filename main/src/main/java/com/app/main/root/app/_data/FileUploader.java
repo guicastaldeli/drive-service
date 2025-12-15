@@ -3,11 +3,13 @@ import com.app.main.root.app._crypto.file_encoder.FileEncoderWrapper;
 import com.app.main.root.app._crypto.file_encoder.KeyManagerService;
 import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._service.FileService;
+import com.app.main.root.app.file_compressor.WithCompressionResult;
 import com.app.main.root.app.file_compressor.WrapperFileCompressor;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.Map;
@@ -90,30 +92,84 @@ public class FileUploader {
             }
 
             byte[] fileBytes = file.getBytes();
+            System.out.println("DEBUG: Compression check:");
+            System.out.println("  File size: " + fileSize + " bytes");
+            System.out.println("  File size: " + (fileSize / 1024.0) + " KB");
+            System.out.println("  MIME type: " + mimeType);
+
+            int compressionType = 0;
             boolean shouldCompress = fileService.shouldCompress(fileSize, mimeType);
+            System.out.println("  shouldCompress result: " + shouldCompress);
             if(shouldCompress) {
                 try {
-                    byte[] compressedData = WrapperFileCompressor.compressData(fileBytes);
-                    long compressedSize = compressedData.length;
-                    double ratio = (double) compressedSize / fileSize;
-
-                    System.out.println("DEBUG: Compression attempt:");
-                    System.out.println("  Original size: " + fileSize);
-                    System.out.println("  Compressed size: " + compressedSize);
-                    System.out.println("  Ratio: " + (ratio * 100) + "%");
-
-                    if(ratio < 0.95) {
-                        fileBytes = compressedData;
-                        this.compressed = true;
-                        System.out.println("  Using compressed data");
+                    System.out.println("DEBUG: Starting compression...");
+                    
+                    if (fileSize > 50 * 1024 * 1024) {
+                        System.out.println("DEBUG: Large file detected, using streaming compression");
+                        
+                        InputStream inputStream = file.getInputStream();
+                        WithCompressionResult compressionResult = 
+                            WrapperFileCompressor.compressStream(inputStream, fileSize, mimeType);
+                        
+                        fileBytes = compressionResult.getData();
+                        compressionType = compressionResult.getCompressionType();
+                        
+                        long compressedSize = fileBytes.length;
+                        double ratio = (double) compressedSize / fileSize;
+                        
+                        System.out.println("DEBUG: Streaming compression result:");
+                        System.out.println("  Original size: " + fileSize);
+                        System.out.println("  Compressed size: " + compressedSize);
+                        System.out.println("  Compression type: " + compressionType);
+                        System.out.println("  Ratio: " + (ratio * 100) + "%");
+                        
+                        if (compressionType == 10 && ratio < 0.95) {
+                            this.compressed = true;
+                            System.out.println("  Using stream-compressed data");
+                        } else {
+                            this.compressed = false;
+                            compressionType = 0;
+                            System.out.println("  Streaming compression not beneficial");
+                        }
                     } else {
-                        this.compressed = false;
-                        System.out.println("  Compression failed, using original");
+                        System.out.println("DEBUG: Using normal compression");
+                        fileBytes = file.getBytes();
+                        WithCompressionResult compressionResult = 
+                            WrapperFileCompressor.compress(fileBytes);
+                        
+                        byte[] compressedData = compressionResult.getData();
+                        compressionType = compressionResult.getCompressionType();
+                        
+                        long compressedSize = compressedData.length;
+                        double ratio = (double) compressedSize / fileSize;
+                        
+                        System.out.println("DEBUG: Normal compression result:");
+                        System.out.println("  Original size: " + fileSize);
+                        System.out.println("  Compressed size: " + compressedSize);
+                        System.out.println("  Compression type: " + compressionType);
+                        System.out.println("  Ratio: " + (ratio * 100) + "%");
+                        
+                        if(compressionType > 0 && ratio < 0.95) {
+                            fileBytes = compressedData;
+                            this.compressed = true;
+                            System.out.println("  Using compressed data, type: " + compressionType);
+                        } else {
+                            this.compressed = false;
+                            compressionType = 0;
+                            System.out.println("  Compression not beneficial, using original");
+                        }
                     }
                 } catch(Exception e) {
-                    System.err.println("Compression failed: " + e.getMessage());
+                    System.err.println("WARNING: Compression failed: " + e.getMessage());
+                    e.printStackTrace();
                     this.compressed = false;
+                    compressionType = 0;
+                    fileBytes = file.getBytes();
                 }
+            } else {
+                fileBytes = file.getBytes();
+                this.compressed = false;
+                compressionType = 0;
             }
 
             byte[] encryptionKey = FileEncoderWrapper.generateKey(32);

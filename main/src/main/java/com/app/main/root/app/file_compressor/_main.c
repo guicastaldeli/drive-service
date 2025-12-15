@@ -11,15 +11,30 @@
  */
 int compressFile(const char* inputPath, const char* outputPath) {
     FILE* in = fopen(inputPath, "rb");
-    if(!in) return -1;
+    if(!in) {
+        printf("ERROR: Cannot open input file: %s\n", inputPath);
+        return -1;
+    }
 
     fseek(in, 0, SEEK_END);
     size_t fileSize = ftell(in);
     fseek(in, 0, SEEK_SET);
 
     uint8_t* data = malloc(fileSize);
-    fread(data, 1, fileSize, in);
+    if(!data) {
+        printf("ERROR: Memory allocation failed for size: %zu\n", fileSize);
+        fclose(in);
+        return -1;
+    }
+
+    size_t readSize = fread(data, 1, fileSize, in);
     fclose(in);
+    
+    if(readSize != fileSize) {
+        printf("ERROR: Read incomplete: %zu != %zu\n", readSize, fileSize);
+        free(data);
+        return -1;
+    }
 
     size_t compressedSize;
     CompressionType compType;
@@ -30,15 +45,22 @@ int compressFile(const char* inputPath, const char* outputPath) {
         &compType
     );
 
+    if(!compressed) {
+        printf("ERROR: Compression failed\n");
+        free(data);
+        return -3;
+    }
+
     CompHeader header;
     header.magic = COMP_MAGIC;
     header.version = 0x0001;
     header.compType = compType;
     header.reserved = 0;
-    header.originalSize = fileSize;
+    header.originalSize = (uint32_t)fileSize;
 
     FILE* out = fopen(outputPath, "wb");
     if(!out) {
+        printf("ERROR: Cannot open output file: %s\n", outputPath);
         free(data);
         free(compressed);
         return -2;
