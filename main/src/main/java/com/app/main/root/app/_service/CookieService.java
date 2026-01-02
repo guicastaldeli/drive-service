@@ -34,9 +34,10 @@ public class CookieService {
         System.out.println("webUrl: " + webUrl);
         System.out.println("===============================");
     }
-    /*
-    ** Get Cookie Value
-    */
+    
+    /**
+     * Get Cookie Value
+     */
     public Optional<String> getCookieValue(HttpServletRequest request, String name) {
         if(request.getCookies() == null) return Optional.empty();
 
@@ -46,9 +47,9 @@ public class CookieService {
             .findFirst();
     }
 
-    /*
-    ** Create Cookie
-    */
+    /**
+     * Create Cookie
+     */
     public Cookie createCookie(String name, String value, int maxAge) {        
         if (name == null || name.trim().isEmpty()) {
             System.err.println("ERR Cookie name is null or empty! name=" + name);
@@ -86,9 +87,9 @@ public class CookieService {
         return cookie;
     }
 
-    /*
-    ** Delete Cookie
-    */
+    /**
+     * Delete Cookie
+     */
     public void deleteCookie(HttpServletResponse response, String name) {
         Cookie cookie = new Cookie(name, null);
         cookie.setHttpOnly(true);
@@ -113,11 +114,11 @@ public class CookieService {
         response.addCookie(cookie);
     }
 
-    /*
-    **
-    *** Auth Cookies
-    **
-    */
+    /**
+     * 
+     * Auth Cookies
+     * 
+     */
     public void setAuthCookies(
         HttpServletResponse response,
         String sessionId,
