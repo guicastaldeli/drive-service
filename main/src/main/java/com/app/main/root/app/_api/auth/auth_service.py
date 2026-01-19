@@ -9,9 +9,7 @@ class AuthService:
         self.url = url
         self.sessionService = sessionService
         
-    ##
     ## Register User
-    ##
     async def registerUser(self, data: Dict) -> Dict:
         return await self._request(
             "post", 
@@ -19,9 +17,7 @@ class AuthService:
             json=data
         )
     
-    ##
     ## Login User
-    ##
     async def loginUser(self, data: Dict) -> Dict:
         return await self._request(
             "post", 
@@ -29,9 +25,7 @@ class AuthService:
             json=data
         )
         
-    ##
     ## Logout User
-    ##
     async def logoutUser(self, cookies: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         headers = {}
         if(cookies):
@@ -44,9 +38,7 @@ class AuthService:
             headers=headers
         )
         
-    ##
     ## Validate Session
-    ##
     async def validateSession(self, cookies: Optional[Dict[str, str]]) -> Dict[str, Any]:
         try:
             sessionId = cookies.get("SESSION_ID")
@@ -69,9 +61,7 @@ class AuthService:
         except Exception as e:
             return { "valid": False, "user": None }
         
-    ##
     ## Refresh Session Token
-    ##
     async def refreshSessionToken(self, cookies: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         headers = {}
         if(cookies):
@@ -84,9 +74,7 @@ class AuthService:
             headers=headers
         )
         
-    ##
     ## Get Session Status
-    ##
     async def getSessionStatus(self, cookies: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
         headers = {}
         if(cookies):

@@ -5,14 +5,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeMessage;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Properties;
 import javax.mail.*;
 
 @Component
 public class EmailService {
-    private String webUrlSrc = EnvConfig.get("WEB_URL");
+    public final static String WEB_URL_SRC = EnvConfig.get("WEB_URL");
+    public final static String RESET_TOKEN = EnvConfig.get("RESET_TOKEN");
+
     @Autowired private EmailDocumentParser emailDocumentParser;
 
     @Value("${email.smtp.host:smtp.gmail.com}")
@@ -35,23 +35,14 @@ public class EmailService {
         return email != null && email.matches(regex);
     }
 
-    public void sendWelcomeEmail(String toEmail, String username, String userId) {
-        try {
-            Map<String, Object> context = new HashMap<>();
-            context.put("appName", "Messages");
-            context.put("username", username);
-            context.put("userId", userId);
-            context.put("webUrl", webUrlSrc);
-    
-            String body = emailDocumentParser.render("welcome-email", context);
-            sendEmail(toEmail, body);
-        } catch(Exception err) {
-            System.err.println("Welcome Email err." + err.getMessage());
-            err.printStackTrace();
-        }
+    public EmailData getEmailData() {
+        return new EmailData(this, emailDocumentParser);
     }
 
-    private void sendEmail(String toEmail, String body) throws MessagingException {
+    /**
+     * Send Email
+     */
+    public void sendEmail(String toEmail, String body) throws MessagingException {
         Properties props = new Properties();
         props.put("mail.smtp.host", smtpHost);
         props.put("mail.smtp.port", smtpPort);

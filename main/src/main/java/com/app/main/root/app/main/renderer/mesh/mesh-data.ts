@@ -1,0 +1,197 @@
+export enum PrimitiveType {
+    TRIANGLE_LIST = 'triangle-list',
+    TRIANGLE_STRIP = 'triangle-strip',
+    LINE_LIST = 'line-list',
+    POINT_LIST = 'point-list'
+}
+
+export enum Type {
+    CUBE = 'cube',
+    SPHERE = 'sphere',
+    CLOUDS = 'clouds',
+    FRESNEL = 'fresnel',
+    PYRAMID = 'pyramid',
+    TREE = 'tree0',
+    DINO = 'dino',
+    CHAT = 'chat',
+    CHATDOT = 'chatdot',
+    SKYBOX = 'skybox',
+    STARS = 'stars'
+}
+
+type AttrType = 
+    'float32' | 
+    'uint32' | 
+    'sint32' | 
+    'uint16' | 
+    'sint16' | 
+    'uint8' | 
+    'sint8';
+
+export interface VertexAttribute {
+    name: string;
+    components: number;
+    offset: number;
+    type: AttrType;
+}
+
+export interface VertexLayout {
+    stride: number;
+    attributes: VertexAttribute[];
+}
+
+export interface Mesh {
+    name: string;
+    type: string;
+    texture?: string;
+    vertices: number[][];
+    indices: number[];
+    vertexLayout: VertexLayout;
+    primitiveType: PrimitiveType;
+}
+
+export interface ModelData {
+    name: string;
+}
+
+export class MeshData {
+    private static meshes: Map<string, MeshData> = new Map();
+
+    public name: string;
+    public texture?: string;
+    public vertices: Float32Array;
+    public indices: Uint32Array | Uint16Array;
+    public vertexLayout: VertexLayout;
+    public primitiveType: PrimitiveType;
+    public vertexBufferLayout: GPUVertexBufferLayout;
+
+    public enableFollowRotation: boolean = false;
+    public autoRotate: boolean = false;
+    public rotationSpeed: number = 1.0;
+
+    constructor(
+        name: string,
+        vertices: number[][],
+        indices: number[],
+        vertexLayout: VertexLayout,
+        primitiveType: PrimitiveType = PrimitiveType.TRIANGLE_LIST,
+        texture?: string
+    ) {
+        this.name = name;
+        this.texture = texture;
+        this.vertexLayout = vertexLayout;
+        this.primitiveType = primitiveType;
+
+        const flatVertices: number[] = [];
+        vertices.forEach(v => {
+            flatVertices.push(...v);
+        });
+        this.vertices = new Float32Array(flatVertices);
+
+        if(indices.some(idx => idx > 65535)) {
+            this.indices = new Uint32Array(indices);
+        } else {
+            this.indices = new Uint16Array(indices);
+        }
+
+        this.vertexBufferLayout = this.createVertexBufferLayout(vertexLayout);
+        MeshData.meshes.set(name, this);
+    }
+
+    public static get(type: Type): MeshData | undefined {
+        return MeshData.meshes.get(type);
+    }
+
+    public static getAll(): MeshData[] {
+        return Array.from(MeshData.meshes.values());
+    } 
+
+    /**
+     * Vertex Count
+     */
+    public getVertexCount(): number {
+        return this.vertices.length / this.vertexLayout.stride;
+    }
+
+    /**
+     * Index Count
+     */
+    public getIndexCount(): number {
+        return this.indices.length;
+    }
+
+    /**
+     * Vertex Buffer Size
+     */
+    public getVertexBufferSize(): number {
+        return this.vertices.byteLength;
+    }
+
+    /**
+     * Indices Buffer Size
+     */
+    public getIndexBufferSize(): number {
+        return this.indices.byteLength;
+    }
+
+    /**
+     * Create Vertex Buffer Layout
+     */
+    private createVertexBufferLayout(layout: VertexLayout): GPUVertexBufferLayout {
+        const attributes: GPUVertexAttribute[] = [];
+        let currShaderLocation = 0;
+        const sortedAttr = [...layout.attributes].sort((a, b) => a.offset - b.offset);
+        for(const attr of sortedAttr) {
+            const format = this.getVertexFormat(attr.components, attr.type);
+            attributes.push({
+                format: format,
+                offset: attr.offset * 4,
+                shaderLocation: currShaderLocation++
+            });
+        }
+
+        return {
+            arrayStride: layout.stride * 4,
+            stepMode: 'vertex' as GPUVertexStepMode,
+            attributes: attributes
+        }
+    }
+
+    /**
+     * Get Vertex Format
+     */
+    private getVertexFormat(components: number, type: string): GPUVertexFormat {
+        const typeMap: Record<string, string> = {
+            'float32': 'float32',
+            'uint32': 'uint32',
+            'sint32': 'sint32',
+            'uint16': 'uint16',
+            'sint16': 'sint16',
+            'uint8': 'uint8',
+            'sint8': 'sint8'
+        };
+        const baseType = typeMap[type] || 'float32';
+        return `${baseType}x${components}` as GPUVertexFormat;
+    }
+
+    /**
+     * Set Follow Rotation
+     */
+    public setFollowRotation(enabled: boolean): void {
+        this.enableFollowRotation = enabled;
+    }
+
+    /**
+     * Set Auto Rotate
+     */
+    public setAutoRotate(enabled: boolean): void {
+        this.autoRotate = enabled;
+    }
+
+    /**
+     * Set Rotation Speed
+     */
+    public setRotationSpeed(speed: number): void {
+        this.rotationSpeed = speed;
+    }
+}

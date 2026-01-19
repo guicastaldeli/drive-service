@@ -14,6 +14,7 @@ interface Props {
 }
 
 interface State {
+    userId: string | null;
     userData: any;
     currentSession: SessionType;
     isLoading: boolean;
@@ -29,6 +30,7 @@ export class Dashboard extends Component<Props, State> {
     constructor(props: Props) {
         super(props);
         this.state = {
+            userId: null,
             userData: null,
             currentSession: 'MAIN_DASHBOARD',
             isLoading: true
@@ -40,16 +42,11 @@ export class Dashboard extends Component<Props, State> {
     public async getUserData(sessionId: string, userId: string): Promise<void> {
         this.socketId = sessionId;
         this.userId = userId;
+        this.setState({ userId });
     }
 
     async componentDidMount(): Promise<void> {
         await this.loadUserData();
-    }
-
-    componentWillUnmount(): void {
-    }
-
-    componentDidUpdate(prevProps: Props): void {
     }
 
     /**
@@ -106,7 +103,7 @@ export class Dashboard extends Component<Props, State> {
                             {sessionContext && sessionContext.currentSession === 'MAIN_DASHBOARD' && (
                                 <div className="screen main-dashboard">
                                     <div className="upper-bar">
-                                        <button id="logout-actn" onClick={() => this.main.handleLogout(sessionContext)}>Logout</button>
+                                        <button id="logout-actn" onClick={() => this.main.auth.logout(sessionContext)}>Logout</button>
                                         <FileUploader
                                             apiClientController={this.apiClientController}
                                             onUploadSuccess={this.handleUploadSuccess}

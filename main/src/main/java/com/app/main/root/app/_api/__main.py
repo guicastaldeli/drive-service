@@ -81,13 +81,10 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         ## fix this later...
-        "*",
-        "http://localhost:3005",
-        "http://127.0.0.1:3005",
-        "http://localhost:3006",
-        "http://127.0.0.1:3006",
-        "http://localhost:3007",
-        "http://127.0.0.1:3007"
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:3002",
+        "http://127.0.0.1:3002"
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -95,11 +92,9 @@ app.add_middleware(
     expose_headers=["*"]
 )
 app.add_middleware(NoWWWAuthenticateMiddleware)
-
-
-# Time Update
 timeStream = instance.timeStream
 
+# Time Update
 def timeCallback(time: str, serverTime: bool):
     print(f"Time: {time}, Server Time: {serverTime}")
 

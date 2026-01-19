@@ -1,6 +1,6 @@
 package com.app.main.root.app._service;
 import com.app.main.root.app._db.DataSourceService;
-import com.app.main.root.app._types._User;
+import com.app.main.root.app._types.User;
 import com.app.main.root.app.EventTracker;
 import com.app.main.root.app.EventLog.EventDirection;
 import com.app.main.root.app._crypto.password_encoder.PasswordEncoderWrapper;
@@ -9,6 +9,7 @@ import com.app.main.root.app._db.CommandQueryManager;
 import com.app.main.root.app._server.ConnectionTracker;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.stereotype.Component;
 import java.time.LocalDateTime;
@@ -67,7 +68,7 @@ public class UserService {
         }
     }
 
-    public _User getUserById(String id) throws SQLException {
+    public User getUserById(String id) throws SQLException {
     String query = CommandQueryManager.GET_USER_BY_ID.get();
     
     System.out.println("=== DEBUG: getUserById() ===");
@@ -81,7 +82,7 @@ public class UserService {
 
         try(ResultSet rs = stmt.executeQuery()) {
             if(rs.next()) {
-                _User user = mapUserFromResultSet(rs);
+                User user = mapUserFromResultSet(rs);
                 System.out.println("User found: " + user.getUsername());
                 return user;
             } else {
@@ -92,7 +93,7 @@ public class UserService {
     }
 }
 
-    public _User getUserByUsername(String username) throws SQLException {
+    public User getUserByUsername(String username) throws SQLException {
         String query = CommandQueryManager.GET_USER_BY_USERNAME.get();
 
         try(
@@ -111,9 +112,9 @@ public class UserService {
         return null;
     }
 
-    public List<_User> getAllUsers() throws SQLException {
+    public List<User> getAllUsers() throws SQLException {
         String query = CommandQueryManager.GET_ALL_USERS.get();
-        List<_User> users = new ArrayList<>();
+        List<User> users = new ArrayList<>();
 
         try(
             Connection conn = getConnection();
@@ -140,7 +141,7 @@ public class UserService {
 
     /* Username by User Id */
     public String getUsernameByUserId(String userId) throws SQLException {
-        _User user = getUserById(userId);
+        User user = getUserById(userId);
         if(user == null) System.out.println("Err user" + userId);
         String username = user.getUsername();
         if(username == null) System.out.println("Err username" + username);
@@ -226,7 +227,12 @@ public class UserService {
             int rowsAffected = stmt.executeUpdate();
             if(rowsAffected > 0) {
                 createProfile(conn, userId);
-                serviceManager.getEmailService().sendWelcomeEmail(email, username, userId);
+                CompletableFuture.runAsync(() -> {
+                    serviceManager
+                        .getEmailService()
+                        .getEmailData()
+                        .welcome(email, username, userId);
+                });
                 linkUserSession(userId, sessionId);
 
                 Map<String, Object> res = new HashMap<>();
@@ -319,7 +325,7 @@ public class UserService {
     */
     private void createProfile(Connection conn, String userId) throws SQLException {
         String query = CommandQueryManager.CREATE_USER_PROFILE.get();
-        _User user = new _User();
+        User user = new User();
         try(PreparedStatement stmt = conn.prepareStatement(query)) {
             stmt.setString(1, userId);
             stmt.setString(2, user.getUsername());
@@ -384,11 +390,11 @@ public class UserService {
     /*
     * Is Online 
     */
-    public List<_User> getOnlineUsers() throws SQLException {
-        List<_User> allUsers = getAllUsers();
-        List<_User> onlineUsers = new ArrayList<>();
+    public List<User> getOnlineUsers() throws SQLException {
+        List<User> allUsers = getAllUsers();
+        List<User> onlineUsers = new ArrayList<>();
 
-        for(_User user : allUsers) {
+        for(User user : allUsers) {
             if(isUserOnline(user.getId())) {
                 onlineUsers.add(user);
             }
@@ -412,7 +418,7 @@ public class UserService {
     /*
     * Is Email Registered 
     */
-    public _User getUserByEmail(String email) throws SQLException {
+    public User getUserByEmail(String email) throws SQLException {
         String query = CommandQueryManager.GET_USER_BY_EMAIL.get();
         try(
             Connection conn = getConnection();
@@ -446,8 +452,8 @@ public class UserService {
     ***
     **
     */
-    private _User mapUserFromResultSet(ResultSet rs) throws SQLException {
-        _User user = new _User();
+    private User mapUserFromResultSet(ResultSet rs) throws SQLException {
+        User user = new User();
         user.setId(rs.getString("id"));
         user.setUsername(rs.getString("username"));
         user.setEmail(rs.getString("email"));
@@ -456,7 +462,7 @@ public class UserService {
     }
 
     private Map<String, Object> getUserBySessionInfo(String userId) throws SQLException {
-        _User user = getUserById(userId);
+        User user = getUserById(userId);
         if(user == null) return null;
 
         Map<String, Object> userInfo = new HashMap<>();

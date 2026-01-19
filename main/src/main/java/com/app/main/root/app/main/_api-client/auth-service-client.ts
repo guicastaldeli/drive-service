@@ -50,6 +50,8 @@ export class AuthServiceClient {
         sessionId: string,
         rememberUser?: boolean
     }) {
+        console.log('Login request URL:', `${this.url}/api/auth/login`);
+    console.log('Login data:', userData);
         const res = await fetch(`${this.url}/api/auth/login`, {
             method: 'POST',
             headers: { 

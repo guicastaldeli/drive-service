@@ -5,7 +5,7 @@ import com.app.main.root.app._auth.LoginRequest;
 import com.app.main.root.app.EventTracker;
 import com.app.main.root.app._service.ServiceManager;
 import com.app.main.root.app._service.SessionService;
-import com.app.main.root.app._types._User;
+import com.app.main.root.app._types.User;
 import com.app.main.root.app._server.ConnectionTracker;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.http.ResponseEntity;
@@ -140,7 +140,9 @@ public class AuthController {
 
             String sessionId;
             List<SessionService.SessionData> userSessions = 
-                serviceManager.getSessionService().getSessionsByUserId(userId);
+                serviceManager
+                    .getSessionService()
+                    .getSessionsByUserId(userId);
             
             SessionService.SessionData existingSession = null;
             for(SessionService.SessionData session : userSessions) {
@@ -173,6 +175,7 @@ public class AuthController {
                 System.out.println("Created new session: " + sessionId);
             }
 
+            serviceManager.getUserService().linkUserSession(userId, sessionId);
             serviceManager.getCookieService().setAuthCookies(
                 response, 
                 sessionId, 
@@ -286,10 +289,11 @@ public class AuthController {
                     );
             }
 
+            serviceManager.getUserService().linkUserSession(sessionData.getUserId(), sessionId);
             String clientIp = connectionTracker.getClientIpAddress(request);
             String userAgent = request.getHeader("User-Agent");
             connectionTracker.trackConnection(sessionId, clientIp, userAgent);
-            connectionTracker.updateUsername(sessionId, sessionData.getUsername());
+            connectionTracker.updateUsername(clientIp, userAgent);
 
             serviceManager.getSessionService().refreshSession(
                 sessionId, 
@@ -297,7 +301,7 @@ public class AuthController {
                 response
             );
 
-            _User user = serviceManager.getUserService().getUserById(sessionData.getUserId());
+            User user = serviceManager.getUserService().getUserById(sessionData.getUserId());
             if(user == null) {
                 return ResponseEntity.status(401)
                     .body(
