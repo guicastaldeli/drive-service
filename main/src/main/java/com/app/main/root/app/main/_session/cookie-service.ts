@@ -14,10 +14,8 @@ export class CookieService {
             days = 7,
             path = '/',
             domain = '',
-            secure =
-                process.env.NODE_ENV === 'production' ||
-                process.env.NODE_ENV === 'development',
-            sameSite = 'Strict'
+            secure = false,
+            sameSite = 'Lax'
         } = options;
         const expires = new Date(
             Date.now() + (days * 24 * 60 * 60 * 1000)
@@ -39,26 +37,28 @@ export class CookieService {
      * Get Value
      */
     public static getValue(name: string): string | null {
-    if(typeof document === 'undefined') return null;
+        if(typeof document === 'undefined') return null;
 
-    console.log('=== CookieService.getValue DEBUG ===');
-    console.log('Looking for cookie:', name);
-    console.log('All cookies string:', document.cookie);
-    
-    const cookies = document.cookie.split(';');
-    console.log('Split cookies:', cookies);
-    
-    for(let cookie of cookies) {
-        const [cookieName, cookieVal] = cookie.trim().split('=');
-        console.log('Checking:', cookieName, 'value:', cookieVal);
-        if(cookieName === name) {
-            console.log('Found cookie:', name, 'value:', cookieVal);
-            return decodeURIComponent(cookieVal);
+        /*
+        console.log('=== CookieService.getValue DEBUG ===');
+        console.log('Looking for cookie:', name);
+        console.log('All cookies string:', document.cookie);
+        */
+        
+        const cookies = document.cookie.split(';');
+        //console.log('Split cookies:', cookies);
+        
+        for(let cookie of cookies) {
+            const [cookieName, cookieVal] = cookie.trim().split('=');
+            //console.log('Checking:', cookieName, 'value:', cookieVal);
+            if(cookieName === name) {
+                //console.log('Found cookie:', name, 'value:', cookieVal);
+                return decodeURIComponent(cookieVal);
+            }
         }
+        //console.log('Cookie not found:', name);
+        return null;
     }
-    console.log('Cookie not found:', name);
-    return null;
-}
 
     /**
      * Delete Cookie

@@ -54,6 +54,9 @@ public class UserService {
         return dataSourceService.setDb("user_service").getConnection();
     }
 
+    /**
+     * Add User
+     */
     public void addUser(String id, String username, String sessionId) throws SQLException {
         String query = CommandQueryManager.ADD_USER.get();
 
@@ -68,32 +71,34 @@ public class UserService {
         }
     }
 
+    /**
+     * Get User by Id
+     */
     public User getUserById(String id) throws SQLException {
-    String query = CommandQueryManager.GET_USER_BY_ID.get();
-    
-    System.out.println("=== DEBUG: getUserById() ===");
-    System.out.println("Querying user with ID: " + id);
+        String query = CommandQueryManager.GET_USER_BY_ID.get();
 
-    try(
-        Connection conn = getConnection();
-        PreparedStatement stmt = conn.prepareStatement(query)
-    ) {
-        stmt.setString(1, id);
+        try(
+            Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query)
+        ) {
+            stmt.setString(1, id);
 
-        try(ResultSet rs = stmt.executeQuery()) {
-            if(rs.next()) {
-                User user = mapUserFromResultSet(rs);
-                System.out.println("User found: " + user.getUsername());
-                return user;
-            } else {
-                System.out.println("ERROR: No user found with ID: " + id);
-                return null;
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    User user = mapUserFromResultSet(rs);
+                    return user;
+                } else {
+                    System.out.println("ERROR: No user found with ID: " + id);
+                    return null;
+                }
             }
         }
     }
-}
 
-    public User getUserByUsername(String username) throws SQLException {
+    /**
+     * Get User by Username
+     */
+    public User getUserIdByUsername(String username) throws SQLException {
         String query = CommandQueryManager.GET_USER_BY_USERNAME.get();
 
         try(
@@ -129,17 +134,23 @@ public class UserService {
         return users;
     }
 
-    /* Username */
+    /**
+     * Username
+     */
     public String getUsernameBySessionId(String sessionId) {
         return sessionToUserMap.get(sessionId);
     }
 
-    /* Session by User Id */
+    /**
+     * Session by User Id
+     */
     public String getSessionByUserId(String userId) {
         return userToSessionMap.get(userId);
     }
 
-    /* Username by User Id */
+    /**
+     * Username by User Id
+     */
     public String getUsernameByUserId(String userId) throws SQLException {
         User user = getUserById(userId);
         if(user == null) System.out.println("Err user" + userId);
@@ -148,27 +159,36 @@ public class UserService {
         return username;
     }
 
-    /* Link */
+    /**
+     * Link Session
+     */
     public void linkUserSession(String userId, String sessionId) {
         userToSessionMap.put(userId, sessionId);
         sessionToUserMap.put(sessionId, userId);
     }
 
-    /* Unlink */
+    /**
+     * Unlink Session
+     */
     public void unlinkUserSession(String sessionId) {
         String userId = sessionToUserMap.remove(sessionId);
         if(userId != null) userToSessionMap.remove(userId);
     }
 
-    /*
-    ** Send To User
-    */
+    /**
+     * Send Socket Message to User
+     */
     public void sendMessageToUser(
         String sessionId,
         String event,
         Object data
     ) {
         try {
+            if(sessionId == null || sessionId.isEmpty() || !isSessionActive(sessionId)) {
+                System.out.println("Session " + sessionId + " is not active, skipping message: " + event);
+                return;
+            }
+
             eventTracker.track(
                 event,
                 data,
@@ -182,17 +202,154 @@ public class UserService {
                 data
             );
         } catch(Exception err) {
-            System.err.println("Error sending message: " + err.getMessage());
+            System.out.println(err);
         }
     }
 
-    /*
-    **
-    ***
-    *** Register User
-    ***
-    **
-    */
+    /**
+     * Update Sesssion 
+     */
+    private void updateUserSession(Connection conn, String userId, String sessionId) throws SQLException {
+        String query = CommandQueryManager.UPDATE_USER_SESSION.get();
+        Timestamp time = Timestamp.valueOf(LocalDateTime.now());
+        try(PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, sessionId);
+            stmt.setTimestamp(2, time);
+            stmt.setString(3, userId);
+            stmt.executeUpdate();
+        }
+        linkUserSession(userId, sessionId);
+    }
+
+    /**
+     * Update Last Login 
+     */
+    public void updateLastLogin(String userId) throws SQLException {
+        String query = CommandQueryManager.UPDATE_LAST_LOGIN.get();
+        Timestamp time = Timestamp.valueOf(LocalDateTime.now());
+        
+        try(
+            Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query);
+        ) {
+            stmt.setTimestamp(1, time);
+            stmt.setString(2, userId);
+            stmt.executeUpdate();
+        }
+    }
+
+    /**
+     * Is Online
+     */
+    public List<User> getOnlineUsers() throws SQLException {
+        List<User> allUsers = getAllUsers();
+        List<User> onlineUsers = new ArrayList<>();
+
+        for(User user : allUsers) {
+            if(isUserOnline(user.getId())) {
+                onlineUsers.add(user);
+            }
+        }
+
+        return onlineUsers;
+    }
+
+    public boolean isUserOnline(String userId) {
+        return userToSessionMap.containsKey(userId) &&
+            userToSessionMap.get(userId) != null;
+    }
+
+    /**
+     * Username Taken
+     */
+    public boolean isUsernameTaken(String username) throws SQLException {
+        return getUserIdByUsername(username) != null;
+    }
+
+    /**
+     * Get User By Email
+     */
+    public User getUserByEmail(String email) throws SQLException {
+        String query = CommandQueryManager.GET_USER_BY_EMAIL.get();
+        try(
+            Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query);
+        ) {
+            stmt.setString(1, email.toLowerCase().trim());
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    return mapUserFromResultSet(rs);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    public boolean isEmailRegistered(String email) throws SQLException {
+        return getUserByEmail(email) != null;
+    }
+
+    public boolean isValidEmail(String email) {
+        if(email == null) return false;
+        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
+        return email.matches(regex);
+    }
+
+    /**
+     * User Id 
+     */
+    private String generateUserId() {
+        String userId = "user_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 12);
+        return userId;
+    }
+
+    public String getUserIdBySession(String sessionId) {
+        return sessionToUserMap.get(sessionId);
+    } 
+
+    /**
+     * 
+     * Profile
+     *  
+     */
+    private void createProfile(Connection conn, String userId) throws SQLException {
+        String query = CommandQueryManager.CREATE_USER_PROFILE.get();
+        User user = new User();
+        try(PreparedStatement stmt = conn.prepareStatement(query)) {
+            stmt.setString(1, userId);
+            stmt.setString(2, user.getUsername());
+            stmt.executeUpdate();
+        }
+    }
+
+    public Map<String, Object> getUserProfile(String userId) throws SQLException {
+        String query = CommandQueryManager.GET_USER_PROFILE.get();
+        Map<String, Object> profile = new HashMap<>();
+
+        try(
+            Connection conn = getConnection();
+            PreparedStatement stmt = conn.prepareStatement(query);
+        ) {
+            stmt.setString(1, userId);
+            try(ResultSet rs = stmt.executeQuery()) {
+                if(rs.next()) {
+                    profile.put("displayName", rs.getString("display_name"));
+                    profile.put("avatar_url", rs.getString("avatar_url"));
+                    profile.put("createdAt", rs.getTime("created_at"));
+                    profile.put("updatedAt", rs.getTime("updated_at"));
+                }
+            }
+        }
+
+        return profile;
+    }
+
+    /**
+     * 
+     * Register User
+     * 
+     */
     public Map<String, Object> registerUser(
         String username,
         String email,
@@ -259,13 +416,11 @@ public class UserService {
         }
     }
 
-    /*
-    **
-    ***
-    *** Login User
-    ***
-    **
-    */
+    /**
+     * 
+     * Login User
+     * 
+     */
     public Map<String, Object> loginUser(
         String accountEmail, 
         String password, 
@@ -320,138 +475,11 @@ public class UserService {
         throw new SecurityException("Invalid credentials");
     }
 
-    /*
-    * Create Profile 
-    */
-    private void createProfile(Connection conn, String userId) throws SQLException {
-        String query = CommandQueryManager.CREATE_USER_PROFILE.get();
-        User user = new User();
-        try(PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, userId);
-            stmt.setString(2, user.getUsername());
-            stmt.executeUpdate();
-        }
-    }
-
-    public Map<String, Object> getUserProfile(String userId) throws SQLException {
-        String query = CommandQueryManager.GET_USER_PROFILE.get();
-        Map<String, Object> profile = new HashMap<>();
-
-        try(
-            Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query);
-        ) {
-            stmt.setString(1, userId);
-            try(ResultSet rs = stmt.executeQuery()) {
-                if(rs.next()) {
-                    profile.put("displayName", rs.getString("display_name"));
-                    profile.put("avatar_url", rs.getString("avatar_url"));
-                    profile.put("createdAt", rs.getTime("created_at"));
-                    profile.put("updatedAt", rs.getTime("updated_at"));
-                }
-            }
-        }
-
-        return profile;
-    }
-
-    /*
-    * Update Sesssion 
-    */
-    private void updateUserSession(Connection conn, String userId, String sessionId) throws SQLException {
-        String query = CommandQueryManager.UPDATE_USER_SESSION.get();
-        Timestamp time = Timestamp.valueOf(LocalDateTime.now());
-        try(PreparedStatement stmt = conn.prepareStatement(query)) {
-            stmt.setString(1, sessionId);
-            stmt.setTimestamp(2, time);
-            stmt.setString(3, userId);
-            stmt.executeUpdate();
-        }
-        linkUserSession(userId, sessionId);
-    }
-
-    /*
-    * Update Last Login 
-    */
-    public void updateLastLogin(String userId) throws SQLException {
-        String query = CommandQueryManager.UPDATE_LAST_LOGIN.get();
-        Timestamp time = Timestamp.valueOf(LocalDateTime.now());
-        
-        try(
-            Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query);
-        ) {
-            stmt.setTimestamp(1, time);
-            stmt.setString(2, userId);
-            stmt.executeUpdate();
-        }
-    }
-
-    /*
-    * Is Online 
-    */
-    public List<User> getOnlineUsers() throws SQLException {
-        List<User> allUsers = getAllUsers();
-        List<User> onlineUsers = new ArrayList<>();
-
-        for(User user : allUsers) {
-            if(isUserOnline(user.getId())) {
-                onlineUsers.add(user);
-            }
-        }
-
-        return onlineUsers;
-    }
-
-    public boolean isUserOnline(String userId) {
-        return userToSessionMap.containsKey(userId) &&
-            userToSessionMap.get(userId) != null;
-    }
-
-    /*
-    * Is Username Taken 
-    */
-    public boolean isUsernameTaken(String username) throws SQLException {
-        return getUserByUsername(username) != null;
-    }
-
-    /*
-    * Is Email Registered 
-    */
-    public User getUserByEmail(String email) throws SQLException {
-        String query = CommandQueryManager.GET_USER_BY_EMAIL.get();
-        try(
-            Connection conn = getConnection();
-            PreparedStatement stmt = conn.prepareStatement(query);
-        ) {
-            stmt.setString(1, email.toLowerCase().trim());
-            try(ResultSet rs = stmt.executeQuery()) {
-                if(rs.next()) {
-                    return mapUserFromResultSet(rs);
-                }
-            }
-        }
-
-        return null;
-    }
-
-    public boolean isEmailRegistered(String email) throws SQLException {
-        return getUserByEmail(email) != null;
-    }
-
-    public boolean isValidEmail(String email) {
-        if(email == null) return false;
-        String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
-        return email.matches(regex);
-    }
-
-    /*
-    **
-    ***
-    *** Maps
-    ***
-    **
-    */
+    /**
+     * 
+     * Maps
+     * 
+     */
     private User mapUserFromResultSet(ResultSet rs) throws SQLException {
         User user = new User();
         user.setId(rs.getString("id"));
@@ -475,15 +503,12 @@ public class UserService {
         return userInfo;
     }
 
-    /*
-    * User Id 
-    */
-    private String generateUserId() {
-        String userId = "user_" + System.currentTimeMillis() + "_" + UUID.randomUUID().toString().substring(0, 12);
-        return userId;
+    public boolean isSessionActive(String sessionId) {
+        if(sessionId == null || sessionId.isEmpty()) {
+            return false;
+        }
+        
+        return sessionToUserMap.containsKey(sessionId) ||
+            userToSessionMap.containsValue(sessionId);
     }
-
-    public String getUserIdBySession(String sessionId) {
-        return sessionToUserMap.get(sessionId);
-    } 
 }

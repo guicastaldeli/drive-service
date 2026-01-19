@@ -1,9 +1,21 @@
-#pragma once
-#include <string.h>
+#ifndef RESERVED_USERNAME_LIST_H
+#define RESERVED_USERNAME_LIST_H
 
-typedef struct {
-    const char* const* usernames;
-    size_t count;
-} ReservedUsernameList;
+#include <iostream>
+#include <vector>
+#include <algorithm>
+#include <cctype>
+#include <locale>
 
-extern const ReservedUsernameList RESERVED_USERNAME_LIST;
+class ReservedUsernameList {
+    public: static inline const std::vector<std::string> LIST = {
+        "admin", 
+        "root", 
+        "system", 
+        "administrator", 
+        "null", 
+        "undefined"
+    };
+};
+
+#endif

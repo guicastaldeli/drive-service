@@ -27,7 +27,7 @@ export class SessionManager {
     public static readonly USER_INFO_KEY = "USER_INFO";
     public static readonly REMEMBER_USER = "REMEMBER_USER";
     public static readonly SESSION_STATUS_KEY = "SESSION_STATUS";
-    public static readonly LOCAL_STORAGE_KEY = 'DRIVE_SESSION_DATA';
+    public static readonly LOCAL_STORAGE_KEY = 'MESSAGES_SESSION_DATA';
 
     public static setDate(rememberUser: boolean): SessionDate {
         const now = Date.now();
@@ -46,7 +46,7 @@ export class SessionManager {
                 const userInfo = this.getUserInfo();
                 if(userInfo && userInfo.sessionId) {
                     sessionId = userInfo.sessionId;
-                    console.log('Got sessionId from USER_INFO:', sessionId);
+                    //console.log('Got sessionId from USER_INFO:', sessionId);
                 }
             }
             const userInfo = this.getUserInfo();
@@ -100,6 +100,8 @@ export class SessionManager {
         rememberUser: boolean = false,
         addData?: Partial<UserSessionData>    
     ): void {
+        this.clearSession();
+        
         const dates = this.setDate(rememberUser);
         const data: UserSessionData = {
             ...userData,
@@ -116,10 +118,12 @@ export class SessionManager {
                 process.env.NODE_ENV === 'production' ||
                 process.env.NODE_ENV === 'development'
         });
+        
         CookieService.set(this.USER_INFO_KEY, JSON.stringify({
             userId: userData.userId,
             username: userData.username,
-            email: userData.email
+            email: userData.email,
+            sessionId: sessionId 
         }), {
             days: rememberUser ? 7 : undefined,
             secure: 
@@ -203,9 +207,9 @@ export class SessionManager {
         if(!sessionData) return false;
 
         let sessionId = CookieService.getValue(this.SESSION_ID_KEY);
-        if (!sessionId) {
+        if(!sessionId) {
             const userInfo = this.getUserInfo();
-            if (userInfo && userInfo.sessionId) {
+            if(userInfo && userInfo.sessionId) {
                 sessionId = userInfo.sessionId;
             }
         }
@@ -236,12 +240,12 @@ export class SessionManager {
 
     public static getSessionId(): string | null {
         const sessionId = CookieService.getValue(this.SESSION_ID_KEY);
-        if (sessionId) {
+        if(sessionId) {
             return sessionId;
         }
         
         const userInfo = this.getUserInfo();
-        if (userInfo && userInfo.sessionId) {
+        if(userInfo && userInfo.sessionId) {
             return userInfo.sessionId;
         }
         
@@ -258,22 +262,30 @@ export class SessionManager {
             const userCookie = CookieService.getValue(this.USER_INFO_KEY);
             if(!userCookie) return null;
             
-            console.log('USER_INFO cookie:', userCookie);
-            
             let value = userCookie.trim();
             if(value.startsWith('"') && value.endsWith('"')) {
                 value = value.slice(1, -1);
             }
-        
-            if(value.includes(':')) {
-                const parts = value.split(':');
-                if (parts.length >= 4) {
-                    return {
-                        sessionId: parts[0] || '', 
-                        userId: parts[1] || '',
-                        username: parts[2] || '',
-                        email: parts[3] || ''
-                    };
+            
+            try {
+                const parsed = JSON.parse(value);
+                return {
+                    sessionId: parsed.sessionId || parsed.sessioinId || '',
+                    userId: parsed.userId || '',
+                    username: parsed.username || '',
+                    email: parsed.email || ''
+                };
+            } catch(parseError) {
+                if(value.includes(':')) {
+                    const parts = value.split(':');
+                    if(parts.length >= 4) {
+                        return {
+                            sessionId: parts[0] || '', 
+                            userId: parts[1] || '',
+                            username: parts[2] || '',
+                            email: parts[3] || ''
+                        };
+                    }
                 }
             }
             

@@ -1,7 +1,6 @@
 import { Chat } from "@/public/data/mesh/chat";
 import { TextureData, TextureLoader } from "../resource/texture-loader";
 import { Tick } from "../tick";
-import { getRandomColor } from "../utils/RandomColor";
 import { Transform } from "../utils/transform";
 import { MeshData, PrimitiveType, Type } from "./mesh-data";
 import { MeshLoader } from "./mesh-loader";

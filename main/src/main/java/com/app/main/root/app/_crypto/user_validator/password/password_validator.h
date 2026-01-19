@@ -1,10 +1,17 @@
-#pragma once
-#include <stdbool.h>
+#ifndef PASSWORD_VALIDATOR_H
+#define PASSWORD_VALIDATOR_H
 
-typedef struct {
-    bool (*isCommonPassword)(const char* password);
-    bool (*validate)(const char* password);
-    bool (*meetsLengthRequirements)(const char* password);
-} PasswordValidator;
+#include <string>
+#include <vector>
 
-extern PasswordValidator passwordValidator;
+class PasswordValidator {
+private:
+    static const int MIN_PASSWORD_LENGTH = 8;
+
+public:
+    bool isCommonPassword(const std::string& password);
+    bool validate(const std::string& password);
+    static bool meetsLengthRequirements(const std::string& password);
+};
+
+#endif

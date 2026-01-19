@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scene>
+    <camera 
+        position-x="0" position-y="0" position-z="5"
+        target-x="0" target-y="0" target-z="0" 
+    />
+    
+    <!-- Skybox -->
+    <mesh 
+        type="skybox" 
+        position-x="0" position-y="0" position-z="0"
+        rotation-x="0" rotation-y="0" rotation-z="0"
+        scale-x="100" scale-y="100" scale-z="1"
+        followRotation="false"
+        autoRotate="false"
+    />
+    <mesh 
+        type="stars" 
+        position-x="0" position-y="0" position-z="0"
+        rotation-x="0" rotation-y="0" rotation-z="0"
+        scale-x="1" scale-y="1" scale-z="1"
+        followRotation="false"
+        autoRotate="true"
+        rotationSpeed="0.003"
+    />
+    
+    <!-- Earth -->
+    <mesh 
+        type="sphere" 
+        position-x="-3.5" position-y="-3.7" position-z="-1.5"
+        rotation-x="0" rotation-y="0" rotation-z="0"
+        scale-x="6" scale-y="6" scale-z="6"
+        texture="earth.png" 
+        followRotation="false"
+        autoRotate="true"
+        rotationSpeed="0.05"
+    />
+    <mesh 
+        type="clouds" 
+        position-x="-3.5" position-y="-3.7" position-z="-1.5"
+        rotation-x="0" rotation-y="0" rotation-z="0"
+        scale-x="6.2" scale-y="6.2" scale-z="6.2"
+        texture="clouds.png" 
+        followRotation="false"
+        autoRotate="true"
+        rotationSpeed="0.02"
+    />
+    <mesh 
+        type="fresnel" 
+        position-x="-3.5" position-y="-3.7" position-z="-1.5"
+        rotation-x="0" rotation-y="0" rotation-z="0"
+        scale-x="6.35" scale-y="6.35" scale-z="6.35"
+        texture="fresnel.png" 
+        followRotation="false"
+        autoRotate="true"
+        rotationSpeed="0.01"
+    />
+
+    <!-- Chat -->
+    <mesh 
+        type="chat" 
+        position-x="-1.5" position-y="1" position-z="-3.0"
+        rotation-x="0" rotation-y="2.0" rotation-z="0"
+        scale-x="1" scale-y="1" scale-z="1"
+        texture="chatblank.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+    />
+    <mesh 
+        type="chatdot" 
+        position-x="-1.5" position-y="1" position-z="-3.0"
+        rotation-x="0" rotation-y="2.0" rotation-z="0"
+        scale-x="1" scale-y="1" scale-z="1"
+        texture="chatdot.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+    /> <!-- First Mesh -->
+    <mesh 
+        type="chat" 
+        position-x="-3.0" position-y="1" position-z="-0.5"
+        rotation-x="0" rotation-y="1.7" rotation-z="0"
+        scale-x="0.8" scale-y="0.8" scale-z="0.8"
+        texture="chatblank.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+    />
+    <mesh 
+        type="chatdot" 
+        position-x="-3.0" position-y="1" position-z="-0.5"
+        rotation-x="0" rotation-y="1.7" rotation-z="0"
+        scale-x="0.8" scale-y="0.8" scale-z="0.8"
+        texture="chatdot.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+    /> <!-- Second Mesh -->
+    <mesh 
+        type="chat" 
+        position-x="-7.3" position-y="1" position-z="-2.8"
+        rotation-x="0" rotation-y="2.0" rotation-z="0"
+        scale-x="1" scale-y="1" scale-z="1"
+        texture="chatblank.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+
+    />
+    <mesh 
+        type="chatdot" 
+        position-x="-7.3" position-y="1" position-z="-2.8"
+        rotation-x="0" rotation-y="2.0" rotation-z="0"
+        scale-x="1" scale-y="1" scale-z="1"
+        texture="chatdot.png" 
+        followRotation="true"
+        autoRotate="false"
+        rotationSpeed="1.0"
+    /> <!-- Third Mesh --> 
+</scene>

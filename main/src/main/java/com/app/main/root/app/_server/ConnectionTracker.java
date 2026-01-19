@@ -1,11 +1,11 @@
 package com.app.main.root.app._server;
 import com.app.main.root.app.__controllers.UserAgentParserController;
 import com.app.main.root.app._service.ServiceManager;
-import com.app.main.root.app._utils.ColorConverter;
-import jakarta.servlet.http.HttpServletRequest;
+import com.app.main.root.app.utils.ColorConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
+import jakarta.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ConcurrentHashMap;
@@ -18,18 +18,14 @@ public class ConnectionTracker {
     private final Map<String, ConnectionInfo> connections = new ConcurrentHashMap<>();
     private final Set<Consumer<ConnectionInfo>> connectionCallbacks = new CopyOnWriteArraySet<>();
     private final Set<Consumer<ConnectionInfo>> disconnectionCallbacks = new CopyOnWriteArraySet<>();
-    public ServiceManager serviceManager;
+
     @Autowired private ColorConverter colorConverter;
     @Autowired private UserAgentParserController userAgentParserController;
-    
-    @Autowired
-    public void setServiceManager(@Lazy ServiceManager serviceManager) {
-        this.serviceManager = serviceManager;
-    }
+    @Autowired @Lazy public ServiceManager serviceManager;
 
-    /*
-    * Track Connection 
-    */
+    /**
+     * Track Connection 
+     */
     public void trackConnection(
         String socketId,
         String ipAddress,
@@ -43,16 +39,15 @@ public class ConnectionTracker {
         );
         connectionInfo.isConnected = true;
         connections.put(socketId, connectionInfo);
-        serviceManager.getUserService().linkUserSession(socketId, socketId);
         
         logConnection(connectionInfo);
         notifyConnectionCallbacks(connectionInfo);
         System.out.println(connectionInfo.toString());
     }
 
-    /*
-    * Track Disconnection 
-    */
+    /**
+     * Track Disconnection 
+     */
     public void trackDisconnection(String socketId) {
         ConnectionInfo connectionInfo = connections.get(socketId);
         if(connectionInfo != null) {
@@ -69,14 +64,14 @@ public class ConnectionTracker {
         }
     }
 
-    /*
-    * Update Username 
-    */
-    public void updateUsername(String socketId, String username) {
+    /**
+     * Update Username 
+     */
+    public void updateUsername(String socketId, String userId, String username) {
         ConnectionInfo connectionInfo = connections.get(socketId);
         if(connectionInfo != null) {
-            String userId = socketId;
             connectionInfo.username = username;
+            connectionInfo.userId = userId;
             
             serviceManager.getUserService().linkUserSession(userId, socketId);
             connections.put(socketId, connectionInfo);
@@ -125,9 +120,9 @@ public class ConnectionTracker {
         disconnectionCallbacks.remove(callback);
     }
 
-    /*
-    * Get All Active Sessions 
-    */
+    /**
+     * Get All Active Sessions 
+     */
     public Set<String> getAllActiveSessions() {
         Set<String> activeSessions = new HashSet<>();
         for(ConnectionInfo conn : connections.values()) {
@@ -138,9 +133,9 @@ public class ConnectionTracker {
         return activeSessions;
     }
 
-    /*
-    * Get Ip 
-    */
+    /**
+     * Get Ip 
+     */
     public String getClientIpAddress(HttpServletRequest request) {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
         if(xForwardedFor != null && xForwardedFor.isEmpty()) {
@@ -155,33 +150,34 @@ public class ConnectionTracker {
         return request.getRemoteAddr();
     }
 
-    /*
-    * Connection Stats 
-    */
+    /**
+     * Connection Stats 
+     */
     public Map<String, Object> getConnectionStats() {
         Map<String, Object> stats = new HashMap<>();
         stats.put("totalConnections", connections.size());
         stats.put("activeConnections", getActiveConnectionsCount());
         stats.put("totalUsers", serviceManager.getUserService().userToSessionMap.size());
+
         return stats;
     }
 
-    /* 
-    ***
-    **** Socket Id
-    *** 
-    */
+    /**
+     * 
+     * Socket Id
+     * 
+     */
     public String getSocketId(String sessionId) {
         ConnectionInfo connectionInfo = connections.get(sessionId);
         String res = connectionInfo != null ? connectionInfo.socketId : null;
         return res;
     }
 
-    /* 
-    ***
-    **** LOGS
-    *** 
-    */
+    /**
+     * 
+     * Logs
+     * 
+     */
     private void logConnection(ConnectionInfo info) {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"));
         String socket = colorConverter.style(info.socketId, "white", "bold");
@@ -217,11 +213,11 @@ public class ConnectionTracker {
         System.out.println(prefix + username + suffix + socket);
     }
 
-    /* 
-    ***
-    **** NOTIFICATIONS
-    *** 
-    */
+    /**
+     * 
+     * Notifications
+     * 
+     */
     private void notifyConnectionCallbacks(ConnectionInfo info) {
         for(Consumer<ConnectionInfo> callback : connectionCallbacks) {
             try {

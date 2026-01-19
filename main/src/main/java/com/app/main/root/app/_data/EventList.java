@@ -63,6 +63,7 @@ public class EventList {
                 String username = (String) data.get("username");
                 String userId = (String) data.get("userId");
 
+                //System.out.print("USERID " + userId + " username" + username);
                 eventTracker.track(
                     "new-user",
                     username,
@@ -70,7 +71,7 @@ public class EventList {
                     sessionId,
                     username
                 );
-                connectionTracker.updateUsername(sessionId, username);
+                connectionTracker.updateUsername(sessionId, userId, username);
 
                 try {
                     serviceManager.getUserService().addUser(userId, username, sessionId);

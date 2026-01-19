@@ -1,18 +1,34 @@
-#pragma once
-#include <stddef.h>
-#include <stdbool.h>
+#ifndef HASH_GENERATOR_H
+#define HASH_GENERATOR_H
 
-typedef struct {
-    unsigned char* data;
-    size_t size;
-} ByteArray;
+#include <vector>
+#include <string>
 
-#define HASH_KEY_LENGTH 128
-#define HASH_ITERATIONS 1000
+class HashGenerator {
+private:
+    static const int HASH_KEY_LENGTH = 128;
+    static const int HASH_ITERATIONS = 1000;
 
-ByteArray generateSecureHash(const ByteArray* pepperedPassword, const ByteArray* salt);
-ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt);
-ByteArray applyFinalHmac(const ByteArray* input, const ByteArray* salt);
-bool constantTimeEquals(const ByteArray* a, const ByteArray* b);
+public:
+    static std::vector<unsigned char> generateSecureHash(
+        const std::vector<unsigned char>& pepperedPassword,
+        const std::vector<unsigned char>& salt
+    );
+    
+    static std::vector<unsigned char> applyMemoryHardFunction(
+        const std::vector<unsigned char>& input,
+        const std::vector<unsigned char>& salt
+    );
+    
+    static std::vector<unsigned char> applyFinalHmac(
+        const std::vector<unsigned char>& input,
+        const std::vector<unsigned char>& salt
+    );
+    
+    static bool constantTimeEquals(
+        const std::vector<unsigned char>& a,
+        const std::vector<unsigned char>& b
+    );
+};
 
-void freeByteArray(ByteArray* array);
+#endif

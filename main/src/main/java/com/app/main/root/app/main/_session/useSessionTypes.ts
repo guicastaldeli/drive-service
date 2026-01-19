@@ -6,14 +6,14 @@ export const useSessionTypes = () => {
     const [types, setTypes] = useState<Types>({});
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    let apiClientController!: ApiClientController;
+    let ApiClientController!: ApiClientController;
 
     const loadSessionTypes = async(): Promise<void> => {
         try {
-            if(!apiClientController) throw new Error('err');
+            if(!ApiClientController) throw new Error('err');
             setLoading(true);
             setError(null);
-            const service = await apiClientController.getSessionService();
+            const service = await ApiClientController.getSessionService();
             const types = await service.getSessionTypes();
             setTypes(types);
         } catch(err) {

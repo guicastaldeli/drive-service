@@ -4,8 +4,8 @@ import { SessionManager } from "./session-manager";
 export class SessionConfig {
     private apiClientController: ApiClientController;
 
-    constructor(apiClientController: ApiClientController) {
-        this.apiClientController = apiClientController;
+    constructor(ApiClientController: ApiClientController) {
+        this.apiClientController = ApiClientController;
     }
 
     public setupSessionRefresh(): void {

@@ -79,12 +79,18 @@ export class Auth {
                     const userService = await this.apiClientController.getUserService();
 
                     const usernameExists = await userService.checkUsernameExists(username);
-                    if(usernameExists) return;
+                    if(usernameExists) {
+                        alert('Username already exists. Please choose a different username.');
+                        return;
+                    }
                     const emailExists = await userService.checkUserExists(email);
-                    if(emailExists) return;
-
+                    if(emailExists) {
+                        alert('Email already registered. Please use a different email or login.');
+                        return;
+                    }
                 } catch(err) {
                     console.error('Error checking', err);
+                    return; 
                 }
             } else if(!isCreateAccount) {
                 if(!this.loginEmailRef.current || !this.loginPasswordRef.current) {

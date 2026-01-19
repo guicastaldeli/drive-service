@@ -28,6 +28,7 @@ public class SessionService {
     public enum SessionType {
         LOGIN("LOGIN"),
         MAIN_DASHBOARD("MAIN_DASHBOARD"),
+        PASSWORD_RESET("PASSWORD_RESET"),
         DELETED("DELETED");
 
         private final String value;
@@ -102,86 +103,86 @@ public class SessionService {
             this.sessionAttrs = new ConcurrentHashMap<>();
         }
 
-        /*
-        * Get Session Id 
-        */
+        /**
+         * Get Session Id 
+         */
         public String getSessionId() {
             return sessionId;
         }
 
-        /*
-        * Get Current Session 
-        */
+        /**
+         * Get Current Session 
+         */
         public SessionType getCurrentSession() {
             return currentSession;
         }
 
-        /*
-        * Get User Id 
-        */
+        /**
+         * Get User Id 
+         */
         public String getUserId() {
             return userId;
         }
 
-        /*
-        * Get Username 
-        */
+        /**
+         * Get Username 
+         */
         public String getUsername() {
             return username;
         }
 
-        /*
-        * Get Email 
-        */
+        /**
+         * Get Email 
+         */
         public String getEmail() {
             return email;
         }
 
-        /*
-        ** Get User Agent
-        */
+        /**
+         * Get User Agent
+         */
         public String getUserAgent() {
             return userAgent;
         }
 
-        /*
-        ** Get Ip Address
-        */
+        /**
+         * Get Ip Address
+         */
         public String getIpAddress() {
             return ipAddress;
         }
 
-        /*
-        ** Get Last Activity
-        */
+        /**
+         * Get Last Activity
+         */
         public LocalDateTime getLastActivity() {
             return lastActivity;
         }
 
-        /*
-        ** Get Expires At
-        */
+        /**
+         * Get Expires At
+         */
         public LocalDateTime getCreatedAt() {
             return createdAt;
         }
 
-        /*
-        ** Get Expires At
-        */
+        /**
+         * Get Expires At
+         */
         public LocalDateTime getExpiresAt() {
             return expiresAt;
         }
 
-        /*
-        ** Remember User
-        */
+        /**
+         * Remember User
+         */
         public boolean isRememberUser() {
             return rememberUser;
         }
 
-        /*
-        ** Get Session Attributes
-        */
+        /**
+         * Get Session Attributes
+         */
         public Map<String, Object> getSessionAttrs() {
             return sessionAttrs;
         }
@@ -211,9 +212,9 @@ public class SessionService {
             updateActivity();
         }
 
-        /*
-        ** Session Attribute
-        */
+        /**
+         * Session Attribute
+         */
         public void setAttr(String key, Object val) {
             sessionAttrs.put(key, val);
             updateActivity();
@@ -227,16 +228,16 @@ public class SessionService {
             sessionAttrs.remove(key);
         }
 
-        /*
-        ** Session Expired
-        */
+        /**
+         * Session Expired
+         */
         public boolean isExpired() {
             return LocalDateTime.now().isAfter(expiresAt);
         }
 
-        /*
-        ** Extend Session
-        */
+        /**
+         * Extend Session
+         */
         public void extendSession(boolean rememberUser) {
             this.rememberUser = rememberUser;
             this.updateActivity();
@@ -248,9 +249,9 @@ public class SessionService {
         cleanupExpiredSessions();
     }
 
-    /*
-    ** Create Session
-    */
+    /**
+     * Create Session
+     */
     public String createSession(
         SessionType type,
         String userId,
@@ -262,8 +263,10 @@ public class SessionService {
         HttpServletResponse response
     ) {
         String sessionId = generateSessionId();
+        String browserInstanceId = UUID.randomUUID().toString();
+    
         SessionData sessionData = new SessionData(
-            sessionId,
+            sessionId, 
             type, 
             userId, 
             username, 
@@ -272,6 +275,7 @@ public class SessionService {
             ipAddress, 
             rememberUser
         );
+        sessionData.setAttr("browserInstanceId", browserInstanceId);
 
         userSessions.put(sessionId, sessionData);
         tokenToUserIdMap.put(sessionId, userId);
@@ -284,9 +288,9 @@ public class SessionService {
         return sessionId;
     }
 
-    /*
-    ** Get Session
-    */
+    /**
+     * Get Session
+     */
     public SessionData getSession(String id) {
         SessionData session = userSessions.get(id);
         if(session != null && !session.isExpired()) {
@@ -326,9 +330,9 @@ public class SessionService {
         return count;
     }
 
-    /*
-    ** Update
-    */
+    /**
+     * Update
+     */
     public void updateSessionType(String sessionId, SessionType type) {
         SessionData session = getSession(sessionId);
         if(session != null) session.updateSessionType(type);
@@ -357,17 +361,17 @@ public class SessionService {
         }
     }
 
-    /*
-    ** Validate
-    */
+    /**
+     * Validate
+     */
     public boolean validateSession(String sessionId) {
         SessionData session = getSession(sessionId);
         return session != null && !session.isExpired();
     }
 
-    /*
-    ** Destroy
-    */
+    /**
+     * Destroy
+     */
     public void destroySession(String sessionId, HttpServletResponse response) {
         SessionData session = userSessions.remove(sessionId);
         if(session != null) {
@@ -396,26 +400,26 @@ public class SessionService {
         clearSessionCookie(response);
     }
 
-    /*
-    ** Set Session Attribute
-    */
+    /**
+     * Set Session Attribute
+     */
     public void setSessionAttr(String sessionId, String key, Object val) {
         SessionData session = getSession(sessionId);
         if(session != null) session.setAttr(key, val);
     }
 
-    /*
-    ** Get Session Attribute
-    */
+    /**
+     * Get Session Attribute
+     */
     public Object getSessionAttr(String sessionId, String key) {
         SessionData session = getSession(sessionId);
         if(session != null) session.getAttr(key);
         return null;
     }
 
-    /*
-    ** Remove Session Attribute
-    */
+    /**
+     * Remove Session Attribute
+     */
     public void removeSessionAttr(String sessionId, String key) {
         SessionData session = getSession(sessionId);
         if(session != null) session.removeAttr(key);
@@ -436,9 +440,9 @@ public class SessionService {
         return stats;
     }
     
-    /*
-    * Get All Active Sessions
-    */
+    /**
+     * Get All Active Sessions
+     */
     public List<SessionData> getAllActiveSessions() {
         List<SessionData> activeSessions = new ArrayList<>();
         for(SessionData session : userSessions.values()) {
@@ -449,9 +453,9 @@ public class SessionService {
         return activeSessions;
     }
     
-    /*
-    * Get Session Count
-    */
+    /**
+     * Get Session Count
+     */
     public int getActiveSessionCount() {
         int count = 0;
         for(SessionData session : userSessions.values()) {
@@ -462,9 +466,9 @@ public class SessionService {
         return count;
     }
 
-    /*
-    ** Cleanup Expired Sessions
-    */
+    /**
+     * Cleanup Expired Sessions
+     */
     @Scheduled(fixedRate = 300000)
     public void cleanupExpiredSessions() {
         int removed = 0;
@@ -497,7 +501,7 @@ public class SessionService {
             URI uri = new URI(url);
             String host = uri.getHost();
 
-            if (host.equals("localhost") || host.equals("127.0.0.1")) {
+            if(host.equals("localhost") || host.equals("127.0.0.1")) {
                 return "localhost";
             }
             return host;
@@ -507,9 +511,9 @@ public class SessionService {
         }
     }
 
-    /*
-    ** Set Session Cookie
-    */
+    /**
+     * Set Session Cookie
+     */
     private void setSessionCookie(
         String sessionId, 
         boolean rememberUser, 
@@ -600,9 +604,9 @@ public class SessionService {
         }
     }
 
-    /*
-    ** Extract Session Id
-    */
+    /**
+     * Extract Session Id
+     */
     public String extractSessionId(HttpServletRequest request) {
         Cookie[] cookies = request.getCookies();
         if(cookies != null) {
@@ -626,9 +630,9 @@ public class SessionService {
         return null;
     }
 
-    /*
-    ** Refresh Session
-    */
+    /**
+     * Refresh Session
+     */
     public boolean refreshSession(
         String sessionId,
         boolean rememberUser,

@@ -48,7 +48,7 @@ class AuthRoutes:
                         detail="User with this email already exists!"
                     )
                 
-                usernameCheck = await self.userService.getUserByUsername(data.get("username", ""))
+                usernameCheck = await self.userService.getUserIdByUsername(data.get("username", ""))
                 if(usernameCheck.get("exists", False)):
                     raise HTTPException(
                         status_code=400, 
@@ -90,18 +90,6 @@ class AuthRoutes:
                 
                 return result
             except HTTPException as err:
-                if err.status_code == 503:
-                    # Java controller is down
-                    raise HTTPException(
-                        status_code=503,
-                        detail="Authentication service is currently unavailable. Please ensure the backend service is running."
-                    )
-                elif err.status_code == 400:
-                    # Invalid credentials from Java controller
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Invalid email or password"
-                    )
                 raise err
             except Exception as err:
                 raise HTTPException(

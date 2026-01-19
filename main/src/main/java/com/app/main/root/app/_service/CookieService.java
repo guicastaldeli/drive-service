@@ -50,24 +50,15 @@ public class CookieService {
     /**
      * Create Cookie
      */
-    public Cookie createCookie(String name, String value, int maxAge) {        
-        if (name == null || name.trim().isEmpty()) {
-            System.err.println("ERR Cookie name is null or empty! name=" + name);
-        }
-        
+    public Cookie createCookie(String name, String value, int maxAge) {
         Cookie cookie = new Cookie(name, value);
         cookie.setHttpOnly(true);
         cookie.setSecure(cookieSecure);
         cookie.setPath("/");
         cookie.setMaxAge(maxAge);
-
-        if(cookieDomain != null && 
-            !cookieDomain.equals("localhost") && 
-            !cookieDomain.equals(webUrl)
-        ) {
+        
+        if(cookieDomain != null && !cookieDomain.isEmpty()) {
             cookie.setDomain(cookieDomain);
-        } else {
-            System.out.println("Not setting domain");
         }
         
         return cookie;
@@ -136,7 +127,7 @@ public class CookieService {
         System.out.println("USER_INFO_KEY: " + USER_INFO_KEY);
         System.out.println("SESSION_STATUS_KEY: " + SESSION_STATUS_KEY);
         int rememberRes = remember ? 7 * 24 * 60 * 60 : 30 * 60;
-            String userRes = String.format("%s:%s:%s:%s", 
+        String userRes = String.format("%s:%s:%s:%s", 
             sessionId != null ? sessionId : "",
             userId != null ? userId : "",
             username != null ? username : "",

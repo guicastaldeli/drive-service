@@ -71,7 +71,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({
         } else {
             setLocalEmail(value);
         }
-    };
+    }
 
     const setNewPassword = (value: string) => {
         if(passwordReset?.setNewPassword) {
@@ -79,7 +79,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({
         } else {
             setLocalNewPassword(value);
         }
-    };
+    }
 
     const setConfirmPassword = (value: string) => {
         if(passwordReset?.setConfirmPassword) {
@@ -87,7 +87,7 @@ export const PasswordReset: React.FC<PasswordResetProps> = ({
         } else {
             setLocalConfirmPassword(value);
         }
-    };
+    }
 
     const setSession = (session: string): void => {
         console.log(`Setting session to: ${session}`);

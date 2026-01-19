@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.util.List;
 import java.util.Map;
 
@@ -79,6 +80,13 @@ public class AuthController {
                     rememberUser,
                     response
                 );
+            
+            HttpSession httpSession = httpRequest.getSession();
+            httpSession.setAttribute("userId", userId);
+            httpSession.setAttribute("username", username);
+            httpSession.setAttribute("email", email);
+            System.out.println("DEBUG - Stored userId in HTTP session: " + userId);
+            
             serviceManager.getCookieService().setAuthCookies(
                 response, 
                 sessionId, 
@@ -113,6 +121,7 @@ public class AuthController {
                 );
         }
     }
+
 
     /**
      * Login
@@ -160,6 +169,12 @@ public class AuthController {
                     rememberUser, 
                     response
                 );
+                
+                HttpSession httpSession = httpRequest.getSession();
+                httpSession.setAttribute("userId", userId);
+                httpSession.setAttribute("username", username);
+                httpSession.setAttribute("email", email);
+                System.out.println("DEBUG - Stored userId in existing HTTP session: " + userId);
             } else {
                 sessionId = serviceManager.getSessionService()
                     .createSession(
@@ -173,6 +188,12 @@ public class AuthController {
                         response
                     );
                 System.out.println("Created new session: " + sessionId);
+                
+                HttpSession httpSession = httpRequest.getSession();
+                httpSession.setAttribute("userId", userId);
+                httpSession.setAttribute("username", username);
+                httpSession.setAttribute("email", email);
+                System.out.println("DEBUG - Stored userId in new HTTP session: " + userId);
             }
 
             serviceManager.getUserService().linkUserSession(userId, sessionId);
@@ -289,11 +310,17 @@ public class AuthController {
                     );
             }
 
+            HttpSession httpSession = request.getSession();
+            httpSession.setAttribute("userId", sessionData.getUserId());
+            httpSession.setAttribute("username", sessionData.getUsername());
+            httpSession.setAttribute("email", sessionData.getEmail());
+            System.out.println("DEBUG - Stored userId in HTTP session during validation: " + sessionData.getUserId());
+
             serviceManager.getUserService().linkUserSession(sessionData.getUserId(), sessionId);
             String clientIp = connectionTracker.getClientIpAddress(request);
             String userAgent = request.getHeader("User-Agent");
             connectionTracker.trackConnection(sessionId, clientIp, userAgent);
-            connectionTracker.updateUsername(clientIp, userAgent);
+            connectionTracker.updateUsername(sessionId, sessionData.getUserId(), sessionData.getUsername());
 
             serviceManager.getSessionService().refreshSession(
                 sessionId, 

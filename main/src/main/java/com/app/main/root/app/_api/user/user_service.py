@@ -6,28 +6,20 @@ class UserService:
     def __init__(self, url: str):
         self.base_url = url
         
-    ##
     ## Get All Users
-    ##
     async def getAllUsers(self) -> List[Dict]:
         return await self._request("GET", f"{self.base_url}/api/users/all")
     
-    ##
     ## Online Users
-    ##
     async def getOnlineUsers(self) -> List[Dict]:
         return await self._request("GET", f"{self.base_url}/api/users/online")
     
-    ##
     ## Get User By Email
-    ##
     async def getUserByEmail(self, email: str) -> Dict:
         return await self._request("GET", f"{self.base_url}/api/users/email/{email}")
     
-    ##
     ## Get User by Username
-    ##
-    async def getUserByUsername(self, username: str) -> Dict:
+    async def getUserIdByUsername(self, username: str) -> Dict:
         return await self._request("GET", f"{self.base_url}/api/users/username/{username}")
     
     async def _request(self, method: str, url: str, json=None) -> Dict:

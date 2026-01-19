@@ -1,7 +1,15 @@
-#pragma once
-#include "../hash_generator/hash_generator.h"
+#ifndef SALT_GENERATOR_H
+#define SALT_GENERATOR_H
 
-#define SALT_LENGTH 32
+#include <vector>
 
-ByteArray generateSalt();
-bool isSaltValid(const ByteArray* salt);
+class SaltGenerator {
+private:
+    static const int SALT_LENGTH = 32;
+
+public:
+    static std::vector<unsigned char> generateSalt();
+    static bool isSaltValid(const std::vector<unsigned char>& salt);
+};
+
+#endif

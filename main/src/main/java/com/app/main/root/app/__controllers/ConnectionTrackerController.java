@@ -15,25 +15,25 @@ public class ConnectionTrackerController {
         this.connectionTracker = connectionTracker;
     }
 
-    /*
-    * All Connections 
-    */
+    /**
+     * All Connections 
+     */
     @GetMapping("/connections/all")
     public Map<String, ConnectionInfo> getAllConnections() {
         return connectionTracker.getAllConnections();
     }
 
-    /*
-    * Active Connections 
-    */
+    /**
+     * Active Connections
+     */
     @GetMapping("/connections/active")
     public List<ConnectionInfo> getActiveConnections() {
         return connectionTracker.getActiveConnections();
     }
 
-    /*
-    * Connection by Socket Id 
-    */
+    /**
+     * Connection by Socket Id 
+     */
     @GetMapping("/connections/{socketId}")
     public ConnectionInfo getConnectionSocketId(@PathVariable String socketId) {
         ConnectionInfo conn = connectionTracker.getConnection(socketId);
@@ -41,9 +41,9 @@ public class ConnectionTrackerController {
         return conn;
     }
 
-    /*
-    * Connection by Ip 
-    */
+    /**
+     * Connection by Ip 
+     */
     @GetMapping("/connections/ip/{ipAddress}")
     public List<ConnectionInfo> getConnectionIp(@PathVariable String ipAddress) {
         Map<String, ConnectionInfo> conn = connectionTracker.getAllConnections();
@@ -56,9 +56,9 @@ public class ConnectionTrackerController {
         return connIp;
     }
 
-    /*
-    * Connections by Username  
-    */
+    /**
+     * Connections by Username 
+     */
     @GetMapping("/connections/user/{username}")
     public List<ConnectionInfo> getConnectionsByUsername(@PathVariable String username) {
         Map<String, ConnectionInfo> conns = connectionTracker.getAllConnections();
@@ -71,31 +71,32 @@ public class ConnectionTrackerController {
         return connsUser;
     }
 
-    /*
-    * Update Username 
-    */
+    /**
+     * Update Username
+     */
     @PutMapping("/connections/{socketId}/username/{username}")
     public ConnectionInfo updateUsername(
-        @PathVariable String socketId, 
+        @PathVariable String socketId,
+        @PathVariable String userId,
         @PathVariable String username
     ) {
-        connectionTracker.updateUsername(socketId, username);
+        connectionTracker.updateUsername(socketId, userId, username);
         ConnectionInfo conn = connectionTracker.getConnection(socketId);
         if(conn == null) throw new RuntimeException("Connection not found!");
         return conn;
     }
 
-    /*
-    * Count 
-    */
+    /**
+     * Count
+     */
     @GetMapping("/count")
     public int getConnectionsCount() {
         return connectionTracker.getConnectionsCount();
     }
 
-    /*
-    * Track Connection
-    */
+    /**
+     * Track Connection
+     */
     @PostMapping("/connections/track")
     public ConnectionInfo trackConnection(
         @RequestParam String socketId,
@@ -106,9 +107,9 @@ public class ConnectionTrackerController {
         return connectionTracker.getConnection(socketId);
     }
 
-    /*
-    * Clear 
-    */
+    /**
+     * Clear
+     */
     @DeleteMapping("/connections/clear")
     public String clearConnections() {
         return "Add clear later...";

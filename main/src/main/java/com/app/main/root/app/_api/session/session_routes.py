@@ -8,9 +8,7 @@ class SessionRoutes:
         self.setupRoutes()
         
     def setupRoutes(self):
-        ##
         ## Types
-        ##
         @self.router.get("/types")
         async def getSessionTypes():
             try:
@@ -21,9 +19,7 @@ class SessionRoutes:
             except Exception as err:
                 raise HTTPException(status_code=err, detail="Failed to get session")
             
-        ##
         ## Get Session
-        ##
         @self.router.get("/{userId}")
         async def getSession(userId: str):
             try:
@@ -34,9 +30,7 @@ class SessionRoutes:
             except Exception as err:
                 raise HTTPException(status_code=err, detail="Failed to get session")
             
-        ##
         ## Stats
-        ##
         @self.router.get("/stats")
         async def getSessionStats():
             try:
@@ -47,22 +41,7 @@ class SessionRoutes:
             except Exception as err:
                 raise HTTPException(status_code=err, detail="Failed to get session stats")
             
-        ##
-        ## Stats
-        ##
-        @self.router.get("/id/{sessionId}")
-        async def getSessionById(sessionId: str):
-            try:
-                stats = await self.service.getSessionById(sessionId)
-                return stats
-            except HTTPException as e:
-                raise e
-            except Exception as err:
-                raise HTTPException(status_code=err, detail="Failed to get session id")
-            
-        ##
         ## Update Session Type
-        ##
         @self.router.put("/{userId}/type")
         async def updateSessionType(userId: str, sessionType: str):
             try:
@@ -73,9 +52,7 @@ class SessionRoutes:
             except Exception as err:
                 raise HTTPException(status_code=err, detail="Failed to update session type")
             
-        ##
         ## Update Session
-        ##
         @self.router.post("/update")
         async def updateSession(
             userId: str,

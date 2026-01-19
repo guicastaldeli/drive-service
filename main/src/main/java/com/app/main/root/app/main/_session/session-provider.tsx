@@ -18,7 +18,7 @@ export interface ContextType {
     sessionTypes: { [key: string]: string };
     sessionTypesLoading: boolean;
     syncSessionServer: () => Promise<void>;
-    validadeSessionType: (type: string) => boolean;
+    validateSessionType: (type: string) => boolean;
 }
 
 interface Props {
@@ -74,7 +74,21 @@ export class SessionProvider extends Component<Props, State> {
      */
     private async initSession(): Promise<void> {
         this.setState({ isLoading: true });
+        
         try {
+            const urlParams = new URLSearchParams(window.location.search);
+            const resetToken = urlParams.get('token');
+            
+            if (resetToken) {
+                console.log('SessionProvider: Password reset token detected, setting session to PASSWORD_RESET');
+                this.setState({
+                    currentSession: 'PASSWORD_RESET',
+                    isLoading: false,
+                    isAuth: false
+                });
+                return;
+            }
+
             const sessionData = await SessionManager.initSession();
             if(sessionData && SessionManager.isSessionValid()) {
                 this.setState({
@@ -89,10 +103,6 @@ export class SessionProvider extends Component<Props, State> {
 
                 setTimeout(async () => {
                     await this.checkAuth();
-                    /*
-                    const isValid = await this.checkAuth();
-                    if(!isValid) await this.clearSession();
-                    */
                 }, 1000);
             } else {
                 this.setState({
@@ -131,9 +141,18 @@ export class SessionProvider extends Component<Props, State> {
     }
 
     setSession = async (session: SessionType): Promise<void> => {
-        if(!this.validadeSessionType(session)) {
+        if(!this.validateSessionType(session)) {
             console.warn(`Invalid session type: ${session}`);
             return;
+        }
+
+        if(session === 'LOGIN') {
+            const urlParams = new URLSearchParams(window.location.search);
+            if(urlParams.has('token') || urlParams.has('action')) {
+                const newUrl = window.location.pathname;
+                window.history.replaceState(null, '', newUrl);
+                console.log('Cleared URL parameters for login');
+            }
         }
 
         this.setState({ currentSession: session });
@@ -179,8 +198,8 @@ export class SessionProvider extends Component<Props, State> {
         }
     }
 
-    validadeSessionType = (t: string): boolean => {
-        return ['LOGIN', 'MAIN_DASHBOARD'].includes(t)
+    validateSessionType = (t: string): boolean => {
+        return ['LOGIN', 'MAIN_DASHBOARD', 'PASSWORD_RESET', 'DELETED'].includes(t)
     }
 
     setSessionData = (sessionData: any): void => {
@@ -212,7 +231,7 @@ export class SessionProvider extends Component<Props, State> {
                 }
                 this.setSessionData(mergedData);
             }
-        } catch (err) {
+        } catch(err) {
             console.error('Failed to sync session with server:', err);
         } finally {
             this.setState({ isLoading: false });
@@ -236,7 +255,7 @@ export class SessionProvider extends Component<Props, State> {
             syncSessionServer: this.syncSessionServer,
             sessionTypes: this.sessionTypes.types || {},
             sessionTypesLoading: this.sessionTypes.loading || false,
-            validadeSessionType: this.validadeSessionType
+            validateSessionType: this.validateSessionType
         }
     }
 
@@ -334,9 +353,13 @@ export class SessionProvider extends Component<Props, State> {
     render() {
         if(this.state.isLoading) {
             return (
-                <div className="session-loading">
-                    <div className="loading-spinner"></div>
-                    <p>Loading session...</p>
+                <div className="session-loading-overlay">
+                    <div className="session-loading-content">
+                        <div>Loading session...</div>
+                        <div className="session-loading-status">
+                            <span>Initializing application</span>
+                        </div>
+                    </div>
                 </div>
             );
         }

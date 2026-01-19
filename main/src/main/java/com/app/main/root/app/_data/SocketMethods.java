@@ -19,34 +19,37 @@ public class SocketMethods {
         this.eventTracker = eventTracker;
     }
 
-    /*
-    ** Send
-    */
-    public void send(
-        String sessionId,
-        String destination,
-        Object data
-    ) {
+    /**
+     * Send
+     */
+    public void send(String sessionId, String destination, Object data) {
         try {
+            if(sessionId == null || sessionId.isEmpty() || sessionId.equals("unknown")) {
+                System.out.println("Invalid session ID, skipping message to: " + destination);
+                return;
+            }
+            if(destination == null || destination.isEmpty()) {
+                //System.out.println("Invalid destination, skipping message for session: " + sessionId);
+                return;
+            }
+
             eventTracker.track(
-                destination,
-                data,
-                EventDirection.SENT,
-                sessionId,
+                destination, 
+                data, 
+                EventDirection.SENT, 
+                sessionId, 
                 "system"
             );
-            messagingTemplate.convertAndSend(
-                destination,
-                data
-            );
+            messagingTemplate.convertAndSend(destination, data);
         } catch(Exception err) {
-            System.err.println("Error sending message: " + err.getMessage());
+            System.err.println("Error sending message to " + destination + ": " + err.getMessage());
+            err.printStackTrace();
         }
     }
 
-    /*
-    ** Broadcast to All 
-    */
+    /**
+     * Broadcast to All 
+     */
     public void broadcastAll(String event, Object data) {
         try {
             eventTracker.track(
@@ -65,9 +68,9 @@ public class SocketMethods {
         }
     }
 
-    /*
-    * Broadcast to Destination 
-    */
+    /**
+     * Broadcast to Destination
+     */
     public void broadcastToDestination(String destination, Object data) {
         try {
             eventTracker.track(
@@ -83,9 +86,9 @@ public class SocketMethods {
         }
     }
 
-    /*
-    ** Session Id 
-    */
+    /**
+     * Session Id 
+     */
     public String getSessionId(Object src) {
         if(src instanceof String) {
             return (String) src;
@@ -100,9 +103,9 @@ public class SocketMethods {
         return "unknown";
     }
 
-    /*
-    * Socket Username 
-    */
+    /**
+     * Socket Username 
+     */
     public String getSocketUsername(String sessionId) {
         return sessionId;
     }
