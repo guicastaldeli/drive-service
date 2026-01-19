@@ -6,12 +6,12 @@ import { Transform } from "@/app/main/renderer/utils/transform";
 /**
  * 
  * 
- *      Chat Mesh General Configuration...
+ *      Cloud Mesh General Configuration...
  * 
  * 
  */
 
-export class Chat {
+export class Cloud {
     public floatingEnabled: boolean = false;
     public floatingSpeed: number = 1.0;
     public floatingHeight: number = 0.2;
@@ -29,11 +29,13 @@ export class Chat {
     ): { isChat: boolean, color: [number, number, number] } {
         this.originalY = transform.position[1];
 
-        if(data.name.includes('chat')) {
+        if(data.name.includes('cloud1') ||
+            data.name.includes('cloud2')
+        ) {
             this.floatingEnabled = true;
         }
-        if(data.name.includes('chat') && 
-            !data.name.includes('chatdot')
+        if(data.name.includes('cloud1') && 
+            !data.name.includes('cloud2')
         ) {
             isChat = true;
         } else {
@@ -47,36 +49,22 @@ export class Chat {
      * Assign Random Props
      */
     public assignRandomProps(meshes: MeshRenderer[]): void {
-        const pairs: Map<string, MeshRenderer[]> = new Map();
-
         meshes.forEach(m => {
             const data = m.getMeshData();
             if(data && 
-                data.name.includes('chat') ||
-                data.name.includes('chatdot')
+                (data.name.includes('cloud1') ||
+                data.name.includes('cloud2'))
             ) {
-                const posKey = 
-                    `${m.transform.position[0]},
-                    ${m.transform.position[1]},
-                    ${m.transform.position[2]}`;
-                if(!pairs.has(posKey)) {
-                    pairs.set(posKey, []);
-                }
-                pairs.get(posKey)!.push(m);
-            }
-        });
-        pairs.forEach(mg => {
-            const floatingSpeed = 0.2 + Math.random() * 0.6;
-            const floatingHeight = 0.05 + Math.random() * 0.1;
-            mg.forEach(m => {
-                m.custom.set(
+                const randomSpeed = 0.5 + Math.random() * 1.0;
+                const randomHeight = 0.1 + Math.random() * 0.3;
+                this.setFloatingProps(
                     m.transform,
                     true,
-                    floatingSpeed,
-                    floatingHeight
-                )
-            });
-        })
+                    randomSpeed,
+                    randomHeight
+                );
+            }
+        });
     }
 
     /**

@@ -922,16 +922,27 @@ body {
   background: var(--primary-hover) !important;
 }
 
-/* Join Screen - Login/Register */
+/* Join Screen */
 header {
   width: 100%;
   height: 6%;
-  background-color: #1c1c1c;
+  background-color: #eeeeee;
+  z-index: 9 !important;
+}
+
+.screen.join-screen.container {
+  position: fixed !important;
+  z-index: 6 !important;
+  top: 10% !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 80% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .screen.join-screen {
-  top: 25%;
-  left: 10%;
   width: 30vw;
   height: 55vh;
   position: absolute;
@@ -1186,6 +1197,7 @@ header {
 }
 .info {
   position: absolute;
+  z-index: 9 !important;
   bottom: 0 !important;
   width: 100%;
   height: 6%;
@@ -1199,7 +1211,7 @@ header {
   align-items: center;
 }
 .info .border-info {
-  width: 85%;
+  width: 100%;
   border-top: 0.1rem solid #a6aeb8 !important;
 }
 .info .text-info {
@@ -1240,7 +1252,7 @@ header {
   cursor: pointer;
 }
 #main-header #header-content a {
-  color: #e2e7ed;
+  color: #1c1c1c;
   text-decoration: none;
 }
 #main-header #header-content a:hover {
@@ -1250,13 +1262,17 @@ header {
 
 .renderer {
   width: 100%;
-  height: 57%;
+  height: 100%;
+  position: relative;
+  z-index: 5;
 }
 
 canvas {
   width: 100%;
   height: 100%;
   display: block;
+  position: relative;
+  z-index: 5;
 }
 
 /* Password Reset */

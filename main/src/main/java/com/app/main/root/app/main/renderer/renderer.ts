@@ -166,18 +166,18 @@ export class Renderer {
         );
         this.pipelines.set('main', mainPipeline);
 
-        /* Stars */
-        const starsState: GPUPrimitiveState = {
+        /* Skybox */
+        const skyboxState: GPUPrimitiveState = {
             topology: 'triangle-list',
             cullMode: 'none',
             frontFace: 'ccw'
         }
-        const starsDepthStencil: GPUDepthStencilState = {
+        const skyboxDepthStencil: GPUDepthStencilState = {
             depthWriteEnabled: false,
             depthCompare: 'less-equal',
             format: 'depth24plus-stencil8'
         }
-        const starsBlend: GPUBlendState = {
+        const skyboxBlend: GPUBlendState = {
             color: {
                 srcFactor: 'src-alpha',
                 dstFactor: 'one-minus-src-alpha',
@@ -190,16 +190,16 @@ export class Renderer {
             }
         };
         await this.shaderLoader.loadProgram('SKYBOX');
-        const starsPipeline = this.shaderLoader.createRenderPipeline(
+        const skyboxPipeline = this.shaderLoader.createRenderPipeline(
             'SKYBOX',
             layout,
             ShaderConfig.get().vertexBufferLayouts,
             [navigator.gpu.getPreferredCanvasFormat()],
-            starsDepthStencil,
-            starsState,
-            starsBlend
+            skyboxDepthStencil,
+            skyboxState,
+            skyboxBlend
         );
-        this.pipelines.set('stars', starsPipeline);
+        this.pipelines.set('skybox', skyboxPipeline);
     }
 
     /**

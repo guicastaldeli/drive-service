@@ -171,9 +171,12 @@ export class Scene {
             if(!this.elements.has(el.type)) {
                 this.elements.set(el.type, []);
             }
-
-            this.elements.get(el.type)!.push(instance);
-
+            if(instance) {
+                if(!this.elements.has(el.type)) {
+                    this.elements.set(el.type, []);
+                }
+                this.elements.get(el.type)!.push(instance);
+            }
             for(const child of el.children) {
                 const childInstance = await this.createEl(child, instance);
                 if(childInstance && parent && parent.children) {
@@ -226,7 +229,7 @@ export class Scene {
         const meshes = this.getElementsByType<MeshRenderer>('mesh');
         for(const renderer of meshes) {
             const meshData = renderer.getMeshData();
-            if(meshData.name !== 'stars') {
+            if(meshData && meshData.name !== 'skybox') {
                 const pipeline = pipelines.get('lightning');
                 if(pipeline) {
                     renderer.render(
@@ -239,8 +242,8 @@ export class Scene {
         }
         for(const renderer of meshes) {
             const meshData = renderer.getMeshData();
-            if(meshData.name === 'stars') {
-                const pipeline = pipelines.get('stars');
+            if(meshData && meshData.name === 'skybox') {
+                const pipeline = pipelines.get('skybox');
                 if(pipeline) {
                     renderer.render(
                         renderPass, 

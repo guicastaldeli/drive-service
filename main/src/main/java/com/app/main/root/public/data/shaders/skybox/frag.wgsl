@@ -11,34 +11,18 @@ struct Camera {
 struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) color: vec3<f32>,
-    @location(1) uv: vec2<f32>,
-    @location(2) starSeed: f32
-}
-
-fn hash(p: f32) -> f32 {
-    var p2 = fract(p * 0.1031);
-    p2 *= p2 + 33.33;
-    p2 *= p2 + p2;
-    return fract(p2);
+    @location(1) uv: vec2<f32>
 }
 
 @fragment
 fn main(input: VertexOutput) -> @location(0) vec4<f32> {
-    let dist = length(input.uv - vec2<f32>(0.5, 0.5)) * 2.0; 
+    let normalizedY = (input.position.y + 500.0) / 1000.0;
     
-    let core = 1.0 - smoothstep(0.0, 0.3, dist);
-    let glow = 1.0 - smoothstep(0.0, 0.5, dist);
-    let falloff = core + glow * 0.3;
+    let gradient = mix(
+        vec3<f32>(0.0, 0.1, 0.3),
+        vec3<f32>(0.2, 0.4, 0.8),
+        normalizedY
+    );
     
-    if(falloff <= 0.01) {
-        discard;
-    }
-
-    let seed = hash(input.starSeed);
-    let phase = seed * 6.28318;
-    
-    let twinkle = 0.7 + 0.3 * sin(camera.time * 5.0 + phase);
-    let alpha = twinkle * falloff;
-
-    return vec4<f32>(input.color, alpha);
+    return vec4<f32>(gradient, 1.0);
 }

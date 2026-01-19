@@ -260,88 +260,90 @@ export class Main extends Component<any, State> {
                                                     >
                                                     </canvas>
                                                 </div>
-                                                <div className='screen join-screen'>
-                                                    <div className='form'>
-                                                        <div className="tab-container">
-                                                            {/* Tab Headers */}
-                                                            <div className="tab-headers">
-                                                                <div 
-                                                                    className={`tab-header ${activeTab === 'login' ? 'active' : ''}`}
-                                                                    onClick={() => this.switchTab('login')}
-                                                                >
-                                                                    Login
-                                                                </div>
-                                                                <div 
-                                                                    className={`tab-header ${activeTab === 'register' ? 'active' : ''}`}
-                                                                    onClick={() => this.switchTab('register')}
-                                                                >
-                                                                    Register
-                                                                </div>
-                                                            </div>
-                                                                    
-                                                            {/* Tab Content */}
-                                                            <div className="tab-content">
-                                                                {/* Login Tab */}
-                                                                <div className={`tab-panel ${activeTab === 'login' ? 'active' : ''}`}>
-                                                                    <div className="form-input">
-                                                                        <h2>Login</h2>
-                                                                        <label>Email</label>
-                                                                        <input 
-                                                                            type="email" 
-                                                                            ref={this.auth.loginEmailRef}
-                                                                            placeholder="Enter your email"
-                                                                        />
-                                                                        <label>Password</label>
-                                                                        <input 
-                                                                            type="password"
-                                                                            ref={this.auth.loginPasswordRef}
-                                                                            placeholder="Enter your password"
-                                                                        />
-                                                                        <div className="login-input">
-                                                                            <button 
-                                                                                onClick={() => this.auth.join(sessionContext, false)}
-                                                                            >
-                                                                                Login
-                                                                            </button>
-                                                                            <button 
-                                                                                type="button"
-                                                                                className="forgot-password-btn"
-                                                                                onClick={() => this.auth.handlePasswordReset(sessionContext)}
-                                                                            >
-                                                                                Forgot Password?
-                                                                            </button>
-                                                                        </div>
+                                                <div className="screen join-screen container">
+                                                    <div className='screen join-screen'>
+                                                        <div className='form'>
+                                                            <div className="tab-container">
+                                                                {/* Tab Headers */}
+                                                                <div className="tab-headers">
+                                                                    <div 
+                                                                        className={`tab-header ${activeTab === 'login' ? 'active' : ''}`}
+                                                                        onClick={() => this.switchTab('login')}
+                                                                    >
+                                                                        Login
+                                                                    </div>
+                                                                    <div 
+                                                                        className={`tab-header ${activeTab === 'register' ? 'active' : ''}`}
+                                                                        onClick={() => this.switchTab('register')}
+                                                                    >
+                                                                        Register
                                                                     </div>
                                                                 </div>
                                                                         
-                                                                {/* Register Tab */}
-                                                                <div className={`tab-panel ${activeTab === 'register' ? 'active' : ''}`}>
-                                                                    <div className="form-input">
-                                                                        <h2>Create Account</h2>
-                                                                        <label>Email</label>
-                                                                        <input 
-                                                                            type="email" 
-                                                                            ref={this.auth.createEmailRef}
-                                                                            placeholder="Enter your email"
-                                                                        />
-                                                                        <label>Username</label>
-                                                                        <input 
-                                                                            type="text" 
-                                                                            ref={this.auth.createUsernameRef}
-                                                                            placeholder="Choose a username"
-                                                                        />
-                                                                        <label>Password</label>
-                                                                        <input 
-                                                                            type="password"
-                                                                            ref={this.auth.createPasswordRef}
-                                                                            placeholder="Create a password"
-                                                                        />
-                                                                        <div className='register-input'>
-                                                                            <button 
-                                                                                onClick={() => this.auth.join(sessionContext, true)}
-                                                                            >
-                                                                                Create Account
-                                                                            </button>
+                                                                {/* Tab Content */}
+                                                                <div className="tab-content">
+                                                                    {/* Login Tab */}
+                                                                    <div className={`tab-panel ${activeTab === 'login' ? 'active' : ''}`}>
+                                                                        <div className="form-input">
+                                                                            <h2>Login</h2>
+                                                                            <label>Email</label>
+                                                                            <input 
+                                                                                type="email" 
+                                                                                ref={this.auth.loginEmailRef}
+                                                                                placeholder="Enter your email"
+                                                                            />
+                                                                            <label>Password</label>
+                                                                            <input 
+                                                                                type="password"
+                                                                                ref={this.auth.loginPasswordRef}
+                                                                                placeholder="Enter your password"
+                                                                            />
+                                                                            <div className="login-input">
+                                                                                <button 
+                                                                                    onClick={() => this.auth.join(sessionContext, false)}
+                                                                                >
+                                                                                    Login
+                                                                                </button>
+                                                                                <button 
+                                                                                    type="button"
+                                                                                    className="forgot-password-btn"
+                                                                                    onClick={() => this.auth.handlePasswordReset(sessionContext)}
+                                                                                >
+                                                                                    Forgot Password?
+                                                                                </button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+                                                                            
+                                                                    {/* Register Tab */}
+                                                                    <div className={`tab-panel ${activeTab === 'register' ? 'active' : ''}`}>
+                                                                        <div className="form-input">
+                                                                            <h2>Create Account</h2>
+                                                                            <label>Email</label>
+                                                                            <input 
+                                                                                type="email" 
+                                                                                ref={this.auth.createEmailRef}
+                                                                                placeholder="Enter your email"
+                                                                            />
+                                                                            <label>Username</label>
+                                                                            <input 
+                                                                                type="text" 
+                                                                                ref={this.auth.createUsernameRef}
+                                                                                placeholder="Choose a username"
+                                                                            />
+                                                                            <label>Password</label>
+                                                                            <input 
+                                                                                type="password"
+                                                                                ref={this.auth.createPasswordRef}
+                                                                                placeholder="Create a password"
+                                                                            />
+                                                                            <div className='register-input'>
+                                                                                <button 
+                                                                                    onClick={() => this.auth.join(sessionContext, true)}
+                                                                                >
+                                                                                    Create Account
+                                                                                </button>
+                                                                            </div>
                                                                         </div>
                                                                     </div>
                                                                 </div>

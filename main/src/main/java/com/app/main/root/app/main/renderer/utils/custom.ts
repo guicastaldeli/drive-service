@@ -1,17 +1,17 @@
-import { Chat } from "@/public/data/mesh/chat";
+import { Cloud } from "@/public/data/mesh/cloud";
 import { Fresnel } from "@/public/data/mesh/fresnel";
 import { MeshData } from "../mesh/mesh-data";
 import { Transform } from "./transform";
 import { MeshRenderer } from "../mesh/mesh-renderer";
 
 export class Custom {
-    private chat: Chat;
+    private cloud: Cloud;
 
     public isChat: boolean = false;
     public isFresnel: boolean = false;
 
     constructor() {
-        this.chat = new Chat();
+        this.cloud = new Cloud();
     }
 
     /**
@@ -22,8 +22,7 @@ export class Custom {
         color: [number, number, number], 
         transform: Transform
     ): [number, number, number] {
-        const cRes = this.chat.set(data, this.isChat, color, transform);
-        this.isChat = cRes.isChat;
+        const cRes = this.cloud.set(data, this.isChat, color, transform);
         return cRes.color;
     }
 
@@ -53,7 +52,7 @@ export class Custom {
      * Update
      */
     public update(transform: Transform): void {
-        this.chat.update(transform);
+        this.cloud.update(transform);
     }
 
     /**
@@ -65,7 +64,7 @@ export class Custom {
         speed: number, 
         height: number
     ): void {
-        this.chat.setFloatingProps(
+        this.cloud.setFloatingProps(
             transform,
             enabled,
             speed,
@@ -77,6 +76,6 @@ export class Custom {
      * Assign
      */
     public assign(meshes: MeshRenderer[]): void {
-        this.chat.assignRandomProps(meshes);
+        this.cloud.assignRandomProps(meshes);
     }
 }
