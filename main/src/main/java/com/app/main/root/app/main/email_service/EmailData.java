@@ -19,7 +19,7 @@ public class EmailData {
     public void welcome(String toEmail, String username, String userId) {
         try {
             Map<String, Object> context = new HashMap<>();
-            context.put("appName", "Messages");
+            context.put("appName", "Drive Service");
             context.put("username", username);
             context.put("userId", userId);
             context.put("webUrl", EmailService.WEB_URL_SRC);
@@ -38,7 +38,7 @@ public class EmailData {
     public void passwordReset(String toEmail, String username, String token) {
         try {
             Map<String, Object> context = new HashMap<>();
-            context.put("appName", "Messages");
+            context.put("appName", "Drive Service");
             context.put("username", username);
             context.put("resetUrl", EmailService.WEB_URL_SRC + "/?action=reset&token=" + token);
             context.put("webUrl", EmailService.WEB_URL_SRC);
@@ -58,7 +58,7 @@ public class EmailData {
     public void passwordChanged(String toEmail, String username) {
         try {
             Map<String, Object> context = new HashMap<>();
-            context.put("appName", "Messages");
+            context.put("appName", "Drive Service");
             context.put("username", username);
             context.put("changeTime", LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm")));
             context.put("webUrl", EmailService.WEB_URL_SRC);

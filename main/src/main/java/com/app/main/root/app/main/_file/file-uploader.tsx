@@ -94,6 +94,7 @@ export class FileUploader extends Component<Props, State> {
                 />
 
                 <button
+                    className="upload-btn"
                     onClick={this.triggerFileInput}
                     disabled={isUploading}
                     style={{

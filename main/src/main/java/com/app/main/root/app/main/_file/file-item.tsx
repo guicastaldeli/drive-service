@@ -296,6 +296,7 @@ export class FileItem extends Component<Props, State> {
             if(uniqueNewFiles.length === 0) {
                 this.hasMore = false;
                 this.isLoadingMore = false;
+                this.setState({ isLoading: false });
                 return;
             }
                 
@@ -322,6 +323,7 @@ export class FileItem extends Component<Props, State> {
                 }, 100);
             });
         } else {
+            this.setState({ isLoading: false });
             throw new Error(res.error || 'Failed to load files!');
         }
     }
@@ -609,14 +611,13 @@ export class FileItem extends Component<Props, State> {
         } = this.state;
 
         if(isLoading && files.length === 0) {
-        return (
+            return (
                 <div className="file-list-loading">
                     <div className="spinner"></div>
                     <p>Loading files...</p>
                 </div>
             );
         }
-        
         if(error && files.length === 0) {
             return (
                 <div className="file-list-error">
@@ -625,8 +626,7 @@ export class FileItem extends Component<Props, State> {
                 </div>
             );
         }
-
-        if(files.length === 0 && !isLoading) {
+        if(!isLoading && files.length === 0) {
             return (
                 <div className="file-list-empty">
                     <div className="empty-icon">EMPTY</div>

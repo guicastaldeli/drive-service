@@ -101,7 +101,7 @@ export class CachePreloaderService {
             if(files.length >= 0) {
                 this.cacheService.initUserCache(userId, folderId, pagination.total);
                 this.cacheService.addFilesPage(userId, folderId, files);
-                console.log(`Preloaded ${files.length} messages for ${folderId}`);
+                console.log(`Preloaded ${files.length} files for ${folderId}`);
             }
         } catch(err) {
             console.error(`Preload failed for ${folderId}:`, err);

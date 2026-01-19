@@ -81,7 +81,7 @@ export class Main extends Component<any, State> {
             await new Promise(resolve => setTimeout(resolve, 0));
             setTimeout(() => {
                 if(this.canvasRef.current) {
-                    //this.initRenderer();
+                    this.initRenderer();
                 }
             }, 100);
 
@@ -246,7 +246,7 @@ export class Main extends Component<any, State> {
                                                     <div id="header-content">
                                                         <img 
                                                             src={LOGO_PATH} 
-                                                            alt="messages"
+                                                            alt="drive service"
                                                             onClick={() => window.location.href = ''} 
                                                             title='Home'
                                                         />

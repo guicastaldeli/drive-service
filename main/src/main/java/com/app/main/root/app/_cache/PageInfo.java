@@ -3,15 +3,15 @@ package com.app.main.root.app._cache;
 public class PageInfo {
     public final boolean isLoaded;
     public final boolean hasMore;
-    public final int totalMessages;
+    public final int totalFiles;
 
     public PageInfo(
         boolean isLoaded,
         boolean hasMore,
-        int totalMessages 
+        int totalFiles 
     ) {
         this.isLoaded = isLoaded;
         this.hasMore = hasMore;
-        this.totalMessages = totalMessages;
+        this.totalFiles = totalFiles;
     }
 }

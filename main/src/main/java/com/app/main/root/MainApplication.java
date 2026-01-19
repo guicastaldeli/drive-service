@@ -81,7 +81,7 @@ public class MainApplication {
 			String content = 
 			colorConverter.style(spaceBg + "\n", "white", "bold") +
 			colorConverter.style(spaceText, "white", "bold") +
-			colorConverter.style("   Messages Server   ", "blue", "bold") +
+			colorConverter.style("   Drive Service - Server   ", "blue", "bold") +
 			colorConverter.style(spaceTextInv + "\n", "white", "bold") +
 			colorConverter.style(spaceBg + "\n", "white", "bold") +
 
