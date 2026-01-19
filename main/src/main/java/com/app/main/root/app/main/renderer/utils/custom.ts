@@ -5,13 +5,18 @@ import { Transform } from "./transform";
 import { MeshRenderer } from "../mesh/mesh-renderer";
 
 export class Custom {
-    private cloud: Cloud;
+    public cloud: Cloud;
 
     public isChat: boolean = false;
     public isFresnel: boolean = false;
 
-    constructor() {
-        this.cloud = new Cloud();
+    private device: GPUDevice;
+    private uniformBuffer: GPUBuffer;
+
+    constructor(device: GPUDevice, uniformBuffer: GPUBuffer) {
+        this.device = device;
+        this.uniformBuffer = uniformBuffer;
+        this.cloud = new Cloud(this.device, this.uniformBuffer);
     }
 
     /**
@@ -77,5 +82,12 @@ export class Custom {
      */
     public assign(meshes: MeshRenderer[]): void {
         this.cloud.assignRandomProps(meshes);
+    }
+
+    /**
+     * Render
+     */
+    public async render(el: Map<string, any[]>, getElementsByType: <T>(type: string) => T[]): Promise<void> {
+        this.cloud.render(el, getElementsByType);
     }
 }

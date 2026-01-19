@@ -931,6 +931,7 @@ header {
 }
 
 .screen.join-screen.container {
+  display: none !important;
   position: fixed !important;
   z-index: 6 !important;
   top: 10% !important;

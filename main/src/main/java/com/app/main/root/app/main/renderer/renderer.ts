@@ -291,7 +291,6 @@ export class Renderer {
             this.device, 
             this.camera
         );
-        await this.scene.init();
     }
 
     /**

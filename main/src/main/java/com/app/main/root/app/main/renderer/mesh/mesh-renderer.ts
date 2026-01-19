@@ -6,11 +6,11 @@ import { MeshLoader } from "./mesh-loader";
 import { Custom } from "../utils/custom";
 
 export class MeshRenderer {
-    private device: GPUDevice;
+    public device: GPUDevice;
     private pipeline: GPURenderPipeline | null = null;
     public transform: Transform;
 
-    private uniformBuffer: GPUBuffer;
+    public uniformBuffer: GPUBuffer;
     private modelBuffer: GPUBuffer | null = null;
     private materialBuffer: GPUBuffer | null = null;
     private vertexBuffer: GPUBuffer | null = null;
@@ -25,6 +25,7 @@ export class MeshRenderer {
     private meshRenderers: Map<string, MeshRenderer> = new Map();
     private textureLoader: TextureLoader;
     private useTexture: boolean = false;
+    private visible: boolean = false;
 
     public custom: Custom;
 
@@ -34,7 +35,8 @@ export class MeshRenderer {
         this.transform = new Transform();
         this.textureLoader = TextureLoader.getInstance();
         this.textureLoader.setDevice(device);
-        this.custom = new Custom();
+        this.custom = new Custom(this.device, this.uniformBuffer);
+        this.visible = true;
     }
 
     /**
@@ -187,6 +189,14 @@ export class MeshRenderer {
         await this.setup();
     }
 
+    public setVisible(visible: boolean): void {
+        this.visible = visible;
+    }
+
+    public isVisible(): boolean {
+        return this.visible;
+    }
+
     /**
      * Render
      */
@@ -195,6 +205,7 @@ export class MeshRenderer {
         pipeline: GPURenderPipeline,
         lightningBindGroup: GPUBindGroup
     ): void {
+        if(!this.visible) return;
         if(!this.vertexBuffer || !this.indexBuffer) throw new Error('Mesh renderer not init!');
         
         this.updateModelMatrix();

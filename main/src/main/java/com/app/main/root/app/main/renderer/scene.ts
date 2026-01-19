@@ -66,6 +66,9 @@ export class Scene {
             type: 'mesh',
             create: async (config: any) => {
                 const meshRenderer = new MeshRenderer(this.device, this.camera.getUniformBuffer());
+                if(config.visible !== undefined) meshRenderer.setVisible(config.visible);
+                await meshRenderer.set(config.type as Type, config.texture);
+
                 meshRenderer.transform.setPosition(
                     config['position-x'], 
                     config['position-y'], 
@@ -81,8 +84,6 @@ export class Scene {
                     config['scale-y'], 
                     config['scale-z']
                 );
-                
-                await meshRenderer.set(config.type as Type, config.texture);
 
                 const meshData = meshRenderer.getMeshData();
                 if(meshData) {
@@ -148,12 +149,16 @@ export class Scene {
 
         const meshes = this.getElementsByType<MeshRenderer>('mesh');
         for(const mesh of meshes) {
+            mesh.custom.render(
+                this.elements, 
+                this.getElementsByType.bind(this)
+            );
             mesh.custom.assign(meshes);
         }
     }
     
     /**
-     * Create Elment
+     * Create Element
      */
     private async createEl(el: ParsedElement, parent?: any): Promise<any> {
         const handler = this.elementHandlers.get(el.type);
@@ -253,12 +258,5 @@ export class Scene {
                 }
             }
         }
-    }
-
-    /**
-     * Init
-     */
-    public async init(): Promise<void> {
-        
     }
 }

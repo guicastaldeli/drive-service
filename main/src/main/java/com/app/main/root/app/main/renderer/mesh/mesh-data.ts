@@ -18,7 +18,7 @@ export enum Type {
     SKYBOX = 'skybox',
     STARS = 'stars',
     CLOUD1 = 'cloud1',
-    CLOUD2 = 'cloud1',
+    CLOUD2 = 'cloud2',
 }
 
 type AttrType = 
