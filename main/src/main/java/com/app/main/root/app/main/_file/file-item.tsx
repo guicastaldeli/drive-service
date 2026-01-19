@@ -258,8 +258,6 @@ export class FileItem extends Component<Props, State> {
                 const pagination = res.data?.pagination || res.pagination;
                 this.hasMore = pagination?.hasMore !== false && files.length > 0;
 
-                console.log(`Initial load: ${files.length} files, hasMore: ${this.hasMore}`);
-
                 this.setState({
                     files: sortedFiles,
                     isLoading: false,
@@ -267,19 +265,8 @@ export class FileItem extends Component<Props, State> {
                     totalFiles: files.length,
                     allFilesLoaded: !this.hasMore
                 });
-
-                // Debug logging
-                console.log('Checking if should call onAllFilesLoaded:', {
-                    hasMore: this.hasMore,
-                    callbackExists: !!this.props.onAllFilesLoaded,
-                    allFilesLoaded: !this.hasMore
-                });
-
                 if(!this.hasMore && this.props.onAllFilesLoaded) {
-                    console.log('Calling onAllFilesLoaded callback');
                     this.props.onAllFilesLoaded();
-                } else if (this.hasMore) {
-                    console.log('More files to load, callback will be called later');
                 }
             } else {
                 throw new Error(res.error || 'Failed to load files!');
@@ -312,15 +299,7 @@ export class FileItem extends Component<Props, State> {
             );
             
             await this.handleFileResponse(res, nextPage);
-            
-            // Debug logging
-            console.log('After loading more, checking callback:', {
-                hasMore: this.hasMore,
-                callbackExists: !!this.props.onAllFilesLoaded
-            });
-
             if(!this.hasMore && this.props.onAllFilesLoaded) {
-                console.log('All files loaded, calling onAllFilesLoaded callback');
                 this.props.onAllFilesLoaded();
             }
         } catch(err: any) {
@@ -346,15 +325,13 @@ export class FileItem extends Component<Props, State> {
 
             const pagination = res.data?.pagination || res.pagination;
             this.hasMore = pagination?.hasMore !== false && newFiles.length > 0;
-            
-            console.log(`Loaded ${newFiles.length} more files, total: ${allFiles.length}, hasMore: ${this.hasMore}`);
-
             this.setState({
                 files: sortedFiles,
                 currentPage: requestedPage,
                 totalFiles: allFiles.length,
                 allFilesLoaded: !this.hasMore
             });
+            console.log(`Loaded ${newFiles.length} more files, total: ${allFiles.length}, hasMore: ${this.hasMore}`);
         } else {
             this.setState({ isLoading: false });
             throw new Error(res.error || 'Failed to load files!');
