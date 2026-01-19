@@ -41,6 +41,7 @@ interface Props {
     onFileSelect?: (file: Item) => void;
     onFileDelete?: (fileId: string) => void;
     onRefresh?: () => void;
+    onAllFilesLoaded?: () => void;
 }
 
 interface State {
@@ -57,7 +58,8 @@ interface State {
     previewFile: Item | null;
     previewContent: string | null;
     previewLoading: boolean;
-    previewError: string | null;  
+    previewError: string | null;
+    allFilesLoaded: boolean;
 }
 
 export function mapToItem(file: any): Item {
@@ -76,12 +78,14 @@ export function mapToItem(file: any): Item {
 
 export class FileItem extends Component<Props, State> {
     private apiClientController: ApiClientController;
+
     private observer: IntersectionObserver | null = null;
     private sentinelRef = React.createRef<HTMLDivElement>();
     private containerRef = React.createRef<HTMLDivElement>();
+
     private hasMore = true;
     private isLoadingMore = false;
-    
+
     constructor(props: Props) {
         super(props);
         this.state = {
@@ -98,7 +102,8 @@ export class FileItem extends Component<Props, State> {
             previewFile: null,
             previewContent: null,
             previewLoading: false,
-            previewError: null
+            previewError: null,
+            allFilesLoaded: false
         }
         this.apiClientController = this.props.apiClientController;
         
@@ -137,8 +142,7 @@ export class FileItem extends Component<Props, State> {
         this.observer = new IntersectionObserver(
             (entries) => {
                 const sentinel = entries[0];
-                if(
-                    sentinel.isIntersecting && 
+                if(sentinel.isIntersecting && 
                     !this.isLoadingMore && 
                     this.hasMore &&
                     this.state.files.length > 0
@@ -239,11 +243,47 @@ export class FileItem extends Component<Props, State> {
             const fileService = await this.apiClientController.getFileService();
             const res = await fileService.listFiles(
                 this.props.userId,
-                this.props.parentFolderId || 'root'
+                this.props.parentFolderId || 'root',
+                0
             );
-            
-            const page = 0;
-            await this.handleFileResponse(res, page);
+            if(res.success) {
+                const filesData =
+                    Array.isArray(res.data) ?
+                    res.data :
+                    (res.data && res.data.files ? res.data.files : []);
+
+                const files = filesData.map(mapToItem);
+                const sortedFiles = this.sortFiles(files);
+
+                const pagination = res.data?.pagination || res.pagination;
+                this.hasMore = pagination?.hasMore !== false && files.length > 0;
+
+                console.log(`Initial load: ${files.length} files, hasMore: ${this.hasMore}`);
+
+                this.setState({
+                    files: sortedFiles,
+                    isLoading: false,
+                    currentPage: 0,
+                    totalFiles: files.length,
+                    allFilesLoaded: !this.hasMore
+                });
+
+                // Debug logging
+                console.log('Checking if should call onAllFilesLoaded:', {
+                    hasMore: this.hasMore,
+                    callbackExists: !!this.props.onAllFilesLoaded,
+                    allFilesLoaded: !this.hasMore
+                });
+
+                if(!this.hasMore && this.props.onAllFilesLoaded) {
+                    console.log('Calling onAllFilesLoaded callback');
+                    this.props.onAllFilesLoaded();
+                } else if (this.hasMore) {
+                    console.log('More files to load, callback will be called later');
+                }
+            } else {
+                throw new Error(res.error || 'Failed to load files!');
+            }
         } catch(err: any) {
             this.setState({
                 error: err.message,
@@ -272,6 +312,17 @@ export class FileItem extends Component<Props, State> {
             );
             
             await this.handleFileResponse(res, nextPage);
+            
+            // Debug logging
+            console.log('After loading more, checking callback:', {
+                hasMore: this.hasMore,
+                callbackExists: !!this.props.onAllFilesLoaded
+            });
+
+            if(!this.hasMore && this.props.onAllFilesLoaded) {
+                console.log('All files loaded, calling onAllFilesLoaded callback');
+                this.props.onAllFilesLoaded();
+            }
         } catch(err: any) {
             console.error('Error loading more files', err);
         } finally {
@@ -290,37 +341,19 @@ export class FileItem extends Component<Props, State> {
                 (res.data && res.data.files ? res.data.files : []);
 
             const newFiles = filesData.map(mapToItem);
-                
-            const existingIds = new Set(this.state.files.map(f => f.fileId));
-            const uniqueNewFiles = newFiles.filter((file: any) => !existingIds.has(file.fileId));
-            if(uniqueNewFiles.length === 0) {
-                this.hasMore = false;
-                this.isLoadingMore = false;
-                this.setState({ isLoading: false });
-                return;
-            }
-                
-            const allFiles = [...this.state.files, ...uniqueNewFiles];
+            const allFiles = [...this.state.files, ...newFiles];
             const sortedFiles = this.sortFiles(allFiles);
+
             const pagination = res.data?.pagination || res.pagination;
-                
-            const totalFiles = pagination?.total || 0;
-            const loadedFilesCount = sortedFiles.length;
-            this.hasMore = pagination?.hasMore !== false && loadedFilesCount < totalFiles;
+            this.hasMore = pagination?.hasMore !== false && newFiles.length > 0;
+            
+            console.log(`Loaded ${newFiles.length} more files, total: ${allFiles.length}, hasMore: ${this.hasMore}`);
 
             this.setState({
                 files: sortedFiles,
-                isLoading: false,
                 currentPage: requestedPage,
-                totalFiles: totalFiles,
-                error: null
-            }, () => {
-                setTimeout(() => {
-                    if(this.sentinelRef.current && this.observer) {
-                        this.observer.disconnect();
-                        this.observer.observe(this.sentinelRef.current);
-                    }
-                }, 100);
+                totalFiles: allFiles.length,
+                allFilesLoaded: !this.hasMore
             });
         } else {
             this.setState({ isLoading: false });
@@ -613,8 +646,9 @@ export class FileItem extends Component<Props, State> {
         if(isLoading && files.length === 0) {
             return (
                 <div className="file-list-loading">
-                    <div className="spinner"></div>
-                    <p>Loading files...</p>
+                    <div className="spinner">
+                        <p>Loading files...</p>
+                    </div>
                 </div>
             );
         }
@@ -775,13 +809,6 @@ export class FileItem extends Component<Props, State> {
                         <div className="loading-more">
                             <div className="spinner small"></div>
                             <p>Loading more files...</p>
-                        </div>
-                    )}
-                    
-                    {/* End of List */}
-                    {!this.hasMore && files.length > 0 && (
-                        <div className="end-of-list">
-                            <p>No more files to load</p>
                         </div>
                     )}
                 </div>

@@ -18,12 +18,15 @@ interface State {
     userData: any;
     currentSession: SessionType;
     isLoading: boolean;
+    allFilesLoaded: boolean;
 }
 
 export class Dashboard extends Component<Props, State> {
     private apiClientController: ApiClientController;
     private fileItemRef = React.createRef<FileItem>();
     private main: Main;
+
+    private filesLoadTimeout: NodeJS.Timeout | null = null;
     private socketId!: string;
     private userId!: string;
 
@@ -33,7 +36,8 @@ export class Dashboard extends Component<Props, State> {
             userId: null,
             userData: null,
             currentSession: 'MAIN_DASHBOARD',
-            isLoading: true
+            isLoading: true,
+            allFilesLoaded: false
         }
         this.main = props.main;
         this.apiClientController = props.apiClientController;
@@ -47,6 +51,18 @@ export class Dashboard extends Component<Props, State> {
 
     async componentDidMount(): Promise<void> {
         await this.loadUserData();
+        this.filesLoadTimeout = setTimeout(() => {
+            if(!this.state.allFilesLoaded) {
+                console.warn('Files loading timeout reached, proceeding anyway');
+                this.setState({ allFilesLoaded: true });
+            }
+        }, 10000);
+    }
+
+    componentWillUnmount(): void {
+        if(this.filesLoadTimeout) {
+            clearTimeout(this.filesLoadTimeout);
+        }
     }
 
     /**
@@ -69,10 +85,6 @@ export class Dashboard extends Component<Props, State> {
         }
     }
 
-    private setSession = (session: SessionType): void => {
-        this.setState({ currentSession: session });
-    }
-
     private handleUploadSuccess = (res: any) => {
         console.log('Upload success!', res);
         if(this.fileItemRef.current) {
@@ -80,10 +92,20 @@ export class Dashboard extends Component<Props, State> {
         }
     }
 
+    private handleAllFilesLoaded = (): void => {
+        console.log('All files have been loaded!');
+        if(this.filesLoadTimeout) {
+            clearTimeout(this.filesLoadTimeout);
+            this.filesLoadTimeout = null;
+        }
+        this.setState({ allFilesLoaded: true });
+    }
+
     render() {
         const sessionData = SessionManager.getUserInfo();
         const userId = sessionData?.userId;
-        if (!userId) {
+        
+        if(!userId) {
             return <div>Loading user data...</div>;
         }
 
@@ -100,28 +122,47 @@ export class Dashboard extends Component<Props, State> {
 
                     return (
                         <>
-                            {sessionContext && sessionContext.currentSession === 'MAIN_DASHBOARD' && (
-                                <div className="screen main-dashboard">
-                                    <div className="upper-bar">
-                                        <button id="logout-actn" onClick={() => this.main.auth.logout(sessionContext)}>Logout</button>
-                                        <FileUploader
-                                            apiClientController={this.apiClientController}
-                                            onUploadSuccess={this.handleUploadSuccess}
-                                            onUploadError={(err) => {
-                                                console.error('Upload failed', err);
-                                            }}
-                                        />
+                            {!this.state.allFilesLoaded && (
+                                <div className="files-loading-overlay">
+                                    <div className="files-loading-content">
+                                        <p>Loading files...</p>
+                                        <div className="files-loading-spinner">
+                                            <div className="spinner"></div>
+                                        </div>
+                                        <div className="files-loading-status">
+                                            <span>Please wait...</span>
+                                        </div>
                                     </div>
-                                    <div id="file-list">
+                                </div>
+                            )}
+                            
+                            <div className={`screen main-dashboard ${!this.state.allFilesLoaded ? 'loading' : ''}`}>
+                                <div className="upper-bar">
+                                    <button id="logout-actn" onClick={() => this.main.auth.logout(sessionContext)}>Logout</button>
+                                    <FileUploader
+                                        apiClientController={this.apiClientController}
+                                        onUploadSuccess={this.handleUploadSuccess}
+                                        onUploadError={(err) => {
+                                            console.error('Upload failed', err);
+                                        }}
+                                    />
+                                </div>
+                                <div id="file-list">
+                                    <div style={{ 
+                                        opacity: this.state.allFilesLoaded ? 1 : 0,
+                                        height: this.state.allFilesLoaded ? 'auto' : '0',
+                                        overflow: 'hidden'
+                                    }}>
                                         <FileItem
                                             ref={this.fileItemRef}
                                             apiClientController={this.apiClientController}
                                             userId={userId}
                                             parentFolderId="root" 
+                                            onAllFilesLoaded={this.handleAllFilesLoaded}
                                         />
                                     </div>
                                 </div>
-                            )}
+                            </div>
                         </>
                     )
                 }}

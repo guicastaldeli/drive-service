@@ -214,7 +214,7 @@ export class Main extends Component<any, State> {
     render() {
         const { activeTab, isLoading } = this.state;
         const LOGO_PATH = './data/resource/img/logo.png';
-        const REPO_LINK = 'https://github.com/guicastaldeli/messages';
+        const REPO_LINK = 'https://github.com/guicastaldeli/drive-service';
 
         return (
             <div className='app' ref={this.appContainerRef}>
@@ -354,7 +354,7 @@ export class Main extends Component<any, State> {
                                                     <div className="border-info"></div>
                                                     <div className="text-info">
                                                         <p>
-                                                            Messages 2026. Fork on
+                                                            Drive Service 2026. Fork on
                                                             <a href={REPO_LINK} target='_blank'> GitHub</a>
                                                         </p>
                                                     </div>
