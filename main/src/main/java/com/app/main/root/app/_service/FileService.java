@@ -198,7 +198,7 @@ public class FileService {
             }
 
             return res;
-        } catch (Exception err) {
+        } catch(Exception err) {
             System.err.println("Error deleting file: " + err.getMessage());
             err.printStackTrace();
             return false;
@@ -257,7 +257,7 @@ public class FileService {
                 userId 
             );
             return dbName;
-        } catch (Exception err) {
+        } catch(Exception err) {
             System.out.println("Could not find database for file " + fileId + ": " + err.getMessage());
             return null;
         }

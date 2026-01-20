@@ -80,7 +80,7 @@ export class FileServiceClient {
                     }
                 };
             }
-        } catch (error: any) {
+        } catch(error: any) {
             console.error('Download error:', error);
             return {
                 success: false,
@@ -265,7 +265,7 @@ export class FileServiceClient {
                 throw new Error(`Failed to get cache key: ${res.statusText}`);
             }
             return await res.json();
-        } catch (err) {
+        } catch(err) {
             console.error(err);
             throw err;
         }

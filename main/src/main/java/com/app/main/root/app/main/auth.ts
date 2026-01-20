@@ -168,8 +168,7 @@ export class Auth {
         
                 await this.doLogin(sessionContext, email, password, isCreateAccount, username);
             } catch(err: any) {
-                console.error('Authentication error:', err);
-                alert(`Authentication failed: ${err.message}`);
+                this.setState({ error: err.message || 'Login failed!' });
             }
         } catch(err) {
             console.error('Join error');
@@ -267,7 +266,7 @@ export class Auth {
                             
                         sessionContext.setSession('MAIN_DASHBOARD');
                         console.log('Successfully logged in and switched to dashboard');
-                    } catch (err: any) {
+                    } catch(err: any) {
                         console.error('Error in post-login setup:', err);
                         alert('Login successful but setup failed: ' + err.message);
                     }
@@ -277,9 +276,9 @@ export class Auth {
                 throw new Error('Invalid response from server - missing user data');
             }
         } catch(err: any) {
-            console.error('Authentication API error:', err);
-            this.setState({ error: `Authentication failed: ${err.message}` });
-            throw err;
+            console.error(err);
+            this.setState({ error: err.message || 'Login failed!' });
+            return;
         }
     }
     

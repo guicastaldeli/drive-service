@@ -11,7 +11,7 @@ JNIEXPORT jlong JNICALL Java_com_app_main_root_app__1crypto_user_1validator_User
     jobject obj
 ) {
     UserValidator* validator = userValidatorCreate();
-    if (!validator) return 0L;
+    if(!validator) return 0L;
     return (jlong)(intptr_t)validator;
 }
 
@@ -20,7 +20,7 @@ JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_user_1validator_UserV
     jobject obj,
     jlong nativePtr
 ) {
-    if (nativePtr == 0) return;
+    if(nativePtr == 0) return;
     UserValidator* validator = (UserValidator*)(intptr_t)nativePtr;
     userValidatorDestroy(validator);
 }
@@ -34,7 +34,7 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     jstring password,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !username || !email || !password || !ipAddress) {
+    if(nativePtr == 0 || !env || !username || !email || !password || !ipAddress) {
         return JNI_FALSE;
     }
 
@@ -50,11 +50,11 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     passwordStr = (*env)->GetStringUTFChars(env, password, NULL);
     ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
 
-    if (!usernameStr || !emailStr || !passwordStr || !ipAddressStr) {
-        if (usernameStr) (*env)->ReleaseStringUTFChars(env, username, usernameStr);
-        if (emailStr) (*env)->ReleaseStringUTFChars(env, email, emailStr);
-        if (passwordStr) (*env)->ReleaseStringUTFChars(env, password, passwordStr);
-        if (ipAddressStr) (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
+    if(!usernameStr || !emailStr || !passwordStr || !ipAddressStr) {
+        if(usernameStr) (*env)->ReleaseStringUTFChars(env, username, usernameStr);
+        if(emailStr) (*env)->ReleaseStringUTFChars(env, email, emailStr);
+        if(passwordStr) (*env)->ReleaseStringUTFChars(env, password, passwordStr);
+        if(ipAddressStr) (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
         return JNI_FALSE;
     }
 
@@ -84,7 +84,7 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     jstring password,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !email || !password || !ipAddress) {
+    if(nativePtr == 0 || !env || !email || !password || !ipAddress) {
         return JNI_FALSE;
     }
 
@@ -98,10 +98,10 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     passwordStr = (*env)->GetStringUTFChars(env, password, NULL);
     ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
 
-    if (!emailStr || !passwordStr || !ipAddressStr) {
-        if (emailStr) (*env)->ReleaseStringUTFChars(env, email, emailStr);
-        if (passwordStr) (*env)->ReleaseStringUTFChars(env, password, passwordStr);
-        if (ipAddressStr) (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
+    if(!emailStr || !passwordStr || !ipAddressStr) {
+        if(emailStr) (*env)->ReleaseStringUTFChars(env, email, emailStr);
+        if(passwordStr) (*env)->ReleaseStringUTFChars(env, password, passwordStr);
+        if(ipAddressStr) (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
         return JNI_FALSE;
     }
 
@@ -127,12 +127,12 @@ JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_user_1validator_UserV
     jlong nativePtr,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !ipAddress) return;
+    if(nativePtr == 0 || !env || !ipAddress) return;
 
     UserValidator* validator = (UserValidator*)(intptr_t)nativePtr;
     const char* ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
 
-    if (ipAddressStr) {
+    if(ipAddressStr) {
         userValidatorRecordRegistrationAttempt(validator, ipAddressStr);
         (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
     }
@@ -144,12 +144,12 @@ JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_user_1validator_UserV
     jlong nativePtr,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !ipAddress) return;
+    if(nativePtr == 0 || !env || !ipAddress) return;
 
     UserValidator* validator = (UserValidator*)(intptr_t)nativePtr;
     const char* ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
 
-    if (ipAddressStr) {
+    if(ipAddressStr) {
         userValidatorRecordLoginAttempt(validator, ipAddressStr);
         (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
     }
@@ -161,13 +161,13 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     jlong nativePtr,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !ipAddress) return JNI_FALSE;
+    if(nativePtr == 0 || !env || !ipAddress) return JNI_FALSE;
 
     UserValidator* validator = (UserValidator*)(intptr_t)nativePtr;
     const char* ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
     jboolean result = JNI_FALSE;
 
-    if (ipAddressStr) {
+    if(ipAddressStr) {
         bool cResult = userValidatorIsRegistrationRateLimited(validator, ipAddressStr);
         result = cResult ? JNI_TRUE : JNI_FALSE;
         (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);
@@ -182,13 +182,13 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
     jlong nativePtr,
     jstring ipAddress
 ) {
-    if (nativePtr == 0 || !env || !ipAddress) return JNI_FALSE;
+    if(nativePtr == 0 || !env || !ipAddress) return JNI_FALSE;
 
     UserValidator* validator = (UserValidator*)(intptr_t)nativePtr;
     const char* ipAddressStr = (*env)->GetStringUTFChars(env, ipAddress, NULL);
     jboolean result = JNI_FALSE;
 
-    if (ipAddressStr) {
+    if(ipAddressStr) {
         bool cResult = userValidatorIsLoginRateLimited(validator, ipAddressStr);
         result = cResult ? JNI_TRUE : JNI_FALSE;
         (*env)->ReleaseStringUTFChars(env, ipAddress, ipAddressStr);

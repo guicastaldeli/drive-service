@@ -95,6 +95,7 @@ export class Main extends Component<any, State> {
                     authState: { ...this.auth.state }
                 });
             }
+            
             await new Promise(resolve => setTimeout(resolve, 0));
             setTimeout(() => {
                 if(this.canvasRef.current) {
@@ -303,6 +304,7 @@ export class Main extends Component<any, State> {
                                                                         Register
                                                                     </div>
                                                                 </div>
+
                                                                 <div className="auth-content" style={{ display: hasMessages ? 'flex' : 'none' }}>
                                                                     {authState.message && (
                                                                         <div className="auth-message">
@@ -319,7 +321,7 @@ export class Main extends Component<any, State> {
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                        
+
                                                                 {/* Tab Content */}
                                                                 <div className="tab-content">
                                                                     {/* Login Tab */}

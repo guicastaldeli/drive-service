@@ -79,7 +79,7 @@ export class SessionProvider extends Component<Props, State> {
             const urlParams = new URLSearchParams(window.location.search);
             const resetToken = urlParams.get('token');
             
-            if (resetToken) {
+            if(resetToken) {
                 console.log('SessionProvider: Password reset token detected, setting session to PASSWORD_RESET');
                 this.setState({
                     currentSession: 'PASSWORD_RESET',
