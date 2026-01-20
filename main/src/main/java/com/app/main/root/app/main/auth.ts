@@ -11,6 +11,8 @@ export interface State {
     userId: string | null;
     sessionId: string | null;
     username: string | null;
+    message: string;
+    error: string;
 }
 
 export class Auth {
@@ -49,7 +51,9 @@ export class Auth {
         this.state = {
             userId: null,
             sessionId: null,
-            username: null
+            username: null,
+            message: '',
+            error: ''
         }
     }
 
@@ -58,8 +62,16 @@ export class Auth {
         if(cb) cb();
     }
 
+    public clearMessages(): void {
+        this.setState({
+            message: '',
+            error: ''
+        });
+    }
+
     public join = async (sessionContext: any, isCreateAccount: boolean = false): Promise<void> => {
         try {
+            this.clearMessages();
             let email: any;
             let username: any;
             let password: any;
@@ -73,19 +85,29 @@ export class Auth {
                 email = this.createEmailRef.current.value.trim();
                 username = this.createUsernameRef.current.value.trim();
                 password = this.createPasswordRef.current.value.trim();
-                if(!email || !username || !password) return;
+
+                const missingFields = [];
+                if(!email) missingFields.push('Email');
+                if(!username) missingFields.push('Username');
+                if(!password) missingFields.push('Password');
+                if(missingFields.length > 0) {
+                    const fieldNames = missingFields.join(', ');
+                    const text = missingFields.length === 1 ? 'is' : 'are'
+                    this.setState({ error: `${fieldNames} ${text} required` });
+                    return;
+                }
 
                 try {
                     const userService = await this.apiClientController.getUserService();
 
                     const usernameExists = await userService.checkUsernameExists(username);
                     if(usernameExists) {
-                        alert('Username already exists. Please choose a different username.');
+                        this.setState({ error: 'Username already exists' });
                         return;
                     }
                     const emailExists = await userService.checkUserExists(email);
                     if(emailExists) {
-                        alert('Email already registered. Please use a different email or login.');
+                        this.setState({ error: 'Email already registered' });
                         return;
                     }
                 } catch(err) {
@@ -100,7 +122,16 @@ export class Auth {
 
                 email = this.loginEmailRef.current.value.trim();
                 password = this.loginPasswordRef.current.value.trim();
-                if(!email || !password) return;
+
+                const missingFields = [];
+                if(!email) missingFields.push('Email');
+                if(!password) missingFields.push('Password');
+                if(missingFields.length > 0) {
+                    const fieldNames = missingFields.join(' and ');
+                    const text = missingFields.length === 1 ? 'is' : 'are';
+                    this.setState({ error: `${fieldNames} ${text} required` });
+                    return;
+                }
             }
 
             try {
@@ -247,7 +278,7 @@ export class Auth {
             }
         } catch(err: any) {
             console.error('Authentication API error:', err);
-            alert(`Authentication failed: ${err.message}`);
+            this.setState({ error: `Authentication failed: ${err.message}` });
             throw err;
         }
     }

@@ -25,6 +25,15 @@ interface State {
     passwordResetToken?: string;
     renderer: Renderer | null;
     activeTab: 'login' | 'register';
+    authState: AuthState;
+}
+
+interface AuthState {
+    userId: string | null;
+    sessionId: string | null;
+    username: string | null;
+    message: string;
+    error: string;
 }
 
 export class Main extends Component<any, State> {
@@ -72,12 +81,20 @@ export class Main extends Component<any, State> {
             passwordResetToken: undefined,
             rememberUser: rememberUserCookie,
             renderer: null,
-            activeTab: 'login'
+            activeTab: 'login',
+            authState: { ...this.auth.state }
         }
     }
 
     async componentDidMount(): Promise<void> {
         try {
+            const originalSetState = this.auth.setState.bind(this.auth);
+            this.auth.setState = (newState: any, cb?: () => void) => {
+                originalSetState(newState, cb);
+                this.setState({
+                    authState: { ...this.auth.state }
+                });
+            }
             await new Promise(resolve => setTimeout(resolve, 0));
             setTimeout(() => {
                 if(this.canvasRef.current) {
@@ -208,13 +225,20 @@ export class Main extends Component<any, State> {
     }
 
     private switchTab = (tab: 'login' | 'register'): void => {
+        this.auth.clearMessages();
         this.setState({ activeTab: tab });
     }
 
     render() {
-        const { activeTab, isLoading } = this.state;
+        const { activeTab, isLoading, authState } = this.state;
         const LOGO_PATH = './data/resource/img/logo.png';
         const REPO_LINK = 'https://github.com/guicastaldeli/drive-service';
+
+        const hasMessages = authState.message || authState.error;
+        const joinScreenClass = hasMessages ? 'screen join-screen expanded' : 'screen join-screen';
+        const containerClass = hasMessages ? 'screen join-screen container has-messages' : 'screen join-screen container';
+
+        const clearMessages = () => this.auth.clearMessages();
 
         return (
             <div className='app' ref={this.appContainerRef}>
@@ -260,8 +284,8 @@ export class Main extends Component<any, State> {
                                                     >
                                                     </canvas>
                                                 </div>
-                                                <div className="screen join-screen container">
-                                                    <div className='screen join-screen'>
+                                                <div className={containerClass}>
+                                                    <div className={joinScreenClass}>
                                                         <div className='form'>
                                                             <div className="tab-container">
                                                                 {/* Tab Headers */}
@@ -279,6 +303,22 @@ export class Main extends Component<any, State> {
                                                                         Register
                                                                     </div>
                                                                 </div>
+                                                                <div className="auth-content" style={{ display: hasMessages ? 'flex' : 'none' }}>
+                                                                    {authState.message && (
+                                                                        <div className="auth-message">
+                                                                            {authState.message.split('\n').map((line, i) => (
+                                                                                <div key={i}>{line}</div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                    {authState.error && (
+                                                                        <div className="auth-error">
+                                                                            {authState.error.split('\n').map((line, i) => (
+                                                                                <div key={i}>{line}</div>
+                                                                            ))}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
                                                                         
                                                                 {/* Tab Content */}
                                                                 <div className="tab-content">
@@ -291,12 +331,14 @@ export class Main extends Component<any, State> {
                                                                                 type="email" 
                                                                                 ref={this.auth.loginEmailRef}
                                                                                 placeholder="Enter your email"
+                                                                                onChange={clearMessages}
                                                                             />
                                                                             <label>Password</label>
                                                                             <input 
                                                                                 type="password"
                                                                                 ref={this.auth.loginPasswordRef}
                                                                                 placeholder="Enter your password"
+                                                                                onChange={clearMessages}
                                                                             />
                                                                             <div className="login-input">
                                                                                 <button 
@@ -308,6 +350,7 @@ export class Main extends Component<any, State> {
                                                                                     type="button"
                                                                                     className="forgot-password-btn"
                                                                                     onClick={() => this.auth.handlePasswordReset(sessionContext)}
+                                                                                    onChange={clearMessages}
                                                                                 >
                                                                                     Forgot Password?
                                                                                 </button>
@@ -324,18 +367,21 @@ export class Main extends Component<any, State> {
                                                                                 type="email" 
                                                                                 ref={this.auth.createEmailRef}
                                                                                 placeholder="Enter your email"
+                                                                                onChange={clearMessages}
                                                                             />
                                                                             <label>Username</label>
                                                                             <input 
                                                                                 type="text" 
                                                                                 ref={this.auth.createUsernameRef}
                                                                                 placeholder="Choose a username"
+                                                                                onChange={clearMessages}
                                                                             />
                                                                             <label>Password</label>
                                                                             <input 
                                                                                 type="password"
                                                                                 ref={this.auth.createPasswordRef}
                                                                                 placeholder="Create a password"
+                                                                                onChange={clearMessages}
                                                                             />
                                                                             <div className='register-input'>
                                                                                 <button 
@@ -363,30 +409,7 @@ export class Main extends Component<any, State> {
                                                 </div>
                                             </>
                                         )}
-                                        {sessionContext.currentSession === 'PASSWORD_RESET' && (
-                                            <div className="app-password-reset">
-                                                <PasswordResetController
-                                                    apiClientController={this.apiClientController}
-                                                    socketClientConnect={this.socketClientConnect}
-                                                    onBackToLogin={() => this.auth.handleBackToLogin(sessionContext)}
-                                                    token={this.state.passwordResetToken}
-                                                />
-                                            </div>
-                                        )}
-                                        {sessionContext.currentSession === 'MAIN_DASHBOARD' && (
-                                            <>
-                                                <div className="app-dashboard">
-                                                    <div className="dashboard-content">
-                                                        <Dashboard
-                                                            ref={this.setDashboardRef}
-                                                            main={this}
-                                                            apiClientController={this.apiClientController}
-                                                            onLogout={() => this.auth.logout(sessionContext)}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            </>
-                                        )}
+                                        {/* ...rest of existing code... */}
                                     </div>
                                 </>
                             );
