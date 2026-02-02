@@ -80,11 +80,10 @@ app = instance.app
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        ## fix this later...
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3002",
-        "http://127.0.0.1:3002"
+        config.WEB_URL,
+        config.SERVER_ALT_URL,
+        config.SERVER_URL,
+        config.API_URL
     ],
     allow_credentials=True,
     allow_methods=["*"],

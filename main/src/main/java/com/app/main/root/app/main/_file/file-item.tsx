@@ -412,8 +412,6 @@ export class FileItem extends Component<Props, State> {
      */
     private async handleFileDelete(fileId: string, e: React.MouseEvent): Promise<void> {
         e.stopPropagation();
-        if(!confirm('Delete??')) return;
-
         try {
             const fileService = await this.apiClientController.getFileService();
             const res = await fileService.deleteFile(fileId, this.props.userId);
@@ -637,15 +635,6 @@ export class FileItem extends Component<Props, State> {
                 </div>
             );
         }
-        if(!isLoading && files.length === 0) {
-            return (
-                <div className="file-list-empty">
-                    <div className="empty-icon">EMPTY</div>
-                    <h3>No files yet</h3>
-                    <p>Upload your first file to get started!</p>
-                </div>
-            );
-        }
 
         return (
             <div 
@@ -654,159 +643,170 @@ export class FileItem extends Component<Props, State> {
                 onScroll={this.handleScroll}
                 style={{ height: '100%', overflow: 'auto' }}
             >
-                {/* Toolbar */}
-                <div className="file-list-toolbar">
-                    <div className="toolbar-left">
-                        <input 
-                            type="checkbox"
-                            checked={selectedFiles.size === files.length && files.length > 0}
-                            onChange={this.handleSelectAll}
-                            className="select-all-checkbox"
-                        />
-                        <span>{selectedFiles.size} selected</span>
-                    </div>
-                    
-                    <div className="toolbar-right">
-                        <div className="view-toggle">
-                            <button 
-                                className={viewMode === 'grid' ? 'active' : ''}
-                                onClick={() => this.setState({ viewMode: 'grid' })}
-                            >
-                                Grid
-                            </button>
-                            <button 
-                                className={viewMode === 'list' ? 'active' : ''}
-                                onClick={() => this.setState({ viewMode: 'list' })}
-                            >
-                                List
-                            </button>
-                        </div>
-                        
-                        <div className="sort-options">
-                            <span>Sort by:</span>
-                            <select 
-                                value={this.state.sortBy}
-                                onChange={(e) => this.changeSort(e.target.value as SortType)}
-                            >
-                                <option value="name">Name</option>
-                                <option value="date">Date</option>
-                                <option value="size">Size</option>
-                                <option value="type">Type</option>
-                            </select>
-                            <button 
-                                onClick={() => this.setState({ 
-                                    sortOrder: this.state.sortOrder === 'asc' ? 'desc' : 'asc' 
-                                }, () => {
-                                    const sortedFiles = this.sortFiles(this.state.files);
-                                    this.setState({ files: sortedFiles });
-                                })}
-                            >
-                                {this.state.sortOrder === 'asc' ? '↑' : '↓'}
-                            </button>
-                        </div>
+                {(!isLoading && files.length === 0) ? (
+                <div className="file-list-empty">
+                    <div className="file-list-empty-content">
+                        <div className="empty-icon">Empty...</div>
+                        <h3 className="no-files-icon">No files</h3>
                     </div>
                 </div>
-
-                {/* File List */}
-                <div className={`file-list ${viewMode}`}>
-                    {files.map(file => (
-                        <div 
-                            key={file.fileId}
-                            className={`file-item ${selectedFiles.has(file.fileId) ? 'selected' : ''}`}
-                        >
-                            <div className="file-item-checkbox">
+                ) : (
+                    <>
+                        {/* Toolbar */}
+                        <div className="file-list-toolbar">
+                            <div className="toolbar-left">
                                 <input 
                                     type="checkbox"
-                                    checked={selectedFiles.has(file.fileId)}
-                                    onChange={(e) => {
-                                        e.stopPropagation();
-                                        this.handleFileCheckbox(file.fileId, e.target.checked);
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
+                                    checked={selectedFiles.size === files.length && files.length > 0}
+                                    onChange={this.handleSelectAll}
+                                    className="select-all-checkbox"
                                 />
+                                <span>{selectedFiles.size} selected</span>
                             </div>
                             
-                            <div className="file-item-icon">
-                                {this.getFileIcon(file.fileType, file.mimeType)}
-                            </div>
-                            
-                            <div className="file-item-info">
-                                <div 
-                                    className="file-name clickable"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        this.handlePreviewFile(file);
-                                    }}
-                                    title="Click to preview"
-                                >
-                                    {file.originalFileName}
+                            <div className="toolbar-right">
+                                <div className="view-toggle">
+                                    <button 
+                                        className={viewMode === 'grid' ? 'active' : ''}
+                                        onClick={() => this.setState({ viewMode: 'grid' })}
+                                    >
+                                        Grid
+                                    </button>
+                                    <button 
+                                        className={viewMode === 'list' ? 'active' : ''}
+                                        onClick={() => this.setState({ viewMode: 'list' })}
+                                    >
+                                        List
+                                    </button>
                                 </div>
-                                <div className="file-details">
-                                    <span className="file-size">{this.formatFileSize(file.fileSize)}</span>
-                                    <span className="file-date">{this.formatDate(file.uploadedAt)}</span>
-                                    <span className="file-type">{file.fileType}</span>
+                                
+                                <div className="sort-options">
+                                    <span>Sort by:</span>
+                                    <select 
+                                        value={this.state.sortBy}
+                                        onChange={(e) => this.changeSort(e.target.value as SortType)}
+                                    >
+                                        <option value="name">Name</option>
+                                        <option value="date">Date</option>
+                                        <option value="size">Size</option>
+                                        <option value="type">Type</option>
+                                    </select>
+                                    <button 
+                                        onClick={() => this.setState({ 
+                                            sortOrder: this.state.sortOrder === 'asc' ? 'desc' : 'asc' 
+                                        }, () => {
+                                            const sortedFiles = this.sortFiles(this.state.files);
+                                            this.setState({ files: sortedFiles });
+                                        })}
+                                    >
+                                        {this.state.sortOrder === 'asc' ? '↑' : '↓'}
+                                    </button>
                                 </div>
-                            </div>
-                            
-                            <div className="file-item-actions">
-                                <button 
-                                    className="action-btn download-btn"
-                                    onClick={async (e) => {
-                                        e.stopPropagation();
-                                        console.log('Downloading...', file.fileId);
-                                        await this.handleDownloadFile(file);
-                                    }}
-                                    title="Download"
-                                >
-                                    Download
-                                </button>
-                                <button 
-                                    className="action-btn delete-btn"
-                                    onClick={(e) => this.handleFileDelete(file.fileId, e)}
-                                    title="Delete"
-                                >
-                                    Delete
-                                </button>
                             </div>
                         </div>
-                    ))}
-                    
-                    {/* Loading Sentinel */}
-                    <div 
-                        ref={this.sentinelRef}
-                        style={{ 
-                            height: '1px',
-                            visibility: 'hidden',
-                            marginTop: '10px'
-                        }}
-                    />
-                    
-                    {/* Loading More Indicator */}
-                    {this.isLoadingMore && (
-                        <div className="loading-more">
-                            <div className="spinner small"></div>
-                            <p>Loading more files...</p>
-                        </div>
-                    )}
-                </div>
 
-                {/* Preview */}
-                {previewFile && (
-                    <Preview
-                        file={previewFile}
-                        content={previewContent}
-                        isLoading={previewLoading}
-                        error={previewError}
-                        onClose={this.closePreview}
-                        onDownload={async (file) => {
-                            try {
-                                const fileService = await this.apiClientController.getFileService();
-                                await fileService.downloadFile(this.props.userId, file.fileId);
-                            } catch(err) {
-                                console.error('Error downloading file:', err);
-                            }
-                        }}
-                    />
+                        {/* File List */}
+                        <div className={`file-list ${viewMode}`}>
+                            {files.map(file => (
+                                <div 
+                                    key={file.fileId}
+                                    className={`file-item ${selectedFiles.has(file.fileId) ? 'selected' : ''}`}
+                                >
+                                    <div className="file-item-checkbox">
+                                        <input 
+                                            type="checkbox"
+                                            checked={selectedFiles.has(file.fileId)}
+                                            onChange={(e) => {
+                                                e.stopPropagation();
+                                                this.handleFileCheckbox(file.fileId, e.target.checked);
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                        />
+                                    </div>
+                                    
+                                    <div className="file-item-icon">
+                                        {this.getFileIcon(file.fileType, file.mimeType)}
+                                    </div>
+                                    
+                                    <div className="file-item-info">
+                                        <div 
+                                            className="file-name clickable"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                this.handlePreviewFile(file);
+                                            }}
+                                            title="Click to preview"
+                                        >
+                                            {file.originalFileName}
+                                        </div>
+                                        <div className="file-details">
+                                            <span className="file-size">{this.formatFileSize(file.fileSize)}</span>
+                                            <span className="file-date">{this.formatDate(file.uploadedAt)}</span>
+                                            <span className="file-type">{file.fileType}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="file-item-actions">
+                                        <button 
+                                            className="action-btn download-btn"
+                                            onClick={async (e) => {
+                                                e.stopPropagation();
+                                                console.log('Downloading...', file.fileId);
+                                                await this.handleDownloadFile(file);
+                                            }}
+                                            title="Download"
+                                        >
+                                            Download
+                                        </button>
+                                        <button 
+                                            className="action-btn delete-btn"
+                                            onClick={(e) => this.handleFileDelete(file.fileId, e)}
+                                            title="Delete"
+                                        >
+                                            Delete
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                            
+                            {/* Loading Sentinel */}
+                            <div 
+                                ref={this.sentinelRef}
+                                style={{ 
+                                    height: '1px',
+                                    visibility: 'hidden',
+                                    marginTop: '10px'
+                                }}
+                            />
+                            
+                            {/* Loading More Indicator */}
+                            {this.isLoadingMore && (
+                                <div className="loading-more">
+                                    <div className="spinner small"></div>
+                                    <p>Loading more files...</p>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Preview */}
+                        {previewFile && (
+                            <Preview
+                                file={previewFile}
+                                content={previewContent}
+                                isLoading={previewLoading}
+                                error={previewError}
+                                onClose={this.closePreview}
+                                onDownload={async (file) => {
+                                    try {
+                                        const fileService = await this.apiClientController.getFileService();
+                                        await fileService.downloadFile(this.props.userId, file.fileId);
+                                    } catch(err) {
+                                        console.error('Error downloading file:', err);
+                                    }
+                                }}
+                            />
+                        )}
+                    </>
                 )}
             </div>
         );

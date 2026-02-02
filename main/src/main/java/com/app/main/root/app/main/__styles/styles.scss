@@ -81,7 +81,7 @@ body {
     flex-direction: column;
     background: var(--bg-white);
     
-    /* Upper Bar (Header) */
+    /* Upper Bar */
     .upper-bar {
         width: 100%;
         height: 64px;
@@ -266,12 +266,24 @@ body {
                 background: var(--primary-hover) !important;
             }
         }
-        
-        .empty-icon {
-            font-size: 48px;
-            color: var(--border-color);
-            font-weight: 600;
-        }
+    }
+}
+
+.file-list-empty {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+    position: absolute;
+    
+    width: 100%;
+    height: 85%;
+
+    .empty-icon {
+        font-size: 35px;
+        color: #969696;
+        font-weight: 600;
     }
 }
 
@@ -1178,6 +1190,12 @@ header {
                             &:disabled {
                                 background: var(--text-secondary);
                                 cursor: not-allowed;
+                            }
+
+                            &.auth {
+                                cursor: not-allowed;
+                                background: #b6cadc !important;
+                                color: var(--primary-color);
                             }
                         }
                         

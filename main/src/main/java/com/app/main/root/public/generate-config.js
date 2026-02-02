@@ -1,13 +1,45 @@
+const path = require('path');
+const fs = require('fs');
+const { encrypt } = require('./encrypt-url');
+
+const envPath = path.join(__dirname, '..', '.env-config', '.env.dev');
+
+console.log('Looking for .env at:', envPath);
+console.log('.env exists?', fs.existsSync(envPath));
+
+require('dotenv').config({ path: envPath });
+
+const encryptionKey = process.env.ENCRYPTION_MASTER_KEY;
+
+if(!encryptionKey) {
+    console.error('ERROR: ENCRYPTION_MASTER_KEY not found in .env');
+    process.exit(1);
+}
+
+const keyBuffer = Buffer.from(encryptionKey, 'base64');
+console.log('Encryption key length:', keyBuffer.length, 'bytes');
+
+if(keyBuffer.length !== 32) {
+    console.error('ERROR: ENCRYPTION_MASTER_KEY must be 32 bytes (256 bits) for AES-256');
+    console.error('Current length:', keyBuffer.length, 'bytes');
+    process.exit(1);
+}
+
+const encryptedApiUrl = encrypt(process.env.API_URL, encryptionKey);
+const encryptedServerUrl = encrypt(process.env.SERVER_URL, encryptionKey);
+const encryptedWebUrl = encrypt(process.env.WEB_URL, encryptionKey);
+
+const config = `
 //
 // Auto-generated from .env - DO NOT EDIT MANUALLY
 // Values are encrypted
 //
 
 window.ENCRYPTED_CONFIG = {
-    apiGateway: 'd3311b015d60c0ab649d4ac6b37f6dae:b050585b060c6b6a3d747ac384def313c9193e3ef80dfde588db34e967fa334b',
-    serverApi: 'af5948c79246322d053dc58bdbbd0123:b0d299bd070e9b7c3ffaf29bf427e032b6e4c0ff349f238626476df6209a2e1f',
-    webUrl: 'b810400debee13df41d39cdca7c98ef3:81a9672f9fb7ce562698863fb06214b6238554042372d41f47a7d51abf7be6be',
-    key: 'JikwwLsQosrGiLqSQyphXqBcH/0fR/HubHjjmPQ3iZA='
+    apiGateway: '${encryptedApiUrl}',
+    serverApi: '${encryptedServerUrl}',
+    webUrl: '${encryptedWebUrl}',
+    key: '${encryptionKey}'
 };
 
 (function() {
@@ -73,3 +105,9 @@ window.ENCRYPTED_CONFIG = {
         }
     })();
 })();
+`;
+
+const outputPath = path.join(__dirname, 'api-url.js');
+
+fs.writeFileSync(outputPath, config.trim());
+console.log('configuration generated at:', outputPath);

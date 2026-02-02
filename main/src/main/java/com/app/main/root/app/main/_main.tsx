@@ -34,7 +34,9 @@ interface AuthState {
     username: string | null;
     message: string;
     error: string;
+    isAuthenticating: boolean;
 }
+
 
 export class Main extends Component<any, State> {
     private socketClientConnect: SocketClientConnect;
@@ -238,6 +240,7 @@ export class Main extends Component<any, State> {
         const hasMessages = authState.message || authState.error;
         const joinScreenClass = hasMessages ? 'screen join-screen expanded' : 'screen join-screen';
         const containerClass = hasMessages ? 'screen join-screen container has-messages' : 'screen join-screen container';
+        const isAuthenticating = authState.isAuthenticating;
 
         const clearMessages = () => this.auth.clearMessages();
 
@@ -344,9 +347,10 @@ export class Main extends Component<any, State> {
                                                                             />
                                                                             <div className="login-input">
                                                                                 <button 
+                                                                                    className={`login-input-btn ${isAuthenticating === true ? 'auth' : 'default'}`}
                                                                                     onClick={() => this.auth.join(sessionContext, false)}
                                                                                 >
-                                                                                    Login
+                                                                                    {isAuthenticating ? 'Logging in...' : 'Login'}
                                                                                 </button>
                                                                                 <button 
                                                                                     type="button"
@@ -387,9 +391,10 @@ export class Main extends Component<any, State> {
                                                                             />
                                                                             <div className='register-input'>
                                                                                 <button 
+                                                                                    className={`register-input-btn ${isAuthenticating === true ? 'auth' : 'default'}`}
                                                                                     onClick={() => this.auth.join(sessionContext, true)}
                                                                                 >
-                                                                                    Create Account
+                                                                                    {isAuthenticating ? 'Creating Account...' : 'Create Account'}
                                                                                 </button>
                                                                             </div>
                                                                         </div>
@@ -411,7 +416,30 @@ export class Main extends Component<any, State> {
                                                 </div>
                                             </>
                                         )}
-                                        {/* ...rest of existing code... */}
+                                        {sessionContext.currentSession === 'PASSWORD_RESET' && (
+                                            <div className="app-password-reset">
+                                                <PasswordResetController
+                                                    apiClientController={this.apiClientController}
+                                                    socketClientConnect={this.socketClientConnect}
+                                                    onBackToLogin={() => this.auth.handleBackToLogin(sessionContext)}
+                                                    token={this.state.passwordResetToken}
+                                                />
+                                            </div>
+                                        )}
+                                        {sessionContext.currentSession === 'MAIN_DASHBOARD' && (
+                                            <>
+                                                <div className="app-dashboard">
+                                                    <div className="dashboard-content">
+                                                        <Dashboard
+                                                            ref={this.setDashboardRef}
+                                                            main={this}
+                                                            apiClientController={this.apiClientController}
+                                                            onLogout={() => this.auth.logout(sessionContext)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
                                     </div>
                                 </>
                             );

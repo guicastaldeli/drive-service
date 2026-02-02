@@ -6,6 +6,7 @@ import { SocketClientConnect } from "./socket-client-connect";
 import { Main } from "./_main";
 import { CacheServiceClient } from "../_cache/cache-service-client";
 import { CachePreloaderService } from "../_cache/cache-preloader-service";
+import InputSanitizer, { TypeMap } from "../utils/input-sanitizer";
 
 export interface State {
     userId: string | null;
@@ -13,6 +14,7 @@ export interface State {
     username: string | null;
     message: string;
     error: string;
+    isAuthenticating: boolean;
 }
 
 export class Auth {
@@ -53,7 +55,8 @@ export class Auth {
             sessionId: null,
             username: null,
             message: '',
-            error: ''
+            error: '',
+            isAuthenticating: false
         }
     }
 
@@ -70,6 +73,12 @@ export class Auth {
     }
 
     public join = async (sessionContext: any, isCreateAccount: boolean = false): Promise<void> => {
+        this.setState({
+            isAuthenticating: true,
+            error: '',
+            message: ''
+        });
+
         try {
             this.clearMessages();
             let email: any;
@@ -82,9 +91,9 @@ export class Auth {
                     return;
                 }
                         
-                email = this.createEmailRef.current.value.trim();
-                username = this.createUsernameRef.current.value.trim();
-                password = this.createPasswordRef.current.value.trim();
+                email = InputSanitizer.sanitizeRefValue(this.createEmailRef, TypeMap.EMAIL);
+                username = InputSanitizer.sanitizeRefValue(this.createUsernameRef, TypeMap.USERNAME);
+                password = InputSanitizer.sanitizeRefValue(this.createPasswordRef, TypeMap.PASSWORD);
 
                 const missingFields = [];
                 if(!email) missingFields.push('Email');
@@ -93,7 +102,10 @@ export class Auth {
                 if(missingFields.length > 0) {
                     const fieldNames = missingFields.join(', ');
                     const text = missingFields.length === 1 ? 'is' : 'are'
-                    this.setState({ error: `${fieldNames} ${text} required` });
+                    this.setState({ 
+                        error: `${fieldNames} ${text} required`,
+                        isAuthenticating: false 
+                    });
                     return;
                 }
 
@@ -102,12 +114,18 @@ export class Auth {
 
                     const usernameExists = await userService.checkUsernameExists(username);
                     if(usernameExists) {
-                        this.setState({ error: 'Username already exists' });
+                        this.setState({ 
+                            error: 'Username already exists',
+                            isAuthenticating: false
+                        });
                         return;
                     }
                     const emailExists = await userService.checkUserExists(email);
                     if(emailExists) {
-                        this.setState({ error: 'Email already registered' });
+                        this.setState({ 
+                            error: 'Email already registered',
+                            isAuthenticating: false 
+                        });
                         return;
                     }
                 } catch(err) {
@@ -120,8 +138,8 @@ export class Auth {
                     return;
                 }
 
-                email = this.loginEmailRef.current.value.trim();
-                password = this.loginPasswordRef.current.value.trim();
+                email = InputSanitizer.sanitizeRefValue(this.loginEmailRef, TypeMap.EMAIL);
+                password = InputSanitizer.sanitizeRefValue(this.loginPasswordRef, TypeMap.PASSWORD);
 
                 const missingFields = [];
                 if(!email) missingFields.push('Email');
@@ -129,7 +147,10 @@ export class Auth {
                 if(missingFields.length > 0) {
                     const fieldNames = missingFields.join(' and ');
                     const text = missingFields.length === 1 ? 'is' : 'are';
-                    this.setState({ error: `${fieldNames} ${text} required` });
+                    this.setState({ 
+                        error: `${fieldNames} ${text} required`,
+                        isAuthenticating: false 
+                    });
                     return;
                 }
             }
@@ -160,7 +181,10 @@ export class Auth {
                             }
                         } catch(err: any) {
                             console.error('Error in existing session flow:', err);
-                            alert('Session error: ' + err.message);
+                            this.setState({ 
+                                error: 'Session error: ' + err.message,
+                                isAuthenticating: false 
+                            });
                         }
                     });
                     return;
@@ -168,10 +192,14 @@ export class Auth {
         
                 await this.doLogin(sessionContext, email, password, isCreateAccount, username);
             } catch(err: any) {
-                this.setState({ error: err.message || 'Login failed!' });
+                this.setState({ 
+                    error: err.message || 'Login failed!', 
+                    isAuthenticating: false 
+                });
             }
         } catch(err) {
             console.error('Join error');
+            this.setState({ isAuthenticating: false });
             return;
         }
     }
@@ -268,6 +296,10 @@ export class Auth {
                         console.log('Successfully logged in and switched to dashboard');
                     } catch(err: any) {
                         console.error('Error in post-login setup:', err);
+                        this.setState({ 
+                            error: err.message,
+                            isAuthenticating: false 
+                        });
                         alert('Login successful but setup failed: ' + err.message);
                     }
                 });
@@ -277,7 +309,10 @@ export class Auth {
             }
         } catch(err: any) {
             console.error(err);
-            this.setState({ error: err.message || 'Login failed!' });
+            this.setState({ 
+                error: err.message,
+                isAuthenticating: false 
+            });
             return;
         }
     }
@@ -290,6 +325,7 @@ export class Auth {
                     
             SessionManager.clearSession();
             sessionContext.setSession('LOGIN');
+            this.setState({ isAuthenticating: false });
                     
             if(sessionContext && sessionContext.clearSession) {
                 await sessionContext.clearSession();
@@ -329,6 +365,7 @@ export class Auth {
         if(sessionContext && sessionContext.setSession) {
             sessionContext.setSession('LOGIN');
         }
+        this.setState({ isAuthenticating: false });
         setTimeout(() => {
             this.main.initRenderer();
         }, 100);

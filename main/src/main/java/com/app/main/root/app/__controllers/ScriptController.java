@@ -19,9 +19,9 @@ public class ScriptController {
         this.server = server;
     }
 
-    /*
-    * Api Url
-    */
+    /**
+     * Api Url
+     */
     @GetMapping(value = "/public/api-url.js", produces = "application/javascript")
     @ResponseBody
     public ResponseEntity<String> getApiUrl() {
@@ -38,9 +38,9 @@ public class ScriptController {
         }
     }
 
-    /*
-    * Time Updater 
-    */
+    /**
+     * Time Updater
+     */
     @GetMapping(value = "/public/time-updater.js", produces = "application/javascript")
     @ResponseBody
     public ResponseEntity<String> getTimeUpdater() {
@@ -57,9 +57,85 @@ public class ScriptController {
         }
     }
 
-    /*
-    * Server Interface Styles 
-    */
+    /**
+     * Check Client Status
+     */
+    @GetMapping(value = "/public/check-client-status.js", produces = "application/javascript")
+    @ResponseBody
+    public ResponseEntity<String> checkClientStatus() {
+        try {
+            String content = loadFile("com/app/main/root/public/check-client-status.js");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf("application/javascript"))
+                    .body(content);
+        } catch(Exception err) {
+            System.out.println(err);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Failed to load");
+        }
+    }
+
+    /**
+     * Update Time Status
+     */
+    @GetMapping(value = "/public/update-time-status.js", produces = "application/javascript")
+    @ResponseBody
+    public ResponseEntity<String> getUpdateTimeStatus() {
+        try {
+            String content = loadFile("com/app/main/root/public/update-time-status.js");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf("application/javascript"))
+                    .body(content);
+        } catch(Exception err) {
+            System.out.println(err);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Failed to load");
+        }
+    }
+
+    /**
+     * Update Uptime
+     */
+    @GetMapping(value = "/public/update-uptime.js", produces = "application/javascript")
+    @ResponseBody
+    public ResponseEntity<String> getUpdateUptime() {
+        try {
+            String content = loadFile("com/app/main/root/public/update-uptime.js");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf("application/javascript"))
+                    .body(content);
+        } catch(Exception err) {
+            System.out.println(err);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Failed to load");
+        }
+    }
+
+    /**
+     * Update Uptime
+     */
+    @GetMapping(value = "/public/update-connections.js", produces = "application/javascript")
+    @ResponseBody
+    public ResponseEntity<String> getUpdateConnections() {
+        try {
+            String content = loadFile("com/app/main/root/public/update-connections.js");
+            return ResponseEntity.ok()
+                    .contentType(MediaType.valueOf("application/javascript"))
+                    .body(content);
+        } catch(Exception err) {
+            System.out.println(err);
+            return ResponseEntity.ok()
+                    .contentType(MediaType.TEXT_PLAIN)
+                    .body("Failed to load");
+        }
+    }
+
+    /**
+     * Server Interface Styles 
+     */
     @GetMapping(value = "/styles/interface.css", produces = "text/css")
     @ResponseBody
     public ResponseEntity<String> getServerInterfaceStyles() {
