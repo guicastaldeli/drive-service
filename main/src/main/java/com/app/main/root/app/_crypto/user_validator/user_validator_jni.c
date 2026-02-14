@@ -1,3 +1,4 @@
+﻿#include "jni_macros.h"
 #include "user_validator.h"
 #include <jni.h>
 #include <stdio.h>
