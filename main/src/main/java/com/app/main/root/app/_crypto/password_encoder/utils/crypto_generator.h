@@ -1,7 +1,14 @@
-#pragma once
-#include "../hash_generator/hash_generator.h"
-#include <stdbool.h>
+#ifndef CRYPTO_GENERATOR_H
+#define CRYPTO_GENERATOR_H
 
-char* generateSecurePassword(int length);
-bool generateRandomBytes(ByteArray* buffer);
-bool generateRandomBytesBuffer(unsigned char* buffer, size_t length);
+#include <string>
+#include <vector>
+
+class CryptoGenerator {
+public:
+    static std::string generateSecurePassword(int length = 12);
+    static bool generateRandomBytes(std::vector<unsigned char>& buffer);
+    static bool generateRandomBytes(unsigned char* buffer, size_t length);
+};
+
+#endif
