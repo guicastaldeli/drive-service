@@ -35,5 +35,5 @@ window.NEXT_PUBLIC_SERVER_DEF_WS_URL = 'ws://drive-service-server.onrender.com/m
 window.NEXT_PUBLIC_SERVER_DIR_WS_URL = 'ws://drive-service-server.onrender.com/main/direct';
 
 // API URLs
-window.API_URL = 'https://messages-api-p71a.onrender.com';
-window.NEXT_PUBLIC_API_URL = 'https://messages-api-p71a.onrender.com';
+window.API_URL = 'https://drive-service-api.onrender.com';
+window.NEXT_PUBLIC_API_URL = 'https://drive-service-api.onrender.com';
