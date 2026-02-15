@@ -20,6 +20,7 @@ RUN apt-get update && \
 
 # Create build directories
 RUN mkdir -p \
+    main/src/main/java/com/app/main/root/app/_crypto/message_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/file_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/password_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/user_validator/.build \
@@ -258,6 +259,7 @@ compile_native() {\n\
 echo "🚀 STARTING COMPILATION OF ALL MODULES 🚀"\n\
 echo ""\n\
 \n\
+compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/message_encoder" "/usr/local/lib/libmessage_encoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/file_encoder" "/usr/local/lib/libfileencoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder" "/usr/local/lib/libpasswordencoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/user_validator" "/usr/local/lib/libuser_validator.so"\n\
@@ -268,6 +270,18 @@ echo "🎉 ALL MODULES COMPILED SUCCESSFULLY 🎉"\n\
 
 # Run the compilation
 RUN /usr/local/bin/compile_native.sh
+
+# VERIFICATION: Check if the base64 fix was applied
+RUN echo "🔍 VERIFYING BASE64 FIX..." && \
+    if grep -q "for(j = 0; j < i; j++)" /app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder/utils/base64_manager.c; then \
+        echo "✅ BASE64 FIX VERIFIED - Using 'j < i' (correct)"; \
+    elif grep -q "for(j = 0; j < 4; j++)" /app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder/utils/base64_manager.c; then \
+        echo "❌ BASE64 BUG DETECTED - Still using 'j < 4' (WRONG!)"; \
+        echo "The base64_manager.c file has NOT been updated with the fix!"; \
+        exit 1; \
+    else \
+        echo "⚠️  Could not verify base64 fix - file structure may have changed"; \
+    fi
 
 # Build Spring Boot application
 RUN cd main && mvn clean package -DskipTests && \
@@ -303,11 +317,13 @@ RUN mkdir -p \
     chmod -R 777 /app/keys
 
 # Copy native libraries to BOTH locations
+COPY --from=build /usr/local/lib/libmessage_encoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libfileencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libuser_validator.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libfile_compressor.so /usr/local/lib/
 
+COPY --from=build /usr/local/lib/libmessage_encoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libfileencoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libuser_validator.so /app/lib/native/linux/
