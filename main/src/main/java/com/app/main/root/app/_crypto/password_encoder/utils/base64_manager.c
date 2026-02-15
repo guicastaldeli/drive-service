@@ -127,10 +127,10 @@ ByteArray decode(const char* encoded_string) {
         for(j = i; j < 4; j++) {
             char_array_4[j] = 0;
         }
-        for(j = 0; j < 4; j++) {
+        for(j = 0; j < i; j++) {
             const char* pos = strchr(base64_chars, char_array_4[j]);
             if(!pos) {
-                fprintf(stderr, "decode: Invalid base64 character in padding: %c (0x%02x)\n", 
+                fprintf(stderr, "decode: Invalid base64 character in final block: %c (0x%02x)\n", 
                         char_array_4[j], char_array_4[j]);
                 free(buffer);
                 free(standard_encoded);
