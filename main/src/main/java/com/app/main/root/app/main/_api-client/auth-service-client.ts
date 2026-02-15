@@ -62,7 +62,7 @@ export class AuthServiceClient {
         });
 
         const data = await res.json();
-        if(!res.ok) throw new Error(data.detail || data.message || 'Login failed!');
+        if(!res.ok) throw new Error(data.detail || data.message || 'Login failed');
         if(data.userId && data.username) {
             SessionManager.saveSession(
                 {

@@ -193,7 +193,7 @@ export class Auth {
                 await this.doLogin(sessionContext, email, password, isCreateAccount, username);
             } catch(err: any) {
                 this.setState({ 
-                    error: err.message || 'Login failed!', 
+                    error: err.message || 'Login failed!!', 
                     isAuthenticating: false 
                 });
             }
