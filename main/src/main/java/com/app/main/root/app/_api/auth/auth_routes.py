@@ -3,6 +3,7 @@ from typing import Dict, Any, Optional
 from auth.auth_service import AuthService
 from user.user_service import UserService
 import json
+import urllib.parse
 
 class AuthRoutes:
     def __init__(self, authService: AuthService, userService: UserService):
@@ -15,22 +16,46 @@ class AuthRoutes:
         ## Extract Cookies
         def extractCookies(req: Request) -> Dict[str, str]:
             cookies = {}
-            for k, v in req.cookies.items():
-                cookies[k] = v
+            
+            if req.cookies:
+                cookies.update(req.cookies)
+                print(f"[Routes] Extracted {len(cookies)} cookies from req.cookies")
+            
+            cookie_header = req.headers.get('cookie') or req.headers.get('Cookie')
+            if cookie_header and not cookies:
+                for item in cookie_header.split(';'):
+                    item = item.strip()
+                    if '=' in item:
+                        key, value = item.split('=', 1)
+                        cookies[key.strip()] = value.strip()
+                print(f"[Routes] Extracted {len(cookies)} cookies from Cookie header")
+            
+            if not cookies:
+                print(f"[Routes] WARNING: No cookies found!")
+                print(f"[Routes] Headers: {dict(req.headers)}")
+            
             return cookies
         
         ## Set Cookies
         def setCookies(res: Response, cookies: Dict[str, Any]):
-            if(cookies):
-                for k, v in cookies.items():
-                    res.set_cookie(
-                        key=k,
-                        value=v,
-                        httponly=k in ["SESSION_ID", "auth_token"],
-                        secure=False,
-                        samesite="lax",
-                        max_age=7 * 24 * 60 * 60 if k == "SESSION_ID" else None
-                    )
+            if not cookies:
+                return
+            
+            print(f"[Auth] Setting cookies in browser: {list(cookies.keys())}")
+            
+            for k, v in cookies.items():
+                encoded_value = urllib.parse.quote(str(v), safe='')
+                
+                res.set_cookie(
+                    key=k,
+                    value=encoded_value,
+                    httponly=k in ["JSESSIONID", "SESSION_ID", "auth_token"],
+                    secure=True,
+                    samesite="none",
+                    path="/",
+                    max_age=7 * 24 * 60 * 60 if k in ["JSESSIONID", "REMEMBER_USER"] else None
+                )
+                print(f"[Auth] Set cookie {k} with samesite=none, secure=true")
         
         ## Register
         @self.router.post("/register")
@@ -188,6 +213,3 @@ class AuthRoutes:
                     return { "authenticated": False }
             except Exception as err:
                 return { "authenticated": False }
-                
-    
-            
