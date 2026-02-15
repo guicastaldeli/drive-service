@@ -20,7 +20,6 @@ RUN apt-get update && \
 
 # Create build directories
 RUN mkdir -p \
-    main/src/main/java/com/app/main/root/app/_crypto/message_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/file_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/password_encoder/.build \
     main/src/main/java/com/app/main/root/app/_crypto/user_validator/.build \
@@ -259,7 +258,6 @@ compile_native() {\n\
 echo "🚀 STARTING COMPILATION OF ALL MODULES 🚀"\n\
 echo ""\n\
 \n\
-compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/message_encoder" "/usr/local/lib/libmessage_encoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/file_encoder" "/usr/local/lib/libfileencoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder" "/usr/local/lib/libpasswordencoder.so"\n\
 compile_native "/app/main/src/main/java/com/app/main/root/app/_crypto/user_validator" "/usr/local/lib/libuser_validator.so"\n\
@@ -301,13 +299,11 @@ RUN mkdir -p \
     chmod -R 777 /app/keys
 
 # Copy native libraries to BOTH locations
-COPY --from=build /usr/local/lib/libmessage_encoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libfileencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libuser_validator.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libfile_compressor.so /usr/local/lib/
 
-COPY --from=build /usr/local/lib/libmessage_encoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libfileencoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libuser_validator.so /app/lib/native/linux/
