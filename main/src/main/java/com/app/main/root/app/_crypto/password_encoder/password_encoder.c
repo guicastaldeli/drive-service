@@ -96,13 +96,44 @@ bool matchesPassword(PasswordEncoder* encoder, const char* password, const char*
     
     const char* storedHashStr = thirdDelim + 1;
     
+    // CRITICAL FIX: Check if decode returns valid data
     ByteArray salt = decode(saltStr);
+    if(!salt.data || salt.size == 0) {
+        fprintf(stderr, "Failed to decode salt\n");
+        free(saltStr);
+        freeByteArray(&salt);
+        return false;
+    }
+    
     ByteArray storedHash = decode(storedHashStr);
+    if(!storedHash.data || storedHash.size == 0) {
+        fprintf(stderr, "Failed to decode stored hash\n");
+        free(saltStr);
+        freeByteArray(&salt);
+        freeByteArray(&storedHash);
+        return false;
+    }
     
     free(saltStr);
     
     ByteArray peppered = applyPepper((PepperManager*)encoder->pepperManager, password);
+    if(!peppered.data || peppered.size == 0) {
+        fprintf(stderr, "Failed to apply pepper\n");
+        freeByteArray(&salt);
+        freeByteArray(&storedHash);
+        freeByteArray(&peppered);
+        return false;
+    }
+    
     ByteArray newHash = generateSecureHash(&peppered, &salt);
+    if(!newHash.data || newHash.size == 0) {
+        fprintf(stderr, "Failed to generate hash\n");
+        freeByteArray(&salt);
+        freeByteArray(&storedHash);
+        freeByteArray(&peppered);
+        freeByteArray(&newHash);
+        return false;
+    }
     
     bool result = constantTimeEquals(&newHash, &storedHash);
     

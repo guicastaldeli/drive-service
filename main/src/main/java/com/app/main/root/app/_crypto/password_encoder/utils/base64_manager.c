@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdio.h>
 
 static const char* base64_chars = 
     "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -13,6 +14,10 @@ static bool is_base64(unsigned char c) {
 }
 
 char* encode(const ByteArray* data) {
+    if(!data || !data->data || data->size == 0) {
+        return NULL;
+    }
+    
     size_t dataLen = data->size;
     const unsigned char* bytes_to_encode = data->data;
     
@@ -59,8 +64,16 @@ ByteArray decode(const char* encoded_string) {
     ret.data = NULL;
     ret.size = 0;
     
+    if(!encoded_string || strlen(encoded_string) == 0) {
+        fprintf(stderr, "decode: NULL or empty input string\n");
+        return ret;
+    }
+    
     char* standard_encoded = strdup(encoded_string);
-    if(!standard_encoded) return ret;
+    if(!standard_encoded) {
+        fprintf(stderr, "decode: Failed to allocate memory for standard_encoded\n");
+        return ret;
+    }
     
     for(size_t i = 0; standard_encoded[i] != '\0'; i++) {
         if(standard_encoded[i] == '-') standard_encoded[i] = '+';
@@ -76,6 +89,7 @@ ByteArray decode(const char* encoded_string) {
     size_t max_size = (in_len * 3) / 4 + 1;
     unsigned char* buffer = (unsigned char*)malloc(max_size);
     if(!buffer) {
+        fprintf(stderr, "decode: Failed to allocate buffer\n");
         free(standard_encoded);
         return ret;
     }
@@ -87,7 +101,15 @@ ByteArray decode(const char* encoded_string) {
         
         if(i == 4) {
             for(i = 0; i < 4; i++) {
-                char_array_4[i] = (unsigned char)(strchr(base64_chars, char_array_4[i]) - base64_chars);
+                const char* pos = strchr(base64_chars, char_array_4[i]);
+                if(!pos) {
+                    fprintf(stderr, "decode: Invalid base64 character: %c (0x%02x)\n", 
+                            char_array_4[i], char_array_4[i]);
+                    free(buffer);
+                    free(standard_encoded);
+                    return ret;
+                }
+                char_array_4[i] = (unsigned char)(pos - base64_chars);
             }
             
             char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
@@ -106,7 +128,15 @@ ByteArray decode(const char* encoded_string) {
             char_array_4[j] = 0;
         }
         for(j = 0; j < 4; j++) {
-            char_array_4[j] = (unsigned char)(strchr(base64_chars, char_array_4[j]) - base64_chars);
+            const char* pos = strchr(base64_chars, char_array_4[j]);
+            if(!pos) {
+                fprintf(stderr, "decode: Invalid base64 character in padding: %c (0x%02x)\n", 
+                        char_array_4[j], char_array_4[j]);
+                free(buffer);
+                free(standard_encoded);
+                return ret;
+            }
+            char_array_4[j] = (unsigned char)(pos - base64_chars);
         }
         
         char_array_3[0] = (char_array_4[0] << 2) + ((char_array_4[1] & 0x30) >> 4);
