@@ -1,5 +1,6 @@
 package com.app.main.root.app.main.email_service;
 
+import com.app.main.root.EnvConfig;
 import com.sendgrid.*;
 import com.sendgrid.helpers.mail.Mail;
 import com.sendgrid.helpers.mail.objects.Content;
@@ -11,7 +12,6 @@ import java.io.IOException;
 
 @Component
 public class SendGridWebService {
-    
     @Value("${email.from:app.driveservice.noreply@gmail.com}")
     private String fromEmail;
     
@@ -26,7 +26,6 @@ public class SendGridWebService {
             System.out.println("From email: " + fromEmail);
         } else {
             System.err.println("CRITICAL: SENDGRID_API_KEY not found in environment");
-            System.err.println(" Please add it in Render dashboard: Environment → SENDGRID_API_KEY");
         }
     }
     

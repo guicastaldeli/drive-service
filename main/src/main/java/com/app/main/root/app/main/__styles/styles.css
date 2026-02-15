@@ -78,7 +78,6 @@ body {
   flex-direction: column;
   background: var(--bg-white);
   /* Upper Bar */
-  /* File List Container */
 }
 .screen.main-dashboard .upper-bar {
   width: 100%;
@@ -104,7 +103,10 @@ body {
   transition: all 0.05s;
 }
 .screen.main-dashboard .upper-bar #logout-actn:hover {
-  background: var(--hover-bg) !important;
+  background: #f0f0f0 !important;
+}
+.screen.main-dashboard {
+  /* File List Container */
 }
 .screen.main-dashboard #file-list {
   flex: 1;
@@ -383,8 +385,6 @@ body {
   flex: 1;
   overflow-y: auto;
   padding: 8px 24px 24px;
-  /* Grid View */
-  /* List View */
 }
 .file-list::-webkit-scrollbar {
   width: 8px;
@@ -395,6 +395,9 @@ body {
 }
 .file-list::-webkit-scrollbar-track {
   background: var(--bg-white);
+}
+.file-list {
+  /* Grid View */
 }
 .file-list.grid {
   display: grid;
@@ -446,6 +449,9 @@ body {
 }
 .file-list.grid .file-item .file-item-actions button {
   flex: 1;
+}
+.file-list {
+  /* List View */
 }
 .file-list.list {
   display: flex;
@@ -721,8 +727,7 @@ body {
   right: 0 !important;
   bottom: 0 !important;
   background: rgba(0, 0, 0, 0.7) !important;
-  -webkit-backdrop-filter: blur(5px) !important;
-          backdrop-filter: blur(5px) !important;
+  backdrop-filter: blur(5px) !important;
 }
 
 .preview-modal-content {
@@ -964,8 +969,7 @@ header {
   border-radius: 0.3rem;
   width: 100%;
   height: 100%;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   background-color: rgba(239, 246, 255, 0.56);
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
 }
@@ -978,8 +982,7 @@ header {
 }
 .screen.join-screen .form .tab-container .tab-headers {
   display: flex;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   background-color: rgba(239, 246, 255, 0.702);
 }
 .screen.join-screen .form .tab-container .tab-headers .tab-header {
@@ -1059,8 +1062,7 @@ header {
   width: 100%;
   padding: 10px 10px;
   margin-bottom: 16px;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   background-color: rgba(239, 246, 255, 0.822);
   border: 1px solid var(--border-color);
   border-radius: 0.2rem;
@@ -1277,6 +1279,13 @@ header {
   cursor: pointer;
 }
 
+input[type=file] {
+  cursor: default !important;
+}
+input[type=file]:hover {
+  cursor: default !important;
+}
+
 .renderer {
   width: 100%;
   height: 100%;
@@ -1344,8 +1353,7 @@ canvas {
   width: 100%;
   padding: 10px 10px;
   margin-bottom: 10px;
-  -webkit-backdrop-filter: blur(5px);
-          backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
   background-color: rgba(245, 248, 251, 0.875);
   border: 1px solid var(--border-color);
   border-radius: 0.2rem;

@@ -54,6 +54,8 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
         return result;
     }
     
+    memset(memoryBuffer, 0, MEMORY_SIZE);
+    
     size_t blockSize = EVP_MAX_MD_SIZE;
     unsigned char* block = (unsigned char*)malloc(blockSize);
     if(!block) {
@@ -67,7 +69,7 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     if(!ctx) {
         free(memoryBuffer);
         free(block);
-        return *input;
+        return result;
     }
     
     size_t combinedSize = input->size + salt->size;
@@ -76,7 +78,7 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
-        return *input;
+        return result;
     }
     
     memcpy(combined, input->data, input->size);
@@ -90,28 +92,33 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
     
     const int ITERATIONS = 1000;
     for(int i = 0; i < ITERATIONS; i++) {
-        size_t pos = i % MEMORY_SIZE;
-        size_t availableSpace = MEMORY_SIZE - pos;
-        size_t copyLen = min_size(blockLen, availableSpace);
-        memcpy(memoryBuffer + pos, block, copyLen);
+        size_t writePos = (i * blockLen) % MEMORY_SIZE;
+        
+        size_t remainingSpace = MEMORY_SIZE - writePos;
+        size_t bytesToWrite = blockLen < remainingSpace ? blockLen : remainingSpace;
+        memcpy(memoryBuffer + writePos, block, bytesToWrite);
+        
+        if(bytesToWrite < blockLen) {
+            memcpy(memoryBuffer, block + bytesToWrite, blockLen - bytesToWrite);
+        }
         
         if(EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
-            return *input;
+            return result;
         }
         if(EVP_DigestUpdate(ctx, block, blockLen) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
-            return *input;
+            return result;
         }
         if(EVP_DigestFinal_ex(ctx, block, &blockLen) != 1) {
             EVP_MD_CTX_free(ctx);
             free(memoryBuffer);
             free(block);
-            return *input;
+            return result;
         }
     }
     
@@ -121,7 +128,7 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
-        return *input;
+        return result;
     }
     
     if(EVP_DigestInit_ex(ctx, EVP_sha512(), NULL) != 1) {
@@ -129,21 +136,27 @@ ByteArray applyMemoryHardFunction(const ByteArray* input, const ByteArray* salt)
         free(memoryBuffer);
         free(block);
         free(result.data);
-        return *input;
+        result.data = NULL;
+        result.size = 0;
+        return result;
     }
     if(EVP_DigestUpdate(ctx, memoryBuffer, MEMORY_SIZE) != 1) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
         free(result.data);
-        return *input;
+        result.data = NULL;
+        result.size = 0;
+        return result;
     }
     if(EVP_DigestFinal_ex(ctx, result.data, &blockLen) != 1) {
         EVP_MD_CTX_free(ctx);
         free(memoryBuffer);
         free(block);
         free(result.data);
-        return *input;
+        result.data = NULL;
+        result.size = 0;
+        return result;
     }
     
     result.size = blockLen;

@@ -50,19 +50,28 @@ void destroyPepperManager(PepperManager* manager) {
 }
 
 void loadOrGeneratePepper(PepperManager* manager) {
+    char cwd[1024];
+    if(getcwd(cwd, sizeof(cwd)) != NULL) {
+        fprintf(stderr, "DEBUG: Current working directory: %s\n", cwd);
+    }
+    
     FILE* file = fopen(manager->filePath, "rb");
-   if(file) {
+    if(file) {
         size_t bytesRead = fread(manager->pepper.data, 1, manager->pepper.size, file);
         fclose(file);
         
-       if(bytesRead != (size_t)manager->pepper.size) {
-            fprintf(stderr, "Warning: Pepper file corrupted, generating new one\n");
+        if(bytesRead != (size_t)manager->pepper.size) {
             generateNewPepper(manager, manager->filePath);
         } else {
-            printf("Loading pepper from file\n");
+            for(int i = 0; i < 16 && i < manager->pepper.size; i++) {
+                fprintf(stderr, "%02x", manager->pepper.data[i]);
+            }
         }
     } else {
         generateNewPepper(manager, manager->filePath);
+        for(int i = 0; i < 16 && i < manager->pepper.size; i++) {
+            fprintf(stderr, "%02x", manager->pepper.data[i]);
+        }
     }
 }
 

@@ -106,7 +106,7 @@ body {
             transition: all 0.05s;
             
             &:hover {
-                background: var(--hover-bg) !important;
+                background: #f0f0f0 !important;
             }
         }
     }
@@ -1347,6 +1347,13 @@ header {
                 cursor: pointer;
             }
         }
+    }
+}
+
+input[type="file"] {
+    cursor: default !important;
+    &:hover {
+        cursor: default !important;
     }
 }
 

@@ -446,7 +446,25 @@ public class UserService {
                     String username = rs.getString("username");
                     String email = rs.getString("email");
                     
-                    if(passwordEncoder.matches(password, storedHash)) {
+                    boolean passwordMatches = false;
+                    try {
+                        passwordMatches = passwordEncoder.matches(password, storedHash);
+                    } catch(Exception e) {
+                        System.err.println("ERROR: Corrupt password hash detected for user: " + email);
+                        System.err.println("Error details: " + e.getMessage());
+                        e.printStackTrace();
+                        
+                        System.err.println("Stored hash (first 50 chars): " + 
+                            (storedHash != null && storedHash.length() > 50 ? 
+                                storedHash.substring(0, 50) + "..." : storedHash));
+                        
+                        throw new SecurityException(
+                            "Password verification failed due to data corruption. " +
+                            "Please contact support or reset your password."
+                        );
+                    }
+                    
+                    if(passwordMatches) {
                         updateUserSession(conn, userId, sessionId);
 
                         Map<String, Object> res = new HashMap<>();
