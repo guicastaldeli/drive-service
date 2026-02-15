@@ -10,8 +10,8 @@ window.ENCRYPTION_MASTER_KEY = 'x63uuphvQo1qCK4Y3kh2f77iRVwnUtXckI+eeUJgGng=';
 window.RESET_TOKEN = 'F5h+fKbh04s/+nvJKOM1Av7b8JQ3KmBHCUjpWzoE1RE=';
 
 // Web URLs
-window.WEB_URL = 'https://messages-psi-teal.vercel.app';
-window.NEXT_PUBLIC_WEB_URL = 'https://messages-psi-teal.vercel.app';
+window.WEB_URL = 'https://drive-service-orcin.vercel.app';
+window.NEXT_PUBLIC_WEB_URL = 'https://drive-service-orcin.vercel.app';
 
 // Server Configuration
 window.MAIN_SERVER_ID = 'xFGVJr+VaQSt9RHIBpNlazxAf';
