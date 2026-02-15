@@ -1,26 +1,18 @@
-#ifndef PEPPER_MANAGER_H
-#define PEPPER_MANAGER_H
+#pragma once
+#include "../hash_generator/hash_generator.h"
+#include <stdbool.h>
 
-#include <vector>
-#include <string>
+typedef struct {
+    ByteArray pepper;
+    char* filePath;
+} PepperManager;
 
-class PepperManager {
-private:
-    std::vector<unsigned char> pepper;
-    static const int PEPPER_LENGTH = 32;
-    std::string filePath;
+#define PEPPER_LENGTH 32
 
-public:
-    PepperManager();
-    PepperManager(const std::string& path);
-    ~PepperManager();
-    
-    void loadOrGeneratePepper();
-    std::vector<unsigned char> getPepper() const;
-    std::vector<unsigned char> applyPepper(const std::string& password) const;
-    
-private:
-    void generateNewPepper(const std::string& fileName);
-};
+PepperManager* createPepperManager();
+PepperManager* createPepperManagerWithPath(const char* path);
+void destroyPepperManager(PepperManager* manager);
 
-#endif
+void loadOrGeneratePepper(PepperManager* manager);
+ByteArray getPepper(const PepperManager* manager);
+ByteArray applyPepper(const PepperManager* manager, const char* password);

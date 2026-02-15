@@ -1,14 +1,13 @@
-﻿#include "jni_macros.h"
 #include <jni.h>
 #include <stdlib.h>
 #include "password_encoder.h"
 
-JNI_EXPORT JNIEXPORT jlong JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_createNativeObject(JNIEnv *env, jobject obj) {
+__declspec(dllexport) JNIEXPORT jlong JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_createNativeObject(JNIEnv *env, jobject obj) {
     PasswordEncoder* encoder = createPasswordEncoder();
     return (jlong)encoder;
 }
 
-JNI_EXPORT JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_destroyNativeObject(
+__declspec(dllexport) JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_destroyNativeObject(
     JNIEnv *env, 
     jobject obj,
     jlong nativePtr
@@ -19,7 +18,7 @@ JNI_EXPORT JNIEXPORT void JNICALL Java_com_app_main_root_app__1crypto_password_1
     }
 }
 
-JNI_EXPORT JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_encodeNative(
+__declspec(dllexport) JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_encodeNative(
     JNIEnv *env, 
     jobject obj,
     jlong nativePtr,
@@ -43,7 +42,7 @@ JNI_EXPORT JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_passwor
     return jresult;
 }
 
-JNI_EXPORT JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_matchesNative(
+__declspec(dllexport) JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_matchesNative(
     JNIEnv *env, 
     jobject obj,
     jlong nativePtr,
@@ -72,7 +71,7 @@ JNI_EXPORT JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_passwo
     return result ? JNI_TRUE : JNI_FALSE;
 }
 
-JNI_EXPORT JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_isPasswordStrongNative(
+__declspec(dllexport) JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_isPasswordStrongNative(
     JNIEnv *env, 
     jobject obj,
     jlong nativePtr,
@@ -92,7 +91,7 @@ JNI_EXPORT JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_passwo
     return result ? JNI_TRUE : JNI_FALSE;
 }
 
-JNI_EXPORT JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_generateSecurePasswordNative(
+__declspec(dllexport) JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_password_1encoder_PasswordEncoderWrapper_generateSecurePasswordNative(
     JNIEnv *env, 
     jobject obj,
     jlong nativePtr,

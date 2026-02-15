@@ -1,50 +1,36 @@
-#ifndef USER_VALIDATOR_H
-#define USER_VALIDATOR_H
+#pragma once
+#include <stdbool.h>
 
-#include "email/email_validator.h"
-#include "username/username_validator.h"
-#include "password/password_validator.h"
-#include "rate_limiter/rate_limiter.h"
-#include "input_sanitizer/input_sanitizer.h"
-#include <string>
+typedef struct UserValidator UserValidator;
 
-class UserValidator {
-private:
-    EmailValidator emailValidator;
-    UsernameValidator usernameValidator;
-    PasswordValidator passwordValidator;
-    RateLimiter rateLimiter;
+UserValidator* userValidatorCreate(void);
+void userValidatorDestroy(UserValidator* validator);
 
-public:
-    UserValidator();
-    ~UserValidator();
+bool userValidatorValidateRegistration(
+    UserValidator* validator,
+    const char* username,
+    const char* email,
+    const char* password,
+    const char* ipAddress
+);
 
-    bool validateRegistration(
-        const std::string& username,
-        const std::string& email,
-        const std::string& password,
-        const std::string& ipAddress
-    );
-    
-    bool validateLogin(
-        const std::string& email,
-        const std::string& password,
-        const std::string& ipAddress
-    );
+bool userValidatorValidateLogin(
+    UserValidator* validator,
+    const char* email,
+    const char* password,
+    const char* ipAddress
+);
 
-    bool validateUsername(const std::string& username);
-    bool validateEmail(const std::string& email);
-    bool validatePassword(const std::string& password);
+bool userValidatorValidateUsername(UserValidator* validator, const char* username);
+bool userValidatorValidateEmail(UserValidator* validator, const char* email);
+bool userValidatorValidatePassword(UserValidator* validator, const char* password);
 
-    void recordRegistrationAttempt(const std::string& ipAddress);
-    void recordLoginAttempt(const std::string& ipAddress);
-    bool isRegistrationRateLimited(const std::string& ipAddress);
-    bool isLoginRateLimited(const std::string& ipAddress);
-    bool hasSuspiciousActivity(const std::string& ipAddress);
-    void clearRateLimit(const std::string& ipAddress);
-    
-    std::string sanitizeInput(const std::string& input);
-    bool containsSuspiciousPatterns(const std::string& input);
-};
+void userValidatorRecordRegistrationAttempt(UserValidator* validator, const char* ipAddress);
+void userValidatorRecordLoginAttempt(UserValidator* validator, const char* ipAddress);
+bool userValidatorIsRegistrationRateLimited(UserValidator* validator, const char* ipAddress);
+bool userValidatorIsLoginRateLimited(UserValidator* validator, const char* ipAddress);
+bool userValidatorHasSuspiciousActivity(UserValidator* validator, const char* ipAddress);
+void userValidatorClearRateLimit(UserValidator* validator, const char* ipAddress);
 
-#endif
+char* userValidatorSanitizeInput(const char* input);
+bool userValidatorContainsSuspiciousPatterns(const char* input);

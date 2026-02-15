@@ -1,4 +1,3 @@
-﻿#include "jni_macros.h"
 #include <jni.h>
 #include <string.h>
 #include <stdlib.h>

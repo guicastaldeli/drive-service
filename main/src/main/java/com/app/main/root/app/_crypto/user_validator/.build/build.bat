@@ -8,6 +8,8 @@ set JAVA_HOME=C:\Program Files\Java\jdk-22
 set VCPKG_ROOT=C:\Users\casta\OneDrive\Desktop\vscode\messages\main\vcpkg
 set OPENSSL_INCLUDE=%VCPKG_ROOT%\installed\x64-windows\include
 set OPENSSL_LIB=%VCPKG_ROOT%\installed\x64-windows\lib
+set PTHREAD_INCLUDE=%VCPKG_ROOT%\installed\x64-windows\include
+set PTHREAD_LIB=%VCPKG_ROOT%\installed\x64-windows\lib
 
 echo.
 set VS_PATH=C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build
@@ -28,58 +30,86 @@ del user_validator.dll 2>nul
 
 echo.
 echo Compiling with CL.EXE...
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\user_validator.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\user_validator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile user_validator.cpp
+    echo ERROR: Failed to compile user_validator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\user_validator_jni.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\user_validator_jni.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile user_validator_jni.cpp
+    echo ERROR: Failed to compile user_validator_jni.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\email\email_validator.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\email\email_validator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile email_validator.cpp
+    echo ERROR: Failed to compile email_validator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\username\username_validator.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\email\disposable_email_domains.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile username_validator.cpp
+    echo ERROR: Failed to compile disposable_email_domains.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\password\password_validator.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\username\username_validator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile password_validator.cpp
+    echo ERROR: Failed to compile username_validator.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\rate_limiter\rate_limiter.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\username\reserved_username_list.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile rate_limiter.cpp
+    echo ERROR: Failed to compile reserved_username_list.c
     pause
     exit /b 1
 )
 
-cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" ..\input_sanitizer\input_sanitizer.cpp
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\password\password_validator.c
 if %errorlevel% neq 0 (
-    echo ERROR: Failed to compile input_sanitizer.cpp
+    echo ERROR: Failed to compile password_validator.c
+    pause
+    exit /b 1
+)
+
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\password\common_password_list.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile common_password_list.c
+    pause
+    exit /b 1
+)
+
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\rate_limiter\rate_limiter.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile rate_limiter.c
+    pause
+    exit /b 1
+)
+
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\input_sanitizer\input_sanitizer.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile input_sanitizer.c
+    pause
+    exit /b 1
+)
+
+cl /nologo /c /O2 /EHsc /std:c++17 /I"%JAVA_HOME%\include" /I"%JAVA_HOME%\include\win32" /I"%OPENSSL_INCLUDE%" /I"%PTHREAD_INCLUDE%" ..\input_sanitizer\suspicious_pattern_list.c
+if %errorlevel% neq 0 (
+    echo ERROR: Failed to compile suspicious_pattern_list.c
     pause
     exit /b 1
 )
 
 echo.
 echo Linking DLL with link.exe...
-link /nologo /DLL /OUT:user_validator.dll user_validator.obj user_validator_jni.obj email_validator.obj username_validator.obj password_validator.obj rate_limiter.obj input_sanitizer.obj /LIBPATH:"%OPENSSL_LIB%" libssl.lib libcrypto.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
+link /nologo /DLL /OUT:user_validator.dll user_validator.obj user_validator_jni.obj email_validator.obj disposable_email_domains.obj username_validator.obj reserved_username_list.obj password_validator.obj common_password_list.obj rate_limiter.obj input_sanitizer.obj suspicious_pattern_list.obj /LIBPATH:"%OPENSSL_LIB%" /LIBPATH:"%PTHREAD_LIB%" libssl.lib libcrypto.lib pthreadVC3.lib ws2_32.lib gdi32.lib crypt32.lib advapi32.lib
 
 if %errorlevel% neq 0 (
     echo ERROR: Linking failed
@@ -92,15 +122,16 @@ echo Copying required runtime DLLs...
 if exist "%OPENSSL_LIB%\..\bin\libcrypto-3-x64.dll" (
     copy "%OPENSSL_LIB%\..\bin\libcrypto-3-x64.dll" . >nul
     echo Copied libcrypto-3-x64.dll
-) else (
-    echo libcrypto-3-x64.dll not found
 )
 
 if exist "%OPENSSL_LIB%\..\bin\libssl-3-x64.dll" (
     copy "%OPENSSL_LIB%\..\bin\libssl-3-x64.dll" . >nul
     echo Copied libssl-3-x64.dll
-) else (
-    echo libssl-3-x64.dll not found
+)
+
+if exist "%PTHREAD_LIB%\..\bin\pthreadVC3.dll" (
+    copy "%PTHREAD_LIB%\..\bin\pthreadVC3.dll" . >nul
+    echo Copied pthreadVC3.dll
 )
 
 echo.

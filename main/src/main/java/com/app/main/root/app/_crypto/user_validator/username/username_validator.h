@@ -1,24 +1,12 @@
-#ifndef USERNAME_VALIDATOR_H
-#define USERNAME_VALIDATOR_H
+#pragma once
+#include <stdbool.h>
 
-#include <string>
-#include <regex>
-#include <vector>
+typedef struct {
+    bool (*isValidFormat)(const char* username);
+    bool (*isReserved)(const char* username);
+    bool (*hasSuspiciousPatterns)(const char* username);
+    bool (*validate)(const char* username);
+    bool (*meetsLengthRequirements)(const char* username);
+} UsernameValidator;
 
-class UsernameValidator {
-private:
-    static const int MAX_USERNAME_LENGTH = 20;
-    static const int MIN_USERNAME_LENGTH = 5;
-    std::regex usernameRegex;
-
-public:
-    UsernameValidator();
-    
-    bool isValidFormat(const std::string& username);
-    bool isReserved(const std::string& username);
-    bool hasSuspiciousPatterns(const std::string& username);
-    bool validate(const std::string& username);
-    static bool meetsLengthRequirements(const std::string& username);
-};
-
-#endif
+extern UsernameValidator usernameValidator;

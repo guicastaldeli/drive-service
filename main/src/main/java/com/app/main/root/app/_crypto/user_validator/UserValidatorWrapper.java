@@ -15,7 +15,7 @@ public class UserValidatorWrapper {
     private static void loadNativeLibraries() {
         try {
             Path directory = Paths.get(DLL_PATH);
-            if(!Files.exists(directory)) {
+            if (!Files.exists(directory)) {
                 throw new RuntimeException("dll directory does not exist: " + directory.toAbsolutePath());
             }
             System.out.println("Files in dll directory:");
@@ -23,7 +23,7 @@ public class UserValidatorWrapper {
                 Files.list(directory)
                     .filter(path -> path.toString().toLowerCase().endsWith(".dll"))
                     .forEach(path -> System.out.println("  - " + path.getFileName()));
-            } catch(Exception err) {
+            } catch (Exception err) {
                 System.out.println("error directory" + err.getMessage());
             }
 
@@ -35,7 +35,7 @@ public class UserValidatorWrapper {
             
             for(String lib : libraries) {
                 Path libPath = directory.resolve(lib);
-                if(!Files.exists(libPath)) {
+                if (!Files.exists(libPath)) {
                     System.err.println("Missing required DLL: " + libPath.toAbsolutePath());
                     throw new RuntimeException("Required DLL not found: " + lib);
                 }
@@ -46,13 +46,13 @@ public class UserValidatorWrapper {
                 try {
                     System.load(libPath.toAbsolutePath().toString());
                     System.out.println("Successfully loaded: " + lib);
-                } catch(UnsatisfiedLinkError e) {
+                } catch (UnsatisfiedLinkError e) {
                     System.err.println("Failed to load: " + lib);
                     System.err.println("Error: " + e.getMessage());
                     throw e;
                 }
             }
-        } catch(Exception err) {
+        } catch (Exception err) {
             err.printStackTrace();
             throw new RuntimeException("Failed to load native libraries: " + err.getMessage());
         }
@@ -86,9 +86,9 @@ public class UserValidatorWrapper {
     private native boolean isRegistrationRateLimitedNative(long nativePtr, String ipAddress);
     private native boolean isLoginRateLimitedNative(long nativePtr, String ipAddress);
 
-    /**
- * Validate Registration 
- */
+    /*
+    * Validate Registration 
+    */
     public boolean validateRegistration(
         String username,
         String email,
@@ -114,9 +114,9 @@ public class UserValidatorWrapper {
         }
     }
 
-    /**
- * Validate Login 
- */
+    /*
+    * Validate Login 
+    */
     public boolean validateLogin(String email, String password, String ipAddress) {
         if(
             email == null ||
@@ -135,9 +135,9 @@ public class UserValidatorWrapper {
         }
     }
 
-    /**
-     * Record Registration Attempt
-     */
+    /*
+    * Record Registration Attempt 
+    */
     public void recordRegistrationAttempt(String ipAddress) {
         if(ipAddress != null) {
             synchronized(lock) {
@@ -146,9 +146,9 @@ public class UserValidatorWrapper {
         }
     }
 
-    /**
-     * Record Login Attempt
-     */
+    /*
+    * Record Login Attempt 
+    */
     public void recordLoginAttempt(String ipAddress) {
         if(ipAddress != null) {
             synchronized(lock) {
@@ -157,9 +157,9 @@ public class UserValidatorWrapper {
         }
     }
 
-    /**
-     * Registration Rate Limited
-     */
+    /*
+    * Registration Rate Limited 
+    */
     public boolean isRegistrationRateLimited(String ipAddress) {
         if(ipAddress == null) return false;
         synchronized(lock) {
@@ -167,9 +167,9 @@ public class UserValidatorWrapper {
         }
     }
 
-    /**
-     * Login Rate Limited
-     */
+    /*
+    * Login Rate Limited 
+    */
     public boolean isLoginRateLimited(String ipAddress) {
         if(ipAddress == null) return false;
         synchronized(lock) {
