@@ -1,9 +1,29 @@
+#ifndef _WIN32
+#define _POSIX_C_SOURCE 199309L
+#endif
+
 #include "rate_limiter.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
-#include <windows.h>
 #include <time.h>
+
+// Platform-specific includes and types
+#ifdef _WIN32
+    #include <windows.h>
+    typedef CRITICAL_SECTION mutex_t;
+    #define MUTEX_INIT(m) InitializeCriticalSection(&(m))
+    #define MUTEX_LOCK(m) EnterCriticalSection(&(m))
+    #define MUTEX_UNLOCK(m) LeaveCriticalSection(&(m))
+    #define MUTEX_DESTROY(m) DeleteCriticalSection(&(m))
+#else
+    #include <pthread.h>
+    typedef pthread_mutex_t mutex_t;
+    #define MUTEX_INIT(m) pthread_mutex_init(&(m), NULL)
+    #define MUTEX_LOCK(m) pthread_mutex_lock(&(m))
+    #define MUTEX_UNLOCK(m) pthread_mutex_unlock(&(m))
+    #define MUTEX_DESTROY(m) pthread_mutex_destroy(&(m))
+#endif
 
 #define RATE_LIMIT_WINDOW_MS 3600000
 #define MAX_REGISTRATION_ATTEMPTS_PER_HOUR 5
@@ -21,11 +41,17 @@ struct RateLimiter {
     char** ipAddresses;
     size_t ipCount;
     size_t ipCapacity;
-    CRITICAL_SECTION mutex;
+    mutex_t mutex;
 };
 
 static long long getCurrentTimeMs(void) {
+#ifdef _WIN32
     return (long long)time(NULL) * 1000LL;
+#else
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return (long long)ts.tv_sec * 1000LL + (long long)ts.tv_nsec / 1000000LL;
+#endif
 }
 
 static void cleanOldAttempts(AttemptList* list) {
@@ -65,7 +91,7 @@ RateLimiter* rateLimiterCreate(void) {
     memset(limiter->registrationAttempts, 0, sizeof(AttemptList) * limiter->ipCapacity);
     memset(limiter->loginAttempts, 0, sizeof(AttemptList) * limiter->ipCapacity);
     
-    InitializeCriticalSection(&limiter->mutex);
+    MUTEX_INIT(limiter->mutex);
     
     return limiter;
 }
@@ -73,7 +99,7 @@ RateLimiter* rateLimiterCreate(void) {
 void rateLimiterDestroy(RateLimiter* limiter) {
     if(!limiter) return;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i]) free(limiter->ipAddresses[i]);
@@ -85,15 +111,15 @@ void rateLimiterDestroy(RateLimiter* limiter) {
     free(limiter->registrationAttempts);
     free(limiter->loginAttempts);
     
-    LeaveCriticalSection(&limiter->mutex);
-    DeleteCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
+    MUTEX_DESTROY(limiter->mutex);
     free(limiter);
 }
 
 void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
@@ -103,7 +129,7 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
                 size_t newCapacity = list->capacity == 0 ? 10 : list->capacity * 2;
                 long long* newAttempts = realloc(list->attempts, sizeof(long long) * newCapacity);
                 if(!newAttempts) {
-                    LeaveCriticalSection(&limiter->mutex);
+                    MUTEX_UNLOCK(limiter->mutex);
                     return;
                 }
                 list->attempts = newAttempts;
@@ -111,7 +137,7 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
             }
             
             list->attempts[list->count++] = getCurrentTimeMs();
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return;
         }
     }
@@ -123,7 +149,7 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
         AttemptList* newLoginAttempts = realloc(limiter->loginAttempts, sizeof(AttemptList) * newCapacity);
         
         if(!newIpAddresses || !newRegAttempts || !newLoginAttempts) {
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return;
         }
         
@@ -139,7 +165,7 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
     
     limiter->ipAddresses[limiter->ipCount] = malloc(strlen(ipAddress) + 1);
     if(!limiter->ipAddresses[limiter->ipCount]) {
-        LeaveCriticalSection(&limiter->mutex);
+        MUTEX_UNLOCK(limiter->mutex);
         return;
     }
     strcpy(limiter->ipAddresses[limiter->ipCount], ipAddress);
@@ -147,7 +173,7 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
     limiter->registrationAttempts[limiter->ipCount].attempts = malloc(sizeof(long long) * 10);
     if(!limiter->registrationAttempts[limiter->ipCount].attempts) {
         free(limiter->ipAddresses[limiter->ipCount]);
-        LeaveCriticalSection(&limiter->mutex);
+        MUTEX_UNLOCK(limiter->mutex);
         return;
     }
     limiter->registrationAttempts[limiter->ipCount].attempts[0] = getCurrentTimeMs();
@@ -160,13 +186,13 @@ void rateLimiterRecordRegistrationAttempt(RateLimiter* limiter, const char* ipAd
     
     limiter->ipCount++;
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
 }
 
 void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
@@ -176,7 +202,7 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
                 size_t newCapacity = list->capacity == 0 ? 10 : list->capacity * 2;
                 long long* newAttempts = realloc(list->attempts, sizeof(long long) * newCapacity);
                 if(!newAttempts) {
-                    LeaveCriticalSection(&limiter->mutex);
+                    MUTEX_UNLOCK(limiter->mutex);
                     return;
                 }
                 list->attempts = newAttempts;
@@ -184,7 +210,7 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
             }
             
             list->attempts[list->count++] = getCurrentTimeMs();
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return;
         }
     }
@@ -196,7 +222,7 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
         AttemptList* newLoginAttempts = realloc(limiter->loginAttempts, sizeof(AttemptList) * newCapacity);
         
         if(!newIpAddresses || !newRegAttempts || !newLoginAttempts) {
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return;
         }
         
@@ -212,7 +238,7 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
     
     limiter->ipAddresses[limiter->ipCount] = malloc(strlen(ipAddress) + 1);
     if(!limiter->ipAddresses[limiter->ipCount]) {
-        LeaveCriticalSection(&limiter->mutex);
+        MUTEX_UNLOCK(limiter->mutex);
         return;
     }
     strcpy(limiter->ipAddresses[limiter->ipCount], ipAddress);
@@ -220,7 +246,7 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
     limiter->loginAttempts[limiter->ipCount].attempts = malloc(sizeof(long long) * 10);
     if(!limiter->loginAttempts[limiter->ipCount].attempts) {
         free(limiter->ipAddresses[limiter->ipCount]);
-        LeaveCriticalSection(&limiter->mutex);
+        MUTEX_UNLOCK(limiter->mutex);
         return;
     }
     limiter->loginAttempts[limiter->ipCount].attempts[0] = getCurrentTimeMs();
@@ -233,49 +259,49 @@ void rateLimiterRecordLoginAttempt(RateLimiter* limiter, const char* ipAddress) 
     
     limiter->ipCount++;
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
 }
 
 bool rateLimiterIsRegistrationRateLimited(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return false;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
             cleanOldAttempts(&limiter->registrationAttempts[i]);
             bool limited = limiter->registrationAttempts[i].count >= MAX_REGISTRATION_ATTEMPTS_PER_HOUR;
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return limited;
         }
     }
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
     return false;
 }
 
 bool rateLimiterIsLoginRateLimited(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return false;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
             cleanOldAttempts(&limiter->loginAttempts[i]);
             bool limited = limiter->loginAttempts[i].count >= MAX_LOGIN_ATTEMPTS_PER_HOUR;
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return limited;
         }
     }
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
     return false;
 }
 
 bool rateLimiterHasSuspiciousActivity(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return false;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
@@ -283,19 +309,19 @@ bool rateLimiterHasSuspiciousActivity(RateLimiter* limiter, const char* ipAddres
             cleanOldAttempts(&limiter->loginAttempts[i]);
             
             int totalAttempts = limiter->registrationAttempts[i].count + limiter->loginAttempts[i].count;
-            LeaveCriticalSection(&limiter->mutex);
+            MUTEX_UNLOCK(limiter->mutex);
             return totalAttempts > (MAX_REGISTRATION_ATTEMPTS_PER_HOUR + MAX_LOGIN_ATTEMPTS_PER_HOUR);
         }
     }
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
     return false;
 }
 
 void rateLimiterClearRateLimit(RateLimiter* limiter, const char* ipAddress) {
     if(!limiter || !ipAddress) return;
     
-    EnterCriticalSection(&limiter->mutex);
+    MUTEX_LOCK(limiter->mutex);
     
     for(size_t i = 0; i < limiter->ipCount; i++) {
         if(limiter->ipAddresses[i] && strcmp(limiter->ipAddresses[i], ipAddress) == 0) {
@@ -314,5 +340,5 @@ void rateLimiterClearRateLimit(RateLimiter* limiter, const char* ipAddress) {
         }
     }
     
-    LeaveCriticalSection(&limiter->mutex);
+    MUTEX_UNLOCK(limiter->mutex);
 }

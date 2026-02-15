@@ -14,47 +14,89 @@ public class UserValidatorWrapper {
     
     private static void loadNativeLibraries() {
         try {
-            Path directory = Paths.get(DLL_PATH);
-            if (!Files.exists(directory)) {
-                throw new RuntimeException("dll directory does not exist: " + directory.toAbsolutePath());
+            String osName = System.getProperty("os.name").toLowerCase();
+            boolean isWindows = osName.contains("win");
+            boolean isLinux = osName.contains("nix") || osName.contains("nux") || osName.contains("aix");
+            System.out.println("Detected OS: " + osName);
+            
+              if(isWindows) {
+                loadWindowsLibraries();
+            } else if(isLinux) {
+                loadLinuxLibraries();
+            } else {
+                throw new RuntimeException("Unsupported OS: " + osName);
             }
+        } catch(Exception err) {
+            err.printStackTrace();
+            throw new RuntimeException("Failed to load native libraries: " + err.getMessage(), err);
+        }
+    }
+    
+    private static void loadWindowsLibraries() {
+        try {
+            Path directory = Paths.get(DLL_PATH);
+            if(!Files.exists(directory)) {
+                throw new RuntimeException("DLL directory does not exist: " + directory.toAbsolutePath());
+            }
+            
             System.out.println("Files in dll directory:");
             try {
                 Files.list(directory)
                     .filter(path -> path.toString().toLowerCase().endsWith(".dll"))
                     .forEach(path -> System.out.println("  - " + path.getFileName()));
-            } catch (Exception err) {
-                System.out.println("error directory" + err.getMessage());
+            } catch(Exception err) {
+                System.out.println("Error listing directory: " + err.getMessage());
             }
 
             String[] libraries = {
                 "libcrypto-3-x64.dll",
-                "libssl-3-x64.dll", 
+                "libssl-3-x64.dll",
                 "user_validator.dll"
             };
             
             for(String lib : libraries) {
                 Path libPath = directory.resolve(lib);
-                if (!Files.exists(libPath)) {
+                if(!Files.exists(libPath)) {
                     System.err.println("Missing required DLL: " + libPath.toAbsolutePath());
                     throw new RuntimeException("Required DLL not found: " + lib);
                 }
                 System.out.println("Found: " + libPath.toAbsolutePath());
             }
+            
             for(String lib : libraries) {
                 Path libPath = directory.resolve(lib);
                 try {
                     System.load(libPath.toAbsolutePath().toString());
                     System.out.println("Successfully loaded: " + lib);
-                } catch (UnsatisfiedLinkError e) {
+                } catch(UnsatisfiedLinkError e) {
                     System.err.println("Failed to load: " + lib);
                     System.err.println("Error: " + e.getMessage());
                     throw e;
                 }
             }
-        } catch (Exception err) {
+        } catch(Exception err) {
             err.printStackTrace();
-            throw new RuntimeException("Failed to load native libraries: " + err.getMessage());
+            throw new RuntimeException("Windows library load failed: " + err.getMessage(), err);
+        }
+    }
+    
+    private static void loadLinuxLibraries() {
+        try {
+            try {
+                System.loadLibrary("user_validator");
+                System.out.println("Loaded user_validator from system path");
+            } catch(UnsatisfiedLinkError e) {
+                Path soPath = Paths.get(DLL_PATH + "libuser_validator.so");
+                if(Files.exists(soPath)) {
+                    System.load(soPath.toAbsolutePath().toString());
+                    System.out.println("Loaded user_validator from local path: " + soPath);
+                } else {
+                    throw new RuntimeException("libuser_validator.so not found in system or at: " + soPath);
+                }
+            }
+        } catch(Exception err) {
+            err.printStackTrace();
+            throw new RuntimeException("Linux library load failed: " + err.getMessage(), err);
         }
     }
 
@@ -86,9 +128,6 @@ public class UserValidatorWrapper {
     private native boolean isRegistrationRateLimitedNative(long nativePtr, String ipAddress);
     private native boolean isLoginRateLimitedNative(long nativePtr, String ipAddress);
 
-    /*
-    * Validate Registration 
-    */
     public boolean validateRegistration(
         String username,
         String email,
@@ -114,9 +153,6 @@ public class UserValidatorWrapper {
         }
     }
 
-    /*
-    * Validate Login 
-    */
     public boolean validateLogin(String email, String password, String ipAddress) {
         if(
             email == null ||
@@ -135,9 +171,6 @@ public class UserValidatorWrapper {
         }
     }
 
-    /*
-    * Record Registration Attempt 
-    */
     public void recordRegistrationAttempt(String ipAddress) {
         if(ipAddress != null) {
             synchronized(lock) {
@@ -146,9 +179,6 @@ public class UserValidatorWrapper {
         }
     }
 
-    /*
-    * Record Login Attempt 
-    */
     public void recordLoginAttempt(String ipAddress) {
         if(ipAddress != null) {
             synchronized(lock) {
@@ -157,9 +187,6 @@ public class UserValidatorWrapper {
         }
     }
 
-    /*
-    * Registration Rate Limited 
-    */
     public boolean isRegistrationRateLimited(String ipAddress) {
         if(ipAddress == null) return false;
         synchronized(lock) {
@@ -167,9 +194,6 @@ public class UserValidatorWrapper {
         }
     }
 
-    /*
-    * Login Rate Limited 
-    */
     public boolean isLoginRateLimited(String ipAddress) {
         if(ipAddress == null) return false;
         synchronized(lock) {
