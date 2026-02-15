@@ -87,18 +87,55 @@ compile_native() {\n\
             \n\
             mkdir -p "$obj_dir"\n\
             \n\
-            echo "  Compiling C: $rel_path"\n\
-            \n\
-            gcc -c -fPIC \\\n\
-                "$c_file" \\\n\
-                -o "$obj_file" \\\n\
-                -I. \\\n\
-                -I"$JNI_INCLUDE" \\\n\
-                -I"$JNI_INCLUDE_LINUX" \\\n\
-                -I/usr/include/openssl \\\n\
-                -std=c11 \\\n\
-                -O2 \\\n\
-                -Wall\n\
+            # Check if this C file includes C++ headers (like <vector>, <string>, etc.)\n\
+            if grep -qE "#include <(vector|string|map|set|unordered_map|algorithm|memory|iostream)>" "$c_file" 2>/dev/null; then\n\
+                echo "  Compiling as C++ (detected C++ headers): $rel_path"\n\
+                \n\
+                # Compile with g++ since it has C++ dependencies\n\
+                if [ "$module_name" = "password_encoder" ]; then\n\
+                    g++ -c -fPIC \\\n\
+                        "$c_file" \\\n\
+                        -o "$obj_file" \\\n\
+                        -I. \\\n\
+                        -I./hash_generator \\\n\
+                        -I./password_validator \\\n\
+                        -I./pepper_manager \\\n\
+                        -I./salt_generator \\\n\
+                        -I./utils \\\n\
+                        -I"$JNI_INCLUDE" \\\n\
+                        -I"$JNI_INCLUDE_LINUX" \\\n\
+                        -I/usr/include/openssl \\\n\
+                        -std=c++17 \\\n\
+                        -O2 \\\n\
+                        -Wall \\\n\
+                        -Wno-unused-parameter\n\
+                else\n\
+                    g++ -c -fPIC \\\n\
+                        "$c_file" \\\n\
+                        -o "$obj_file" \\\n\
+                        -I. \\\n\
+                        -I"$JNI_INCLUDE" \\\n\
+                        -I"$JNI_INCLUDE_LINUX" \\\n\
+                        -I/usr/include/openssl \\\n\
+                        -std=c++17 \\\n\
+                        -O2 \\\n\
+                        -Wall \\\n\
+                        -Wno-unused-parameter\n\
+                fi\n\
+            else\n\
+                echo "  Compiling C: $rel_path"\n\
+                \n\
+                gcc -c -fPIC \\\n\
+                    "$c_file" \\\n\
+                    -o "$obj_file" \\\n\
+                    -I. \\\n\
+                    -I"$JNI_INCLUDE" \\\n\
+                    -I"$JNI_INCLUDE_LINUX" \\\n\
+                    -I/usr/include/openssl \\\n\
+                    -std=c11 \\\n\
+                    -O2 \\\n\
+                    -Wall\n\
+            fi\n\
             \n\
             echo "    ✅ Created ${rel_path%.*}.o"\n\
         done\n\
@@ -126,6 +163,24 @@ compile_native() {\n\
                     -I./keys \\\n\
                     -I./crypto_operations \\\n\
                     -I./aes_operations \\\n\
+                    -I./utils \\\n\
+                    -I"$JNI_INCLUDE" \\\n\
+                    -I"$JNI_INCLUDE_LINUX" \\\n\
+                    -I/usr/include/openssl \\\n\
+                    -std=c++17 \\\n\
+                    -O2 \\\n\
+                    -Wall \\\n\
+                    -Wno-unused-parameter\n\
+            elif [ "$module_name" = "password_encoder" ]; then\n\
+                # Password encoder has subdirectories\n\
+                g++ -c -fPIC \\\n\
+                    "$cpp_file" \\\n\
+                    -o "$obj_file" \\\n\
+                    -I. \\\n\
+                    -I./hash_generator \\\n\
+                    -I./password_validator \\\n\
+                    -I./pepper_manager \\\n\
+                    -I./salt_generator \\\n\
                     -I./utils \\\n\
                     -I"$JNI_INCLUDE" \\\n\
                     -I"$JNI_INCLUDE_LINUX" \\\n\
