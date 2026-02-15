@@ -282,11 +282,15 @@ RUN apt-get update && \
     apt-get install -y \
         curl \
         nodejs \
+        npm \
         libssl3 \
         libstdc++6 \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+# Install Node.js dependencies for the config generation script
+RUN npm install -g dotenv
 
 # Create directories - CRITICAL: Create database directories with proper permissions
 RUN mkdir -p \

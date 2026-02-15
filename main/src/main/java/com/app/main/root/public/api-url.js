@@ -1,13 +1,13 @@
 //
-// Auto-generated from .env - DO NOT EDIT MANUALLY
+// Auto-generated variables - DO NOT EDIT MANUALLY
 // Values are encrypted
 //
 
 window.ENCRYPTED_CONFIG = {
-    apiGateway: 'd3311b015d60c0ab649d4ac6b37f6dae:b050585b060c6b6a3d747ac384def313c9193e3ef80dfde588db34e967fa334b',
-    serverApi: 'af5948c79246322d053dc58bdbbd0123:b0d299bd070e9b7c3ffaf29bf427e032b6e4c0ff349f238626476df6209a2e1f',
-    webUrl: 'b810400debee13df41d39cdca7c98ef3:81a9672f9fb7ce562698863fb06214b6238554042372d41f47a7d51abf7be6be',
-    key: 'JikwwLsQosrGiLqSQyphXqBcH/0fR/HubHjjmPQ3iZA='
+    apiGateway: 'a15f713fac7000d5ea7beca878a3efee:7b500133724e3228309baeb2b1416979083f3a4c34bb43c83292e368159ebd9d',
+    serverApi: '0e3483296a27af4ac1935aef7563bd39:88c315c0193cb77f767c574c4e1fcd365037cf509a45fbaa6f57e9f2a42b730e',
+    webUrl: 'd26cecfaa3f707a820a00a1ad3a2d418:7d71e48bed1e1c7b0d31eb3c924446aa3147ff5d8238da040a6da9f1bd3ac499',
+    key: 'x63uuphvQo1qCK4Y3kh2f77iRVwnUtXckI+eeUJgGng='
 };
 
 (function() {
@@ -54,7 +54,7 @@ window.ENCRYPTED_CONFIG = {
             );
             
             return bytesToUtf8(new Uint8Array(decrypted));
-        } catch (error) {
+        } catch(error) {
             console.error('Decryption error:', error);
             throw error;
         }
@@ -62,13 +62,19 @@ window.ENCRYPTED_CONFIG = {
     
     (async function() {
         try {
-            window.API_GATEWAY_URL = await decrypt(window.ENCRYPTED_CONFIG.apiGateway);
-            window.SERVER_API_URL = await decrypt(window.ENCRYPTED_CONFIG.serverApi);
+            window.API_URL = await decrypt(window.ENCRYPTED_CONFIG.apiGateway);
+            window.SERVER_URL = await decrypt(window.ENCRYPTED_CONFIG.serverApi);
             window.WEB_URL = await decrypt(window.ENCRYPTED_CONFIG.webUrl);
+            
+            console.log('Config decrypted successfully');
+            console.log('WEB_URL:', window.WEB_URL);
+            console.log('API_URL:', window.API_URL);
+            console.log('SERVER_URL:', window.SERVER_URL);
+            
             if(window.configResolve) window.configResolve();
             
             delete window.ENCRYPTED_CONFIG;
-        } catch (error) {
+        } catch(error) {
             console.error('Failed to decrypt configuration:', error);
         }
     })();
