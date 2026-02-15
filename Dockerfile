@@ -56,10 +56,10 @@ compile_native() {\n\
     CPP_FILES=$(find . -type f -name "*.cpp" 2>/dev/null | sort || true)\n\
     \n\
     if [ -z "$C_FILES" ] && [ -z "$CPP_FILES" ]; then\n\
-        echo "❌ ERROR: No .c or .cpp files found in $module_name!"\n\
-        echo "Searching recursively:"\n\
-        find . -type f -name "*.c" -o -name "*.cpp" 2>/dev/null | head -20 || echo "  No files found"\n\
-        exit 1\n\
+        echo "⚠️  WARNING: No .c or .cpp files found in $module_name - SKIPPING"\n\
+        echo "=========================================="\n\
+        echo ""\n\
+        return 0\n\
     fi\n\
     \n\
     # Display found files\n\
