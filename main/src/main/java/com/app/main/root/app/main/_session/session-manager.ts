@@ -114,9 +114,8 @@ export class SessionManager {
 
         CookieService.set(this.SESSION_ID_KEY, sessionId, {
             days: rememberUser ? 7 : undefined,
-            secure: 
-                process.env.NODE_ENV === 'production' ||
-                process.env.NODE_ENV === 'development'
+            secure: true,
+            sameSite: 'None'
         });
         
         CookieService.set(this.USER_INFO_KEY, JSON.stringify({
@@ -126,24 +125,20 @@ export class SessionManager {
             sessionId: sessionId 
         }), {
             days: rememberUser ? 7 : undefined,
-            secure: 
-                process.env.NODE_ENV === 'production' ||
-                process.env.NODE_ENV === 'development',
-            sameSite: 'Lax'
+            secure: true,
+            sameSite: 'None'
         });
+
         CookieService.set(this.SESSION_STATUS_KEY, 'active', {
             days: rememberUser ? 7 : undefined,
-            secure: 
-                process.env.NODE_ENV === 'production' ||
-                process.env.NODE_ENV === 'development',
-            sameSite: 'Lax'
+            secure: true,
+            sameSite: 'None'
         });
+
         CookieService.set(this.REMEMBER_USER, rememberUser.toString(), {
             days: rememberUser ? 7 : undefined,
-            secure: 
-                process.env.NODE_ENV === 'production' ||
-                process.env.NODE_ENV === 'development',
-            sameSite: 'Lax'
+            secure: true,
+            sameSite: 'None'
         });
 
         if(typeof localStorage !== 'undefined') {
@@ -173,10 +168,8 @@ export class SessionManager {
                     email: updatedData.email
                 }), {
                     days: updatedData.rememberUser ? 7 : undefined,
-                    secure: 
-                        process.env.NODE_ENV === 'production' ||
-                        process.env.NODE_ENV === 'development',
-                    sameSite: 'Lax'
+                    secure: true,
+                    sameSite: 'None'
                 });
             }
         }
@@ -321,4 +314,3 @@ export class SessionManager {
         }
     }
 }
-

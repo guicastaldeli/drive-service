@@ -8,57 +8,61 @@ interface Options {
 
 export class CookieService {
     public static set(name: string, value: string, options: Options): void {
-        if(typeof document === 'undefined') return;
+    if(typeof document === 'undefined') return;
 
-        const {
-            days = 7,
-            path = '/',
-            domain = '',
-            secure = false,
-            sameSite = 'Lax'
-        } = options;
-        const expires = new Date(
-            Date.now() + (days * 24 * 60 * 60 * 1000)
-        ).toUTCString();
+    const {
+        days = 7,
+        path = '/',
+        domain = '',
+        secure = false,
+        sameSite = 'Lax'
+    } = options;
+    
+    const expires = new Date(
+        Date.now() + (days * 24 * 60 * 60 * 1000)
+    ).toUTCString();
 
-        let cookie = `
-            ${name}=${encodeURIComponent(value)}; 
-            expires=${expires}; 
-            path=${path}
-        `;
-        if(domain) cookie += `; domain=${domain}`;
-        if(secure) cookie += '; Secure';
-        if(sameSite) cookie += `; SameSite=${sameSite}`;
-        
-        document.cookie = cookie;
-    }
+    // Build cookie string WITHOUT newlines
+    let cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=${path}`;
+    
+    if(domain) cookie += `; domain=${domain}`;
+    if(secure) cookie += `; Secure`;
+    if(sameSite) cookie += `; SameSite=${sameSite}`;
+    
+    console.log(`[CookieService] Setting cookie:`, cookie);
+    document.cookie = cookie;
+    
+    // Verify it was set
+    const check = document.cookie;
+    console.log(`[CookieService] After setting, cookies now:`, check);
+}
     
     /**
      * Get Value
      */
     public static getValue(name: string): string | null {
-        if(typeof document === 'undefined') return null;
-
-        /*
-        console.log('=== CookieService.getValue DEBUG ===');
-        console.log('Looking for cookie:', name);
-        console.log('All cookies string:', document.cookie);
-        */
+    if(typeof document === 'undefined') return null;
+    
+    console.log(`[CookieService] Looking for: ${name}`);
+    console.log(`[CookieService] Raw document.cookie:`, JSON.stringify(document.cookie));
+    
+    const cookies = document.cookie.split(';');
+    console.log(`[CookieService] Split cookies:`, cookies);
+    
+    for(let cookie of cookies) {
+        const trimmed = cookie.trim();
+        console.log(`[CookieService] Processing:`, JSON.stringify(trimmed));
         
-        const cookies = document.cookie.split(';');
-        //console.log('Split cookies:', cookies);
-        
-        for(let cookie of cookies) {
-            const [cookieName, cookieVal] = cookie.trim().split('=');
-            //console.log('Checking:', cookieName, 'value:', cookieVal);
-            if(cookieName === name) {
-                //console.log('Found cookie:', name, 'value:', cookieVal);
-                return decodeURIComponent(cookieVal);
-            }
+        const [cookieName, cookieVal] = trimmed.split('=');
+        if(cookieName === name) {
+            const value = decodeURIComponent(cookieVal);
+            console.log(`[CookieService] Found ${name}:`, value);
+            return value;
         }
-        //console.log('Cookie not found:', name);
-        return null;
     }
+    console.log(`[CookieService] Cookie not found: ${name}`);
+    return null;
+}
 
     /**
      * Delete Cookie

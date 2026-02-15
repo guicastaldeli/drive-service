@@ -1,5 +1,9 @@
 package com.app.main.root.app.main.email_service;
+
 import com.app.main.root.EnvConfig;
+
+import jakarta.annotation.PostConstruct;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -14,21 +18,31 @@ public class EmailService {
     public final static String RESET_TOKEN = EnvConfig.get("RESET_TOKEN");
 
     @Autowired private EmailDocumentParser emailDocumentParser;
+    @Autowired(required = false) private SendGridWebService sendGridWebService; // Auto-wire SendGrid service
 
-    @Value("${email.smtp.host:smtp.gmail.com}")
+    @Value("${email.smtp.host:smtp.sendgrid.net}")
     private String smtpHost;
 
     @Value("${email.smtp.port:587}")
     private String smtpPort;
 
-    @Value("${email.username}")
+    @Value("${email.username:apikey}")
     private String emailUsername;
 
-    @Value("${email.password}")
+    @Value("${email.password:}")
     private String emailPassword;
+    
+    @Value("${email.from:app.messages.noreply@gmail.com}")
+    private String fromEmail;
 
-    @Value("${web.url:{webUrlSrc}}")
+    @Value("${web.url:}")
     private String webUrl;
+    
+    @Value("${email.use.sendgrid:true}")
+    private boolean useSendGrid;
+
+    @Autowired
+    private org.springframework.core.env.Environment environment;
 
     public boolean isValidEmail(String email) {
         String regex = "^[A-Za-z0-9+_.-]+@(.+)$";
@@ -39,27 +53,121 @@ public class EmailService {
         return new EmailData(this, emailDocumentParser);
     }
 
-    /**
-     * Send Email
-     */
     public void sendEmail(String toEmail, String body) throws MessagingException {
+        String subject = extractSubject(body);
+        
+        if(useSendGrid && sendGridWebService != null) {
+            System.out.println("Attempting to send via SendGrid API...");
+            boolean sent = sendGridWebService.sendEmail(toEmail, subject, body);
+            if(sent) {
+                System.out.println("Email sent successfully via SendGrid to: " + toEmail);
+                return;
+            } else {
+                System.out.println("SendGrid sending failed, falling back to SMTP...");
+            }
+        }
+        
+        sendEmailViaSMTP(toEmail, body);
+    }
+    
+    private void sendEmailViaSMTP(String toEmail, String body) throws MessagingException {
+        String actualPassword = resolvePassword();
+        String actualUsername = resolveUsername();
+        
+        System.out.println("=== SMTP Email Debug ===");
+        System.out.println("Host: " + smtpHost);
+        System.out.println("Port: " + smtpPort);
+        System.out.println("Username from prop: " + emailUsername);
+        System.out.println("Resolved Username: " + actualUsername);
+        System.out.println("Password found: " + (actualPassword != null && !actualPassword.isEmpty()));
+        System.out.println("From: " + fromEmail);
+        System.out.println("To: " + toEmail);
+        System.out.println("========================");
+        
+        if(actualPassword == null || actualPassword.isEmpty()) {
+            throw new MessagingException("Email password not configured. Check email.password property or SENDGRID_API_KEY environment variable.");
+        }
+
         Properties props = new Properties();
         props.put("mail.smtp.host", smtpHost);
         props.put("mail.smtp.port", smtpPort);
         props.put("mail.smtp.auth", "true");
         props.put("mail.smtp.starttls.enable", "true");
+        props.put("mail.smtp.connectiontimeout", "10000");
+        props.put("mail.smtp.timeout", "10000");
+        props.put("mail.smtp.ssl.protocols", "TLSv1.2");
+        
+        props.put("mail.debug", "true");
 
         Session session = Session.getInstance(props, new Authenticator() {
             @Override
             protected PasswordAuthentication getPasswordAuthentication() {
-                return new PasswordAuthentication(emailUsername, emailPassword);
+                return new PasswordAuthentication(actualUsername, actualPassword);
             }
         });
+        
+        session.setDebug(true);
 
         Message message = new MimeMessage(session);
-        message.setFrom(new InternetAddress(emailUsername));
+        message.setFrom(new InternetAddress(fromEmail));
         message.setRecipients(Message.RecipientType.TO, InternetAddress.parse(toEmail));
+        
+        String subject = extractSubject(body);
+        message.setSubject(subject);
+        
         message.setContent(body, "text/html; charset=utf-8");
+        
         Transport.send(message);
+        System.out.println("Email sent successfully via SMTP to: " + toEmail);
+    }
+    
+    private String resolvePassword() {
+        if(emailPassword != null && !emailPassword.isEmpty()) {
+            return emailPassword;
+        }
+        
+        String envPassword = System.getenv("SENDGRID_API_KEY");
+        if(envPassword != null && !envPassword.isEmpty()) {
+            return envPassword;
+        }
+        
+        if(environment != null) {
+            return environment.getProperty("SENDGRID_API_KEY");
+        }
+        
+        return null;
+    }
+    
+    private String resolveUsername() {
+        return "apikey";
+    }
+    
+    private String extractSubject(String htmlBody) {
+        if(htmlBody != null && htmlBody.contains("<title>")) {
+            try {
+                int start = htmlBody.indexOf("<title>") + 7;
+                int end = htmlBody.indexOf("</title>", start);
+                if(start > 6 && end > start) {
+                    return htmlBody.substring(start, end);
+                }
+            } catch(Exception err) {
+                System.out.println(err);
+            }
+        }
+        return "Messages App Notification";
+    }
+
+    @PostConstruct
+    public void init() {
+        System.out.println("=== Email Service Initialized ===");
+        System.out.println("SendGrid Available: " + (sendGridWebService != null));
+        System.out.println("Use SendGrid: " + useSendGrid);
+        System.out.println("SMTP Host: " + smtpHost);
+        System.out.println("SMTP Port: " + smtpPort);
+        System.out.println("Username from properties: " + emailUsername);
+        System.out.println("Password from properties: " + (emailPassword != null && !emailPassword.isEmpty()));
+        System.out.println("From Email: " + fromEmail);
+        System.out.println("WEB_URL_SRC: " + WEB_URL_SRC);
+        System.out.println("=================================");
     }
 }
