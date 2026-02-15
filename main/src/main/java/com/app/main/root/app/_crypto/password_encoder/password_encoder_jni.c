@@ -110,3 +110,4 @@ JNI_EXPORT JNIEXPORT jstring JNICALL Java_com_app_main_root_app__1crypto_passwor
     free(result);
     return jresult;
 }
+

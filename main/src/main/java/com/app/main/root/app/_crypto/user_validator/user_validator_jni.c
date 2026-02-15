@@ -197,3 +197,4 @@ JNIEXPORT jboolean JNICALL Java_com_app_main_root_app__1crypto_user_1validator_U
 
     return result;
 }
+
