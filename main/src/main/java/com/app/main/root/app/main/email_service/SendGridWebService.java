@@ -12,7 +12,7 @@ import java.io.IOException;
 @Component
 public class SendGridWebService {
     
-    @Value("${email.from:app.messages.noreply@gmail.com}")
+    @Value("${email.from:app.driveservice.noreply@gmail.com}")
     private String fromEmail;
     
     private SendGrid sendGridClient;

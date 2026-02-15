@@ -13,16 +13,31 @@ import java.util.stream.Stream;
 import java.util.*;
 
 public class DbManager {
-    private static final String DATA_DIR = "./src/main/java/com/app/main/root/app/_db/data/";
-    private static final String SQL_DIR = "./src/main/java/com/app/main/root/app/_db/src/";
+    private static final String DATA_DIR = getDataDir();
+    private static final String SQL_DIR = getSqlDir();
+    
+    private static String getDataDir() {
+        String dir = System.getenv("DB_DATA_DIR");
+          if(dir == null || dir.isEmpty()) {
+            dir = "./src/main/java/com/app/main/root/app/_db/data/";
+        }
+        return dir.endsWith("/") ? dir : dir + "/";
+    }
+    
+    private static String getSqlDir() {
+        String dir = System.getenv("DB_SQL_DIR");
+          if(dir == null || dir.isEmpty()) {
+            dir = "./src/main/java/com/app/main/root/app/_db/src/";
+        }
+        return dir.endsWith("/") ? dir : dir + "/";
+    }
 
     public void verify() {
         System.out.println("Database Manager initialized...");
+        System.out.println("DATA_DIR: " + DATA_DIR);
+        System.out.println("SQL_DIR: " + SQL_DIR);
     }
 
-    /*
-    * Init 
-    */
     public Map<String, DataSource> initAllDatabases() {
         Map<String, DataSource> dataSources = new HashMap<>();
 
@@ -45,24 +60,29 @@ public class DbManager {
 
             System.out.println("Total databases: " + dataSources.size());
         } catch(Exception err) {
-            throw new RuntimeException("Failed to initialize databses", err);
+            System.err.println("ERROR initializing databases: " + err.getMessage());
+            err.printStackTrace();
+            throw new RuntimeException("Failed to initialize databases", err);
         }
 
         return dataSources;
     }
 
-    /*
-    * Discover 
-    */
+    /**
+     * Discover Files
+     */
     private Map<String, String> discoverSqlFiles() throws Exception {
         Map<String, String> sqlFiles = new HashMap<>();
         Path sqlPath = Paths.get(SQL_DIR);
 
+        System.out.println("Looking for SQL files in: " + sqlPath.toAbsolutePath());
+        
         if(!Files.exists(sqlPath)) {
             Files.createDirectories(sqlPath);
             System.out.println("Created SQL directory: " + SQL_DIR);
             return sqlFiles;
         }
+        
         try(Stream<Path> paths = Files.list(sqlPath)) {
             paths.filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith(".sql"))
@@ -70,16 +90,17 @@ public class DbManager {
                     String fileName = path.getFileName().toString();
                     String dbName = fileName.replace(".sql", "").replace("-service", "");
                     sqlFiles.put(dbName, fileName);
-                    System.out.println("Discovered Sql file: " + fileName + " -> DB: " + dbName);
+                    System.out.println("Discovered SQL file: " + fileName + " -> DB: " + dbName);
                 });
+        }
+
+          if(sqlFiles.isEmpty()) {
+            System.err.println("WARNING: No SQL files found in " + sqlPath.toAbsolutePath());
         }
 
         return sqlFiles;
     }
 
-    /*
-    * Create and Init 
-    */
     private SQLiteDataSource createAndInitDb(
         String dbName,
         String dbFileName,
@@ -92,7 +113,7 @@ public class DbManager {
         File dbFile = new File(dbPath);
         boolean shouldInit = !dbFile.exists() || dbFile.length() == 0 || !isValidDatabase(dbFile);
         if(shouldInit) {
-            System.out.println("Initializing database: " + dbName);
+            System.out.println("Initializing database: " + dbName + " at " + dbPath);
             try(
                 Connection conn = dataSource.getConnection();
                 Statement stmt = conn.createStatement();
@@ -100,27 +121,32 @@ public class DbManager {
                 String sqlContent = readSqlFile(sqlFileName);
                 executeSqlStmt(stmt, sqlContent, dbName);
             } catch(Exception err) {
+                System.err.println("Failed to initialize database: " + dbFileName);
+                err.printStackTrace();
                 throw new SQLException("Failed to init db: " + dbFileName, err);
             }
         } else {
-            System.out.println("Using existing db: " + dbName);
+            System.out.println("Using existing db: " + dbName + " at " + dbPath);
         }
 
         return dataSource;
     }
 
-    /*
-    * Read Sql 
-    */
+    /**
+     * Read Sql
+     */
     private String readSqlFile(String fileName) throws Exception {
         Path filePath = Paths.get(SQL_DIR + fileName);
-        if(!Files.exists(filePath)) throw new Exception("SQL file not found: " + fileName);
+        System.out.println("Reading SQL file: " + filePath.toAbsolutePath());
+        if(!Files.exists(filePath)) {
+            throw new Exception("SQL file not found: " + filePath.toAbsolutePath());
+        }
         return Files.readString(filePath);
     }
 
-    /*
-    * Execute Statement 
-    */
+    /**
+     * Execute Statement
+     */
     private void executeSqlStmt(
         Statement stmt,
         String sqlContent,
@@ -147,9 +173,9 @@ public class DbManager {
         System.out.println(dbName + ": executed " + successCount + " statements");
     }
 
-    /*
-    * Validate 
-    */
+    /**
+     * Validate
+     */
     private boolean isValidDatabase(File dbFile) {
         if(!dbFile.exists() || dbFile.length() == 0) return false;
 
@@ -165,11 +191,15 @@ public class DbManager {
         }
     }
 
-    /*
-    * Ensure Directory 
-    */
     private void ensureDir() throws Exception {
-        Files.createDirectories(Paths.get(DATA_DIR));
-        Files.createDirectories(Paths.get(SQL_DIR));
+        Path dataPath = Paths.get(DATA_DIR);
+        Path sqlPath = Paths.get(SQL_DIR);
+        
+        Files.createDirectories(dataPath);
+        Files.createDirectories(sqlPath);
+        
+        System.out.println("Ensured directories exist:");
+        System.out.println("  Data: " + dataPath.toAbsolutePath());
+        System.out.println("  SQL: " + sqlPath.toAbsolutePath());
     }
 }

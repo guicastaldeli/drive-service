@@ -32,7 +32,7 @@ public class EmailService {
     @Value("${email.password:}")
     private String emailPassword;
     
-    @Value("${email.from:app.messages.noreply@gmail.com}")
+    @Value("${email.from:app.driveservice.noreply@gmail.com}")
     private String fromEmail;
 
     @Value("${web.url:}")
