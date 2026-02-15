@@ -55,10 +55,10 @@ compile_native() {\n\
     CPP_FILES=$(find . -type f -name "*.cpp" 2>/dev/null | sort || true)\n\
     \n\
     if [ -z "$C_FILES" ] && [ -z "$CPP_FILES" ]; then\n\
-        echo "⚠️  WARNING: No .c or .cpp files found in $module_name - SKIPPING"\n\
-        echo "=========================================="\n\
-        echo ""\n\
-        return 0\n\
+        echo "❌ ERROR: No .c or .cpp files found in $module_name!"\n\
+        echo "Searching recursively:"\n\
+        find . -type f -name "*.c" -o -name "*.cpp" 2>/dev/null | head -20 || echo "  No files found"\n\
+        exit 1\n\
     fi\n\
     \n\
     # Display found files\n\
@@ -86,55 +86,18 @@ compile_native() {\n\
             \n\
             mkdir -p "$obj_dir"\n\
             \n\
-            # Check if this C file includes C++ headers (like <vector>, <string>, etc.)\n\
-            if grep -qE "#include <(vector|string|map|set|unordered_map|algorithm|memory|iostream)>" "$c_file" 2>/dev/null; then\n\
-                echo "  Compiling as C++ (detected C++ headers): $rel_path"\n\
-                \n\
-                # Compile with g++ since it has C++ dependencies\n\
-                if [ "$module_name" = "password_encoder" ]; then\n\
-                    g++ -c -fPIC \\\n\
-                        "$c_file" \\\n\
-                        -o "$obj_file" \\\n\
-                        -I. \\\n\
-                        -I./hash_generator \\\n\
-                        -I./password_validator \\\n\
-                        -I./pepper_manager \\\n\
-                        -I./salt_generator \\\n\
-                        -I./utils \\\n\
-                        -I"$JNI_INCLUDE" \\\n\
-                        -I"$JNI_INCLUDE_LINUX" \\\n\
-                        -I/usr/include/openssl \\\n\
-                        -std=c++17 \\\n\
-                        -O2 \\\n\
-                        -Wall \\\n\
-                        -Wno-unused-parameter\n\
-                else\n\
-                    g++ -c -fPIC \\\n\
-                        "$c_file" \\\n\
-                        -o "$obj_file" \\\n\
-                        -I. \\\n\
-                        -I"$JNI_INCLUDE" \\\n\
-                        -I"$JNI_INCLUDE_LINUX" \\\n\
-                        -I/usr/include/openssl \\\n\
-                        -std=c++17 \\\n\
-                        -O2 \\\n\
-                        -Wall \\\n\
-                        -Wno-unused-parameter\n\
-                fi\n\
-            else\n\
-                echo "  Compiling C: $rel_path"\n\
-                \n\
-                gcc -c -fPIC \\\n\
-                    "$c_file" \\\n\
-                    -o "$obj_file" \\\n\
-                    -I. \\\n\
-                    -I"$JNI_INCLUDE" \\\n\
-                    -I"$JNI_INCLUDE_LINUX" \\\n\
-                    -I/usr/include/openssl \\\n\
-                    -std=c11 \\\n\
-                    -O2 \\\n\
-                    -Wall\n\
-            fi\n\
+            echo "  Compiling C: $rel_path"\n\
+            \n\
+            gcc -c -fPIC \\\n\
+                "$c_file" \\\n\
+                -o "$obj_file" \\\n\
+                -I. \\\n\
+                -I"$JNI_INCLUDE" \\\n\
+                -I"$JNI_INCLUDE_LINUX" \\\n\
+                -I/usr/include/openssl \\\n\
+                -std=c11 \\\n\
+                -O2 \\\n\
+                -Wall\n\
             \n\
             echo "    ✅ Created ${rel_path%.*}.o"\n\
         done\n\
@@ -162,24 +125,6 @@ compile_native() {\n\
                     -I./keys \\\n\
                     -I./crypto_operations \\\n\
                     -I./aes_operations \\\n\
-                    -I./utils \\\n\
-                    -I"$JNI_INCLUDE" \\\n\
-                    -I"$JNI_INCLUDE_LINUX" \\\n\
-                    -I/usr/include/openssl \\\n\
-                    -std=c++17 \\\n\
-                    -O2 \\\n\
-                    -Wall \\\n\
-                    -Wno-unused-parameter\n\
-            elif [ "$module_name" = "password_encoder" ]; then\n\
-                # Password encoder has subdirectories\n\
-                g++ -c -fPIC \\\n\
-                    "$cpp_file" \\\n\
-                    -o "$obj_file" \\\n\
-                    -I. \\\n\
-                    -I./hash_generator \\\n\
-                    -I./password_validator \\\n\
-                    -I./pepper_manager \\\n\
-                    -I./salt_generator \\\n\
                     -I./utils \\\n\
                     -I"$JNI_INCLUDE" \\\n\
                     -I"$JNI_INCLUDE_LINUX" \\\n\
@@ -269,18 +214,6 @@ echo "🎉 ALL MODULES COMPILED SUCCESSFULLY 🎉"\n\
 # Run the compilation
 RUN /usr/local/bin/compile_native.sh
 
-# VERIFICATION: Check if the base64 fix was applied
-RUN echo "🔍 VERIFYING BASE64 FIX..." && \
-    if grep -q "for(j = 0; j < i; j++)" /app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder/utils/base64_manager.c; then \
-        echo "✅ BASE64 FIX VERIFIED - Using 'j < i' (correct)"; \
-    elif grep -q "for(j = 0; j < 4; j++)" /app/main/src/main/java/com/app/main/root/app/_crypto/password_encoder/utils/base64_manager.c; then \
-        echo "❌ BASE64 BUG DETECTED - Still using 'j < 4' (WRONG!)"; \
-        echo "The base64_manager.c file has NOT been updated with the fix!"; \
-        exit 1; \
-    else \
-        echo "⚠️  Could not verify base64 fix - file structure may have changed"; \
-    fi
-
 # Build Spring Boot application
 RUN cd main && mvn clean package -DskipTests && \
     echo "✅ SPRING BOOT BUILD COMPLETED"
@@ -294,15 +227,11 @@ RUN apt-get update && \
     apt-get install -y \
         curl \
         nodejs \
-        npm \
         libssl3 \
         libstdc++6 \
         && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
-
-# Install Node.js dependencies for the config generation script
-RUN npm install -g dotenv
 
 # Create directories - CRITICAL: Create database directories with proper permissions
 RUN mkdir -p \
@@ -319,6 +248,7 @@ COPY --from=build /usr/local/lib/libfileencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libuser_validator.so /usr/local/lib/
 COPY --from=build /usr/local/lib/libfile_compressor.so /usr/local/lib/
+
 
 COPY --from=build /usr/local/lib/libfileencoder.so /app/lib/native/linux/
 COPY --from=build /usr/local/lib/libpasswordencoder.so /app/lib/native/linux/
