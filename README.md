@@ -1,4 +1,4 @@
-# <img src="https://i.imgur.com/lyvEuN3.png" width=300>
+# <img src="https://i.imgur.com/lyvEuN3.png" width=500>
 This is Drive Service, where you can upload your files, such as:
 - Images
 - Videos
