@@ -24,6 +24,8 @@ interface State {
     showPasswordReset: boolean;
     passwordResetToken?: string;
     renderer: Renderer | null;
+    rendererReady: boolean;
+    rendererError: string | null;
     activeTab: 'login' | 'register';
     authState: AuthState;
 }
@@ -49,6 +51,11 @@ export class Main extends Component<any, State> {
     private canvasRef = React.createRef<HTMLCanvasElement>();
     private appContainerRef = React.createRef<HTMLDivElement>();
     private dashboardInstance: Dashboard | null = null;
+
+    private rendererInitialized = false;
+
+    private RENDER_TIMEOUT: number = 1500;
+    private WAIT_TIME: number = 60;
 
     constructor(props: any) {
         super(props);
@@ -83,6 +90,8 @@ export class Main extends Component<any, State> {
             passwordResetToken: undefined,
             rememberUser: rememberUserCookie,
             renderer: null,
+            rendererReady: false,
+            rendererError: null,
             activeTab: 'login',
             authState: { ...this.auth.state }
         }
@@ -98,12 +107,12 @@ export class Main extends Component<any, State> {
                 });
             }
             
-            await new Promise(resolve => setTimeout(resolve, 0));
             setTimeout(() => {
-                if(this.canvasRef.current) {
-                    this.initRenderer();
+                if(!this.state.rendererReady && !this.state.rendererError) {
+                    //console.warn('Renderer init timed out, continuing anyway');
+                    this.setState({ rendererError: 'Renderer timed out' });
                 }
-            }, 100);
+            }, this.RENDER_TIMEOUT);
 
             await this.connect();
 
@@ -154,20 +163,6 @@ export class Main extends Component<any, State> {
                         console.error('Failed to load chat items:', err);
                     }
                 }
-                
-                const activeChat = localStorage.getItem('active-chat');
-                console.log('Found active chat from storage:', activeChat);
-                let activeChatId = null;
-                if(activeChat) {
-                    try {
-                        const chatObj = JSON.parse(activeChat);
-                        activeChatId = chatObj.id || chatObj.chatId;
-                        console.log(`Extracted active chat ID: ${activeChatId}`);
-                    } catch(err) {
-                        console.warn('Failed to parse active chat, using as-is:', activeChat);
-                        activeChatId = activeChat;
-                    }
-                }
 
                 if(userInfo.userId) {
                     console.log('Initializing cache for user:', userInfo.userId);
@@ -178,6 +173,8 @@ export class Main extends Component<any, State> {
                     isLoading: false,
                     rememberUser: rememberUser
                 });
+            } else {
+                this.setState({ isLoading: false });
             }
         } catch(err) {
             console.error('Error in componentDidMount:', err);
@@ -210,6 +207,17 @@ export class Main extends Component<any, State> {
      * 
      */
     public async initRenderer(): Promise<void> {
+        console.log('[Main] initRenderer START');
+
+        if(!this.canvasRef.current) {
+            console.warn('[Main] no canvas — bailing');
+            this.setState({
+                rendererReady: false,
+                rendererError: 'Canvas not available'
+            });
+            return;
+        }
+
         try {
             if(!this.canvasRef.current) {
                 console.warn('Canvas ref not available');
@@ -221,10 +229,43 @@ export class Main extends Component<any, State> {
             await this.renderer.run();
             await this.renderer.update();
 
-            this.setState({ renderer: this.renderer });
+            await new Promise<void>((resolve) => {
+                let n = 0;
+
+                const step = () => {
+                    if(++n >= this.WAIT_TIME) {
+                        resolve();
+                        return;
+                    }
+                    requestAnimationFrame(step);
+                };
+                requestAnimationFrame(step);
+            });
+
+            this.setState({
+                renderer: this.renderer,
+                rendererReady: true,
+                rendererError: null,
+            }, () => console.log('[Main] rendererReady is now true'));
         } catch(err) {
-            console.error('Renderer err', err);
+            console.error('[Main] initRenderer ERR', err);
+            this.setState({
+                rendererReady: false,
+                rendererError: (err as Error)?.message ?? 'Failed to initialize renderer',
+            });
         }
+    }
+
+    private maybeInitRenderer(): void {
+        if(this.rendererInitialized) return;
+
+        const canvas = this.canvasRef.current;
+        if(!canvas) return;
+        if(document.querySelector('#ctx') !== canvas) return;
+
+        this.rendererInitialized = true;
+        console.log('[Main] canvas mounted, calling initRenderer');
+        this.initRenderer();
     }
 
     private switchTab = (tab: 'login' | 'register'): void => {
@@ -233,7 +274,7 @@ export class Main extends Component<any, State> {
     }
 
     render() {
-        const { activeTab, isLoading, authState } = this.state;
+        const { activeTab, authState } = this.state;
         const LOGO_PATH = './data/resource/img/logo.png';
         const REPO_LINK = 'https://github.com/guicastaldeli/drive-service';
 
@@ -246,61 +287,61 @@ export class Main extends Component<any, State> {
 
         return (
             <div className='app' ref={this.appContainerRef}>
-                <SessionProvider 
-                    apiClientController={this.apiClientController} 
+                <SessionProvider
+                    apiClientController={this.apiClientController}
                     initialSession='LOGIN'
                 >
                     <SessionContext.Consumer>
                         {(sessionContext) => {
-                            if(!sessionContext) {
-                                return (
-                                    <div className="session-loading-overlay">
-                                        <div className="session-loading-content">
-                                            <div>Loading session...</div>
-                                            <div className="session-loading-status">
-                                                <span>Initializing application</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                );
-                            }
+                            const showOverlay = !sessionContext || (!this.state.rendererReady && !this.state.rendererError);
+
+                            const showLoginScreen = !sessionContext || sessionContext.currentSession === 'LOGIN';
 
                             return (
                                 <>
                                     <div className="app-main">
-                                        {sessionContext.currentSession === 'LOGIN' && (
+                                        {/* Login Screen */}
+                                        {showLoginScreen && (
                                             <>
                                                 <header id='main-header'>
                                                     <div id="header-content">
-                                                        <img 
-                                                            src={LOGO_PATH} 
+                                                        <img
+                                                            src={LOGO_PATH}
                                                             alt="drive service"
-                                                            onClick={() => window.location.href = ''} 
+                                                            onClick={() => (window.location.href = '')}
                                                             title='Home'
                                                         />
-                                                        <a href={REPO_LINK} target='_blank'>Repository</a>
+                                                        <a href={REPO_LINK} target='_blank'>
+                                                            Repository
+                                                        </a>
                                                     </div>
                                                 </header>
+
                                                 <div className='renderer'>
-                                                    <canvas 
+                                                    <canvas
                                                         id='ctx'
-                                                        ref={this.canvasRef}
-                                                    >
-                                                    </canvas>
+                                                        ref={(el) => {
+                                                            if (el) {
+                                                                this.canvasRef.current = el;
+                                                                this.maybeInitRenderer();
+                                                            }
+                                                        }}
+                                                    ></canvas>
                                                 </div>
+
                                                 <div className={containerClass}>
                                                     <div className={joinScreenClass}>
                                                         <div className='form'>
                                                             <div className="tab-container">
                                                                 {/* Tab Headers */}
                                                                 <div className="tab-headers">
-                                                                    <div 
+                                                                    <div
                                                                         className={`tab-header ${activeTab === 'login' ? 'active' : ''}`}
                                                                         onClick={() => this.switchTab('login')}
                                                                     >
                                                                         Login
                                                                     </div>
-                                                                    <div 
+                                                                    <div
                                                                         className={`tab-header ${activeTab === 'register' ? 'active' : ''}`}
                                                                         onClick={() => this.switchTab('register')}
                                                                     >
@@ -308,19 +349,26 @@ export class Main extends Component<any, State> {
                                                                     </div>
                                                                 </div>
 
-                                                                <div className="auth-content" style={{ display: hasMessages ? 'flex' : 'none' }}>
+                                                                <div
+                                                                    className="auth-content"
+                                                                    style={{ display: hasMessages ? 'flex' : 'none' }}
+                                                                >
                                                                     {authState.message && (
                                                                         <div className="auth-message">
-                                                                            {authState.message.split('\n').map((line, i) => (
-                                                                                <div key={i}>{line}</div>
-                                                                            ))}
+                                                                            {authState.message
+                                                                                .split('\n')
+                                                                                .map((line, i) => (
+                                                                                    <div key={i}>{line}</div>
+                                                                                ))}
                                                                         </div>
                                                                     )}
                                                                     {authState.error && (
                                                                         <div className="auth-error">
-                                                                            {authState.error.split('\n').map((line, i) => (
-                                                                                <div key={i}>{line}</div>
-                                                                            ))}
+                                                                            {authState.error
+                                                                                .split('\n')
+                                                                                .map((line, i) => (
+                                                                                    <div key={i}>{line}</div>
+                                                                                ))}
                                                                         </div>
                                                                     )}
                                                                 </div>
@@ -328,85 +376,129 @@ export class Main extends Component<any, State> {
                                                                 {/* Tab Content */}
                                                                 <div className="tab-content">
                                                                     {/* Login Tab */}
-                                                                    <div className={`tab-panel ${activeTab === 'login' ? 'active' : ''}`}>
-                                                                        <div className="form-input">
+                                                                    <div
+                                                                        className={`tab-panel ${activeTab === 'login' ? 'active' : ''}`}
+                                                                    >
+                                                                        <form
+                                                                            className="form-input"
+                                                                            noValidate
+                                                                            onSubmit={(e) => {
+                                                                                e.preventDefault();
+                                                                                this.auth.join(sessionContext, false);
+                                                                            }}
+                                                                        >
                                                                             <h2>Login</h2>
-                                                                            <label>Email</label>
-                                                                            <input 
-                                                                                type="email" 
+
+                                                                            <label htmlFor="login-email">Email</label>
+                                                                            <input
+                                                                                id="login-email"
+                                                                                name="email"
+                                                                                type="email"
+                                                                                autoComplete="email"
                                                                                 ref={this.auth.loginEmailRef}
                                                                                 placeholder="Enter your email"
                                                                                 onChange={clearMessages}
                                                                             />
-                                                                            <label>Password</label>
-                                                                            <input 
+
+                                                                            <label htmlFor="login-password">Password</label>
+                                                                            <input
+                                                                                id="login-password"
+                                                                                name="password"
                                                                                 type="password"
+                                                                                autoComplete="current-password"
                                                                                 ref={this.auth.loginPasswordRef}
                                                                                 placeholder="Enter your password"
                                                                                 onChange={clearMessages}
                                                                             />
+
                                                                             <div className="login-input">
-                                                                                <button 
-                                                                                    className={`login-input-btn ${isAuthenticating === true ? 'auth' : 'default'}`}
-                                                                                    onClick={() => this.auth.join(sessionContext, false)}
+                                                                                <button
+                                                                                    type="submit"
+                                                                                    className={`login-input-btn ${isAuthenticating ? 'auth' : 'default'}`}
                                                                                 >
                                                                                     {isAuthenticating ? 'Logging in...' : 'Login'}
                                                                                 </button>
-                                                                                <button 
+                                                                                <button
                                                                                     type="button"
                                                                                     className="forgot-password-btn"
-                                                                                    onClick={() => this.auth.handlePasswordReset(sessionContext)}
-                                                                                    onChange={clearMessages}
+                                                                                    onClick={() =>
+                                                                                        this.auth.handlePasswordReset(sessionContext)
+                                                                                    }
                                                                                 >
                                                                                     Forgot Password?
                                                                                 </button>
                                                                             </div>
-                                                                        </div>
+                                                                        </form>
                                                                     </div>
-                                                                            
+
                                                                     {/* Register Tab */}
-                                                                    <div className={`tab-panel ${activeTab === 'register' ? 'active' : ''}`}>
-                                                                        <div className="form-input">
+                                                                    <div
+                                                                        className={`tab-panel ${activeTab === 'register' ? 'active' : ''}`}
+                                                                    >
+                                                                        <form
+                                                                            className="form-input"
+                                                                            noValidate
+                                                                            onSubmit={(e) => {
+                                                                                e.preventDefault();
+                                                                                this.auth.join(sessionContext, true);
+                                                                            }}
+                                                                        >
                                                                             <h2>Create Account</h2>
-                                                                            <label>Email</label>
-                                                                            <input 
-                                                                                type="email" 
+
+                                                                            <label htmlFor="register-email">Email</label>
+                                                                            <input
+                                                                                id="register-email"
+                                                                                name="email"
+                                                                                type="email"
+                                                                                autoComplete="email"
                                                                                 ref={this.auth.createEmailRef}
                                                                                 placeholder="Enter your email"
                                                                                 onChange={clearMessages}
                                                                             />
-                                                                            <label>Username</label>
-                                                                            <input 
-                                                                                type="text" 
+
+                                                                            <label htmlFor="register-username">Username</label>
+                                                                            <input
+                                                                                id="register-username"
+                                                                                name="username"
+                                                                                type="text"
+                                                                                autoComplete="username"
                                                                                 ref={this.auth.createUsernameRef}
                                                                                 placeholder="Choose a username"
                                                                                 onChange={clearMessages}
                                                                             />
-                                                                            <label>Password</label>
-                                                                            <input 
+
+                                                                            <label htmlFor="register-password">Password</label>
+                                                                            <input
+                                                                                id="register-password"
+                                                                                name="password"
                                                                                 type="password"
+                                                                                autoComplete="new-password"
                                                                                 ref={this.auth.createPasswordRef}
                                                                                 placeholder="Create a password"
                                                                                 onChange={clearMessages}
                                                                             />
+
                                                                             <div className='register-input'>
-                                                                                <button 
-                                                                                    className={`register-input-btn ${isAuthenticating === true ? 'auth' : 'default'}`}
-                                                                                    onClick={() => this.auth.join(sessionContext, true)}
+                                                                                <button
+                                                                                    type="submit"
+                                                                                    className={`register-input-btn ${isAuthenticating ? 'auth' : 'default'}`}
                                                                                 >
-                                                                                    {isAuthenticating ? 'Creating Account...' : 'Create Account'}
+                                                                                    {isAuthenticating
+                                                                                        ? 'Creating Account...'
+                                                                                        : 'Create Account'}
                                                                                 </button>
                                                                             </div>
-                                                                        </div>
+                                                                        </form>
                                                                     </div>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
+
                                                 <div className="letter-container"></div>
+
                                                 <div className='info'>
-                                                    <div className="border-info"></div>
                                                     <div className="text-info">
                                                         <p>
                                                             Drive Service 2026. Fork on
@@ -416,31 +508,47 @@ export class Main extends Component<any, State> {
                                                 </div>
                                             </>
                                         )}
-                                        {sessionContext.currentSession === 'PASSWORD_RESET' && (
+
+                                        {/* Password Reset */}
+                                        {sessionContext?.currentSession === 'PASSWORD_RESET' && (
                                             <div className="app-password-reset">
                                                 <PasswordResetController
                                                     apiClientController={this.apiClientController}
                                                     socketClientConnect={this.socketClientConnect}
-                                                    onBackToLogin={() => this.auth.handleBackToLogin(sessionContext)}
+                                                    onBackToLogin={() =>
+                                                        this.auth.handleBackToLogin(sessionContext)
+                                                    }
                                                     token={this.state.passwordResetToken}
                                                 />
                                             </div>
                                         )}
-                                        {sessionContext.currentSession === 'MAIN_DASHBOARD' && (
-                                            <>
-                                                <div className="app-dashboard">
-                                                    <div className="dashboard-content">
-                                                        <Dashboard
-                                                            ref={this.setDashboardRef}
-                                                            main={this}
-                                                            apiClientController={this.apiClientController}
-                                                            onLogout={() => this.auth.logout(sessionContext)}
-                                                        />
-                                                    </div>
+
+                                        {/* Main Dashboard */}
+                                        {sessionContext?.currentSession === 'MAIN_DASHBOARD' && (
+                                            <div className="app-dashboard">
+                                                <div className="dashboard-content">
+                                                    <Dashboard
+                                                        ref={this.setDashboardRef}
+                                                        main={this}
+                                                        apiClientController={this.apiClientController}
+                                                        onLogout={() => this.auth.logout(sessionContext)}
+                                                    />
                                                 </div>
-                                            </>
+                                            </div>
                                         )}
                                     </div>
+
+                                    {/* Loading Overlay */}
+                                    {showOverlay && (
+                                        <div className="session-loading-overlay">
+                                            <div className="session-loading-content">
+                                                <div>Loading session...</div>
+                                                <div className="session-loading-status">
+                                                    <span>Initializing application</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </>
                             );
                         }}
@@ -449,4 +557,4 @@ export class Main extends Component<any, State> {
             </div>
         );
     }
-}
+    }

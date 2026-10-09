@@ -154,7 +154,7 @@ public class EmailService {
                 System.out.println(err);
             }
         }
-        return "Messages App Notification";
+        return "Drive Service App Notification";
     }
 
     @PostConstruct

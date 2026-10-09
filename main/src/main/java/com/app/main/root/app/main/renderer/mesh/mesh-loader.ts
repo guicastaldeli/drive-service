@@ -17,10 +17,13 @@ export class MeshLoader {
         return Array.from(this.loadedMeshes.keys());
     }
 
-    private static async checkFileExists(url: string): Promise<boolean> {
+    private static async checkFileExists(name: string): Promise<boolean> {
         try {
-            const res = await fetch(url, { method: 'HEAD' });
-            return res.ok;
+            const res = await fetch(`/main/renderer/mesh?name=${encodeURIComponent(name)}`);
+            if(!res.ok) return false;
+            
+            const data = await res.json();
+            return data.exists === true;
         } catch {
             return false;
         }
@@ -45,8 +48,7 @@ export class MeshLoader {
                     return await this.loadFile(t);
                 }
 
-                const url = `${MeshLoader.URL}${t}.json`;
-                const meshExists = await this.checkFileExists(url);
+                const meshExists = await this.checkFileExists(t);
                 if(meshExists) {
                     const loaded = await this.loadMesh(t);
                     if(loaded) return loaded;

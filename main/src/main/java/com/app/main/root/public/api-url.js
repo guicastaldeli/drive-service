@@ -1,13 +1,13 @@
 //
 // Auto-generated from .env.dev - DO NOT EDIT MANUALLY
 // Values are encrypted
-// Generated at: 2026-10-08T21:45:12.841Z
+// Generated at: 2026-10-09T14:46:18.283Z
 //
 
 window.ENCRYPTED_CONFIG = {
-    apiGateway: 'baec5ad957bb41f283fefaaf89d92908:4d5a9c0beae852322aa1ef1f90f0adb6ae75236c8c10f7a2e42d58e8078a1251',
-    serverApi: '29ac751ab67e338bdf1b0593446dd0a3:74450d8de556d099c486b43d7cdffdec947232f1cb703328906bf97fbd8a69ec',
-    webUrl: '48177d768bd1dae91809923ebdddbc13:560f6cb9aaa23a39b15d7dba5511ad4f79698e1957f667de8ab7561d1f741e27',
+    apiGateway: '1e60719699ea693e028ca2ac94bd119a:aa9b56e8a30bba42730e8e4598ed7bbd3c2ba81a5d0bb0a729918323a167d741',
+    serverApi: 'c17439773141f1c793a9ac4de3c56198:b3e633b182615dbce63991bb4a322accc5c733fe04db7804e61adbbd9ff563ff',
+    webUrl: '5536e4e73c046ba8494f524853f7a299:b3b071f954e5cfd22d5fdeeb474950e6e2141d39504db5b85f961ad30f4ed284',
     key: 'JikwwLsQosrGiLqSQyphXqBcH/0fR/HubHjjmPQ3iZA='
 };
 
