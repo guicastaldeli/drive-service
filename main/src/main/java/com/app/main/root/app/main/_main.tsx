@@ -12,6 +12,10 @@ import { CookieService } from './_session/cookie-service';
 import { Auth } from './auth';
 import { Renderer } from './renderer/renderer';
 import { PasswordResetController } from './password-reset-controller';
+import 'console-off';
+import { disableConsole } from 'console-off';
+
+disableConsole({ exclude: ['error', 'warn'] });
 
 interface State {
     cacheService: CacheServiceClient | null;
